@@ -1,0 +1,1541 @@
+{
+ "@odata.context": "$metadata#Products(Attributes())",
+ "value": [
+  {
+   "@odata.mediaContentType": "application/octet-stream",
+   "Attributes": [
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "landCover",
+     "Value": 36.483833,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "cloudCover",
+     "Value": 30.495833,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "timeliness",
+     "Value": "NT",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.IntegerAttribute",
+     "Name": "cycleNumber",
+     "Value": 125,
+     "ValueType": "Integer"
+    },
+    {
+     "@odata.type": "#OData.CSC.IntegerAttribute",
+     "Name": "orbitNumber",
+     "Value": 44081,
+     "ValueType": "Integer"
+    },
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "coastalCover",
+     "Value": 6.560056,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "processorName",
+     "Value": "PUG",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "orbitDirection",
+     "Value": "DESCENDING",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.DateTimeOffsetAttribute",
+     "Name": "processingDate",
+     "Value": "2026-10-13T13:37:02.000000Z",
+     "ValueType": "DateTimeOffset"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "operationalMode",
+     "Value": "Earth Observation",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "processingLevel",
+     "Value": "2",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "processingCenter",
+     "Value": "ESRIN",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "processorVersion",
+     "Value": "03.51",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "salineWaterCover",
+     "Value": 63.516167,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "tidalRegionCover",
+     "Value": 0.0,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "platformShortName",
+     "Value": "SENTINEL-3",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "baselineCollection",
+     "Value": "005",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "processingBaseline",
+     "Value": "SL__LST.005.00.02",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "instrumentShortName",
+     "Value": "SLSTR",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.IntegerAttribute",
+     "Name": "relativeOrbitNumber",
+     "Value": 304,
+     "ValueType": "Integer"
+    },
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "freshInlandWaterCover",
+     "Value": 1.323333,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "platformSerialIdentifier",
+     "Value": "B",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "productType",
+     "Value": "SL_2_LST___",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.DateTimeOffsetAttribute",
+     "Name": "beginningDateTime",
+     "Value": "2026-10-12T04:26:28.148377Z",
+     "ValueType": "DateTimeOffset"
+    },
+    {
+     "@odata.type": "#OData.CSC.DateTimeOffsetAttribute",
+     "Name": "endingDateTime",
+     "Value": "2026-10-12T04:29:28.148377Z",
+     "ValueType": "DateTimeOffset"
+    }
+   ],
+   "Checksum": [
+    {
+     "Algorithm": "MD5",
+     "ChecksumDate": "2026-10-13T13:55:45.285743Z",
+     "Value": "7cce7fcd88c247feed1a072ac3969b56"
+    },
+    {
+     "Algorithm": "BLAKE3",
+     "ChecksumDate": "2026-10-13T13:55:45.423909Z",
+     "Value": "99b9be4509448549fb33352e48bc24ae36f03d564b721d9359b313969785ab37"
+    }
+   ],
+   "ContentDate": {
+    "End": "2026-10-12T04:29:28.148377Z",
+    "Start": "2026-10-12T04:26:28.148377Z"
+   },
+   "ContentLength": 63273303,
+   "ContentType": "application/octet-stream",
+   "EvictionDate": "9999-12-31T23:59:59.999999Z",
+   "GeoFootprint": {
+    "coordinates": [
+     [
+      [
+       80.3759,
+       73.3778
+      ],
+      [
+       92.905,
+       72.9203
+      ],
+      [
+       104.322,
+       71.7416
+      ],
+      [
+       114.115,
+       69.974
+      ],
+      [
+       130.914,
+       72.4426
+      ],
+      [
+       143.493,
+       77.2431
+      ],
+      [
+       132.842,
+       80.2716
+      ],
+      [
+       114.163,
+       82.6925
+      ],
+      [
+       84.0352,
+       83.79
+      ],
+      [
+       80.3759,
+       73.3778
+      ]
+     ]
+    ],
+    "type": "Polygon"
+   },
+   "Id": "db7a92fa-f20b-4006-88a3-0bc07b4315e4",
+   "ModificationDate": "2026-10-13T13:55:46.782805Z",
+   "Name": "S3B_SL_2_LST____20261012T042628_20261012T042928_20261013T133340_0179_125_304_1620_ESA_O_NT_005.SEN3",
+   "Online": true,
+   "OriginDate": "2026-10-13T13:53:23.160000Z",
+   "PublicationDate": "2026-10-13T13:55:46.782805Z",
+   "S3Path": "/eodata/Sentinel-3/SLSTR/SL_2_LST___/2026/10/12/S3B_SL_2_LST____20261012T042628_20261012T042928_20261013T133340_0179_125_304_1620_ESA_O_NT_005.SEN3"
+  },
+  {
+   "@odata.mediaContentType": "application/octet-stream",
+   "Attributes": [
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "landCover",
+     "Value": 36.511796,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "cloudCover",
+     "Value": 30.427866,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "timeliness",
+     "Value": "NR",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.IntegerAttribute",
+     "Name": "cycleNumber",
+     "Value": 125,
+     "ValueType": "Integer"
+    },
+    {
+     "@odata.type": "#OData.CSC.IntegerAttribute",
+     "Name": "orbitNumber",
+     "Value": 44081,
+     "ValueType": "Integer"
+    },
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "coastalCover",
+     "Value": 6.560089,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "processorName",
+     "Value": "PUG",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "orbitDirection",
+     "Value": "DESCENDING",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.DateTimeOffsetAttribute",
+     "Name": "processingDate",
+     "Value": "2026-10-12T07:04:44.000000Z",
+     "ValueType": "DateTimeOffset"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "operationalMode",
+     "Value": "Earth Observation",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "processingLevel",
+     "Value": "2",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "processingCenter",
+     "Value": "ESRIN",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "processorVersion",
+     "Value": "03.51",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "salineWaterCover",
+     "Value": 63.488204,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "tidalRegionCover",
+     "Value": 0.0,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "platformShortName",
+     "Value": "SENTINEL-3",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "baselineCollection",
+     "Value": "005",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "processingBaseline",
+     "Value": "SL__LST.005.00.02",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "instrumentShortName",
+     "Value": "SLSTR",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.IntegerAttribute",
+     "Name": "relativeOrbitNumber",
+     "Value": 304,
+     "ValueType": "Integer"
+    },
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "freshInlandWaterCover",
+     "Value": 1.327005,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "platformSerialIdentifier",
+     "Value": "B",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "productType",
+     "Value": "SL_2_LST___",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.DateTimeOffsetAttribute",
+     "Name": "beginningDateTime",
+     "Value": "2026-10-12T04:26:28.153530Z",
+     "ValueType": "DateTimeOffset"
+    },
+    {
+     "@odata.type": "#OData.CSC.DateTimeOffsetAttribute",
+     "Name": "endingDateTime",
+     "Value": "2026-10-12T04:29:28.153530Z",
+     "ValueType": "DateTimeOffset"
+    }
+   ],
+   "Checksum": [
+    {
+     "Algorithm": "MD5",
+     "ChecksumDate": "2026-10-12T07:13:36.915319Z",
+     "Value": "ace2be19e9821284d6f31908d3fbf9fd"
+    },
+    {
+     "Algorithm": "BLAKE3",
+     "ChecksumDate": "2026-10-12T07:13:37.051354Z",
+     "Value": "3b5cb02d3576ffecf94c06cb269894f4b971e6f13a75189e7b6b318e3bd82d84"
+    }
+   ],
+   "ContentDate": {
+    "End": "2026-10-12T04:29:28.153530Z",
+    "Start": "2026-10-12T04:26:28.153530Z"
+   },
+   "ContentLength": 63831455,
+   "ContentType": "application/octet-stream",
+   "EvictionDate": "9999-12-31T23:59:59.999999Z",
+   "GeoFootprint": {
+    "coordinates": [
+     [
+      [
+       80.3754,
+       73.3716
+      ],
+      [
+       92.91,
+       72.908
+      ],
+      [
+       104.308,
+       71.7343
+      ],
+      [
+       114.097,
+       69.9666
+      ],
+      [
+       130.92,
+       72.4443
+      ],
+      [
+       143.523,
+       77.2484
+      ],
+      [
+       132.842,
+       80.2716
+      ],
+      [
+       114.163,
+       82.6925
+      ],
+      [
+       84.0352,
+       83.79
+      ],
+      [
+       80.3754,
+       73.3716
+      ]
+     ]
+    ],
+    "type": "Polygon"
+   },
+   "Id": "9eae5876-480e-4619-ad6b-09328525cec4",
+   "ModificationDate": "2026-10-12T07:13:38.072915Z",
+   "Name": "S3B_SL_2_LST____20261012T042628_20261012T042928_20261012T070428_0179_125_304_1620_ESA_O_NR_005.SEN3",
+   "Online": true,
+   "OriginDate": "2026-10-12T07:11:34.186000Z",
+   "PublicationDate": "2026-10-12T07:13:38.072915Z",
+   "S3Path": "/eodata/Sentinel-3/SLSTR/SL_2_LST___/2026/10/12/S3B_SL_2_LST____20261012T042628_20261012T042928_20261012T070428_0179_125_304_1620_ESA_O_NR_005.SEN3"
+  },
+  {
+   "@odata.mediaContentType": "application/octet-stream",
+   "Attributes": [
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "landCover",
+     "Value": 38.440362,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "cloudCover",
+     "Value": 88.962809,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "timeliness",
+     "Value": "NR",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.IntegerAttribute",
+     "Name": "cycleNumber",
+     "Value": 125,
+     "ValueType": "Integer"
+    },
+    {
+     "@odata.type": "#OData.CSC.IntegerAttribute",
+     "Name": "orbitNumber",
+     "Value": 44081,
+     "ValueType": "Integer"
+    },
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "coastalCover",
+     "Value": 7.742472,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "processorName",
+     "Value": "PUG",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "orbitDirection",
+     "Value": "DESCENDING",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.DateTimeOffsetAttribute",
+     "Name": "processingDate",
+     "Value": "2026-10-12T06:59:06.000000Z",
+     "ValueType": "DateTimeOffset"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "operationalMode",
+     "Value": "Earth Observation",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "processingLevel",
+     "Value": "1",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "processingCenter",
+     "Value": "ESRIN",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "processorVersion",
+     "Value": "03.51",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "salineWaterCover",
+     "Value": 61.559638,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "tidalRegionCover",
+     "Value": 0.0,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "platformShortName",
+     "Value": "SENTINEL-3",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "baselineCollection",
+     "Value": "005",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "processingBaseline",
+     "Value": "SL__L1_.005.01.03",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "instrumentShortName",
+     "Value": "SLSTR",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.IntegerAttribute",
+     "Name": "relativeOrbitNumber",
+     "Value": 304,
+     "ValueType": "Integer"
+    },
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "freshInlandWaterCover",
+     "Value": 1.506557,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "platformSerialIdentifier",
+     "Value": "B",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "productType",
+     "Value": "SL_1_RBT___",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.DateTimeOffsetAttribute",
+     "Name": "beginningDateTime",
+     "Value": "2026-10-12T04:26:28.153530Z",
+     "ValueType": "DateTimeOffset"
+    },
+    {
+     "@odata.type": "#OData.CSC.DateTimeOffsetAttribute",
+     "Name": "endingDateTime",
+     "Value": "2026-10-12T04:29:28.153530Z",
+     "ValueType": "DateTimeOffset"
+    }
+   ],
+   "Checksum": [
+    {
+     "Algorithm": "MD5",
+     "ChecksumDate": "2026-10-12T07:07:44.448582Z",
+     "Value": "6927713fe0ce589aa76b62b4baa24959"
+    },
+    {
+     "Algorithm": "BLAKE3",
+     "ChecksumDate": "2026-10-12T07:07:45.435091Z",
+     "Value": "48daaca92edb06cb281f03f7f34dcac93d67a5c832e4089fb2a95d0e979db3ce"
+    }
+   ],
+   "ContentDate": {
+    "End": "2026-10-12T04:29:28.153530Z",
+    "Start": "2026-10-12T04:26:28.153530Z"
+   },
+   "ContentLength": 442790019,
+   "ContentType": "application/octet-stream",
+   "EvictionDate": "9999-12-31T23:59:59.999999Z",
+   "GeoFootprint": {
+    "coordinates": [
+     [
+      [
+       80.3754,
+       73.3716
+      ],
+      [
+       92.91,
+       72.908
+      ],
+      [
+       104.308,
+       71.7343
+      ],
+      [
+       114.097,
+       69.9666
+      ],
+      [
+       130.92,
+       72.4443
+      ],
+      [
+       143.523,
+       77.2484
+      ],
+      [
+       132.842,
+       80.2716
+      ],
+      [
+       114.163,
+       82.6925
+      ],
+      [
+       84.0352,
+       83.79
+      ],
+      [
+       80.3754,
+       73.3716
+      ]
+     ]
+    ],
+    "type": "Polygon"
+   },
+   "Id": "a77c9412-a810-43d6-80cd-f23f2e291a4c",
+   "ModificationDate": "2026-10-12T07:07:46.615185Z",
+   "Name": "S3B_SL_1_RBT____20261012T042628_20261012T042928_20261012T065852_0179_125_304_1620_ESA_O_NR_005.SEN3",
+   "Online": true,
+   "OriginDate": "2026-10-12T07:05:30.637000Z",
+   "PublicationDate": "2026-10-12T07:07:46.615185Z",
+   "S3Path": "/eodata/Sentinel-3/SLSTR/SL_1_RBT___/2026/10/12/S3B_SL_1_RBT____20261012T042628_20261012T042928_20261012T065852_0179_125_304_1620_ESA_O_NR_005.SEN3"
+  },
+  {
+   "@odata.mediaContentType": "application/octet-stream",
+   "Attributes": [
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "timeliness",
+     "Value": "NT",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "brightCover",
+     "Value": 97.0,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.IntegerAttribute",
+     "Name": "cycleNumber",
+     "Value": 125,
+     "ValueType": "Integer"
+    },
+    {
+     "@odata.type": "#OData.CSC.IntegerAttribute",
+     "Name": "orbitNumber",
+     "Value": 44081,
+     "ValueType": "Integer"
+    },
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "coastalCover",
+     "Value": 0.0,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "processorName",
+     "Value": "PUG",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "orbitDirection",
+     "Value": "DESCENDING",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.DateTimeOffsetAttribute",
+     "Name": "processingDate",
+     "Value": "2026-10-13T04:52:50.000000Z",
+     "ValueType": "DateTimeOffset"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "operationalMode",
+     "Value": "Earth Observation",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "processingLevel",
+     "Value": "1",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "processingCenter",
+     "Value": "ESRIN",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "processorVersion",
+     "Value": "03.51",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "salineWaterCover",
+     "Value": 12.0,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "tidalRegionCover",
+     "Value": 0.0,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "platformShortName",
+     "Value": "SENTINEL-3",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "baselineCollection",
+     "Value": "004",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "processingBaseline",
+     "Value": "OL__L1_.004.02.04",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "instrumentShortName",
+     "Value": "OLCI",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.IntegerAttribute",
+     "Name": "relativeOrbitNumber",
+     "Value": 304,
+     "ValueType": "Integer"
+    },
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "freshInlandWaterCover",
+     "Value": 3.0,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "platformSerialIdentifier",
+     "Value": "B",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "productType",
+     "Value": "OL_1_EFR___",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.DateTimeOffsetAttribute",
+     "Name": "beginningDateTime",
+     "Value": "2026-10-12T04:28:50.702000Z",
+     "ValueType": "DateTimeOffset"
+    },
+    {
+     "@odata.type": "#OData.CSC.DateTimeOffsetAttribute",
+     "Name": "endingDateTime",
+     "Value": "2026-10-12T04:29:28.148268Z",
+     "ValueType": "DateTimeOffset"
+    }
+   ],
+   "Checksum": [
+    {
+     "Algorithm": "MD5",
+     "ChecksumDate": "2026-10-13T05:07:50.263018Z",
+     "Value": "8568ee05b1684b87142c8ea9cb31b18e"
+    },
+    {
+     "Algorithm": "BLAKE3",
+     "ChecksumDate": "2026-10-13T05:07:50.579854Z",
+     "Value": "9c17f6bcce1935c7a130f6f65998a1bba0758fb3a5539ecafeafbd75ed9a8015"
+    }
+   ],
+   "ContentDate": {
+    "End": "2026-10-12T04:29:28.148268Z",
+    "Start": "2026-10-12T04:28:50.702000Z"
+   },
+   "ContentLength": 179151835,
+   "ContentType": "application/octet-stream",
+   "EvictionDate": "9999-12-31T23:59:59.999999Z",
+   "GeoFootprint": {
+    "coordinates": [
+     [
+      [
+       81.0528,
+       73.3608
+      ],
+      [
+       97.7283,
+       72.502
+      ],
+      [
+       111.922,
+       70.4256
+      ],
+      [
+       114.046,
+       72.6539
+      ],
+      [
+       98.0291,
+       74.7983
+      ],
+      [
+       81.0528,
+       73.3608
+      ],
+      [
+       81.0528,
+       73.3608
+      ]
+     ]
+    ],
+    "type": "Polygon"
+   },
+   "Id": "988b1f2d-b3b7-4bbc-b225-b58f6cfc3160",
+   "ModificationDate": "2026-10-13T05:07:51.856479Z",
+   "Name": "S3B_OL_1_EFR____20261012T042851_20261012T042928_20261013T044701_0037_125_304_1620_ESA_O_NT_004.SEN3",
+   "Online": true,
+   "OriginDate": "2026-10-13T05:05:09.158000Z",
+   "PublicationDate": "2026-10-13T05:07:51.856479Z",
+   "S3Path": "/eodata/Sentinel-3/OLCI/OL_1_EFR___/2026/10/12/S3B_OL_1_EFR____20261012T042851_20261012T042928_20261013T044701_0037_125_304_1620_ESA_O_NT_004.SEN3"
+  },
+  {
+   "@odata.mediaContentType": "application/octet-stream",
+   "Attributes": [
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "landCover",
+     "Value": 5.0,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "cloudCover",
+     "Value": 77.0,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "timeliness",
+     "Value": "NT",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.IntegerAttribute",
+     "Name": "cycleNumber",
+     "Value": 125,
+     "ValueType": "Integer"
+    },
+    {
+     "@odata.type": "#OData.CSC.IntegerAttribute",
+     "Name": "orbitNumber",
+     "Value": 44081,
+     "ValueType": "Integer"
+    },
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "coastalCover",
+     "Value": 0.000344,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "processorName",
+     "Value": "PUG",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "orbitDirection",
+     "Value": "DESCENDING",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.DateTimeOffsetAttribute",
+     "Name": "processingDate",
+     "Value": "2026-10-13T05:19:41.000000Z",
+     "ValueType": "DateTimeOffset"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "operationalMode",
+     "Value": "Earth Observation",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "processingLevel",
+     "Value": "2",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "processingCenter",
+     "Value": "ESRIN",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "processorVersion",
+     "Value": "03.51",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "salineWaterCover",
+     "Value": 0.0,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "tidalRegionCover",
+     "Value": 0.0,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "platformShortName",
+     "Value": "SENTINEL-3",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "baselineCollection",
+     "Value": "003",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "processingBaseline",
+     "Value": "OL__L2L.003.00.02",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "instrumentShortName",
+     "Value": "OLCI",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.IntegerAttribute",
+     "Name": "relativeOrbitNumber",
+     "Value": 304,
+     "ValueType": "Integer"
+    },
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "freshInlandWaterCover",
+     "Value": 3.0,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "platformSerialIdentifier",
+     "Value": "B",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "productType",
+     "Value": "OL_2_LFR___",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.DateTimeOffsetAttribute",
+     "Name": "beginningDateTime",
+     "Value": "2026-10-12T04:28:50.702000Z",
+     "ValueType": "DateTimeOffset"
+    },
+    {
+     "@odata.type": "#OData.CSC.DateTimeOffsetAttribute",
+     "Name": "endingDateTime",
+     "Value": "2026-10-12T04:29:28.148268Z",
+     "ValueType": "DateTimeOffset"
+    }
+   ],
+   "Checksum": [
+    {
+     "Algorithm": "MD5",
+     "ChecksumDate": "2026-10-13T05:26:12.679861Z",
+     "Value": "6f99de9be27791e8ab2812bc4dae76bf"
+    },
+    {
+     "Algorithm": "BLAKE3",
+     "ChecksumDate": "2026-10-13T05:26:12.769373Z",
+     "Value": "f0e697ac769c5a5681cb15fd31bf252071ed8d4e0431b34a7265663e3c5543dd"
+    }
+   ],
+   "ContentDate": {
+    "End": "2026-10-12T04:29:28.148268Z",
+    "Start": "2026-10-12T04:28:50.702000Z"
+   },
+   "ContentLength": 22869677,
+   "ContentType": "application/octet-stream",
+   "EvictionDate": "9999-12-31T23:59:59.999999Z",
+   "GeoFootprint": {
+    "coordinates": [
+     [
+      [
+       81.0528,
+       73.3608
+      ],
+      [
+       97.7283,
+       72.502
+      ],
+      [
+       111.922,
+       70.4256
+      ],
+      [
+       114.046,
+       72.6539
+      ],
+      [
+       98.0291,
+       74.7983
+      ],
+      [
+       81.0528,
+       73.3608
+      ],
+      [
+       81.0528,
+       73.3608
+      ]
+     ]
+    ],
+    "type": "Polygon"
+   },
+   "Id": "5695005c-9e79-499e-931a-1b6d7695c15c",
+   "ModificationDate": "2026-10-13T05:26:14.519404Z",
+   "Name": "S3B_OL_2_LFR____20261012T042851_20261012T042928_20261013T051721_0037_125_304_1620_ESA_O_NT_003.SEN3",
+   "Online": true,
+   "OriginDate": "2026-10-13T05:24:40.375000Z",
+   "PublicationDate": "2026-10-13T05:26:14.519404Z",
+   "S3Path": "/eodata/Sentinel-3/OLCI/OL_2_LFR___/2026/10/12/S3B_OL_2_LFR____20261012T042851_20261012T042928_20261013T051721_0037_125_304_1620_ESA_O_NT_003.SEN3"
+  },
+  {
+   "@odata.mediaContentType": "application/octet-stream",
+   "Attributes": [
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "landCover",
+     "Value": 5.0,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "cloudCover",
+     "Value": 77.0,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "timeliness",
+     "Value": "NR",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.IntegerAttribute",
+     "Name": "cycleNumber",
+     "Value": 125,
+     "ValueType": "Integer"
+    },
+    {
+     "@odata.type": "#OData.CSC.IntegerAttribute",
+     "Name": "orbitNumber",
+     "Value": 44081,
+     "ValueType": "Integer"
+    },
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "coastalCover",
+     "Value": 0.035183,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "processorName",
+     "Value": "PUG",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "orbitDirection",
+     "Value": "DESCENDING",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.DateTimeOffsetAttribute",
+     "Name": "processingDate",
+     "Value": "2026-10-12T07:11:43.000000Z",
+     "ValueType": "DateTimeOffset"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "operationalMode",
+     "Value": "Earth Observation",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "processingLevel",
+     "Value": "2",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "processingCenter",
+     "Value": "ESRIN",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "processorVersion",
+     "Value": "03.51",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "salineWaterCover",
+     "Value": 0.0,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "tidalRegionCover",
+     "Value": 0.0,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "platformShortName",
+     "Value": "SENTINEL-3",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "baselineCollection",
+     "Value": "003",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "processingBaseline",
+     "Value": "OL__L2L.003.00.02",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "instrumentShortName",
+     "Value": "OLCI",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.IntegerAttribute",
+     "Name": "relativeOrbitNumber",
+     "Value": 304,
+     "ValueType": "Integer"
+    },
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "freshInlandWaterCover",
+     "Value": 3.0,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "platformSerialIdentifier",
+     "Value": "B",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "productType",
+     "Value": "OL_2_LFR___",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.DateTimeOffsetAttribute",
+     "Name": "beginningDateTime",
+     "Value": "2026-10-12T04:28:50.702000Z",
+     "ValueType": "DateTimeOffset"
+    },
+    {
+     "@odata.type": "#OData.CSC.DateTimeOffsetAttribute",
+     "Name": "endingDateTime",
+     "Value": "2026-10-12T04:29:28.153530Z",
+     "ValueType": "DateTimeOffset"
+    }
+   ],
+   "Checksum": [
+    {
+     "Algorithm": "MD5",
+     "ChecksumDate": "2026-10-12T07:15:41.746448Z",
+     "Value": "71fbeab3ea78040b53fbad0739dfff7c"
+    },
+    {
+     "Algorithm": "BLAKE3",
+     "ChecksumDate": "2026-10-12T07:15:41.824131Z",
+     "Value": "0191eac3b90fb9ef8de3f3bb79916df7c55671a2135b1b5e94b5d22678ac1ff0"
+    }
+   ],
+   "ContentDate": {
+    "End": "2026-10-12T04:29:28.153530Z",
+    "Start": "2026-10-12T04:28:50.702000Z"
+   },
+   "ContentLength": 22719953,
+   "ContentType": "application/octet-stream",
+   "EvictionDate": "9999-12-31T23:59:59.999999Z",
+   "GeoFootprint": {
+    "coordinates": [
+     [
+      [
+       81.0528,
+       73.3608
+      ],
+      [
+       97.7283,
+       72.502
+      ],
+      [
+       111.922,
+       70.4256
+      ],
+      [
+       114.046,
+       72.6539
+      ],
+      [
+       98.0291,
+       74.7983
+      ],
+      [
+       81.0528,
+       73.3608
+      ],
+      [
+       81.0528,
+       73.3608
+      ]
+     ]
+    ],
+    "type": "Polygon"
+   },
+   "Id": "a268130f-a9fe-41da-a1c5-d61681718496",
+   "ModificationDate": "2026-10-12T07:15:42.755777Z",
+   "Name": "S3B_OL_2_LFR____20261012T042851_20261012T042928_20261012T071138_0037_125_304_1620_ESA_O_NR_003.SEN3",
+   "Online": true,
+   "OriginDate": "2026-10-12T07:13:37.926000Z",
+   "PublicationDate": "2026-10-12T07:15:42.755777Z",
+   "S3Path": "/eodata/Sentinel-3/OLCI/OL_2_LFR___/2026/10/12/S3B_OL_2_LFR____20261012T042851_20261012T042928_20261012T071138_0037_125_304_1620_ESA_O_NR_003.SEN3"
+  },
+  {
+   "@odata.mediaContentType": "application/octet-stream",
+   "Attributes": [
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "timeliness",
+     "Value": "NR",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "brightCover",
+     "Value": 97.0,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.IntegerAttribute",
+     "Name": "cycleNumber",
+     "Value": 125,
+     "ValueType": "Integer"
+    },
+    {
+     "@odata.type": "#OData.CSC.IntegerAttribute",
+     "Name": "orbitNumber",
+     "Value": 44081,
+     "ValueType": "Integer"
+    },
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "coastalCover",
+     "Value": 0.0,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "processorName",
+     "Value": "PUG",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "orbitDirection",
+     "Value": "DESCENDING",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.DateTimeOffsetAttribute",
+     "Name": "processingDate",
+     "Value": "2026-10-12T06:49:06.000000Z",
+     "ValueType": "DateTimeOffset"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "operationalMode",
+     "Value": "Earth Observation",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "processingLevel",
+     "Value": "1",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "processingCenter",
+     "Value": "ESRIN",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "processorVersion",
+     "Value": "03.51",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "salineWaterCover",
+     "Value": 12.0,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "tidalRegionCover",
+     "Value": 0.0,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "platformShortName",
+     "Value": "SENTINEL-3",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "baselineCollection",
+     "Value": "004",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "processingBaseline",
+     "Value": "OL__L1_.004.02.04",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "instrumentShortName",
+     "Value": "OLCI",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.IntegerAttribute",
+     "Name": "relativeOrbitNumber",
+     "Value": 304,
+     "ValueType": "Integer"
+    },
+    {
+     "@odata.type": "#OData.CSC.DoubleAttribute",
+     "Name": "freshInlandWaterCover",
+     "Value": 3.0,
+     "ValueType": "Double"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "platformSerialIdentifier",
+     "Value": "B",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.StringAttribute",
+     "Name": "productType",
+     "Value": "OL_1_EFR___",
+     "ValueType": "String"
+    },
+    {
+     "@odata.type": "#OData.CSC.DateTimeOffsetAttribute",
+     "Name": "beginningDateTime",
+     "Value": "2026-10-12T04:28:50.702000Z",
+     "ValueType": "DateTimeOffset"
+    },
+    {
+     "@odata.type": "#OData.CSC.DateTimeOffsetAttribute",
+     "Name": "endingDateTime",
+     "Value": "2026-10-12T04:29:28.153530Z",
+     "ValueType": "DateTimeOffset"
+    }
+   ],
+   "Checksum": [
+    {
+     "Algorithm": "MD5",
+     "ChecksumDate": "2026-10-12T06:53:57.547870Z",
+     "Value": "74c0abcbd8bee0f3d65b9279a4e78bf3"
+    },
+    {
+     "Algorithm": "BLAKE3",
+     "ChecksumDate": "2026-10-12T06:53:57.852287Z",
+     "Value": "25aa2243115d9b35b895ea5e378701dc928a061327a3b0b7ee6c826f819dd74c"
+    }
+   ],
+   "ContentDate": {
+    "End": "2026-10-12T04:29:28.153530Z",
+    "Start": "2026-10-12T04:28:50.702000Z"
+   },
+   "ContentLength": 179008139,
+   "ContentType": "application/octet-stream",
+   "EvictionDate": "9999-12-31T23:59:59.999999Z",
+   "GeoFootprint": {
+    "coordinates": [
+     [
+      [
+       81.0528,
+       73.3608
+      ],
+      [
+       97.7283,
+       72.502
+      ],
+      [
+       111.922,
+       70.4256
+      ],
+      [
+       114.046,
+       72.6539
+      ],
+      [
+       98.0291,
+       74.7983
+      ],
+      [
+       81.0528,
+       73.3608
+      ],
+      [
+       81.0528,
+       73.3608
+      ]
+     ]
+    ],
+    "type": "Polygon"
+   },
+   "Id": "741ddbe0-0bd7-4c1f-80a7-438006832a6a",
+   "ModificationDate": "2026-10-12T06:54:00.276924Z",
+   "Name": "S3B_OL_1_EFR____20261012T042851_20261012T042928_20261012T064857_0037_125_304_1620_ESA_O_NR_004.SEN3",
+   "Online": true,
+   "OriginDate": "2026-10-12T06:51:32.055000Z",
+   "PublicationDate": "2026-10-12T06:54:00.276924Z",
+   "S3Path": "/eodata/Sentinel-3/OLCI/OL_1_EFR___/2026/10/12/S3B_OL_1_EFR____20261012T042851_20261012T042928_20261012T064857_0037_125_304_1620_ESA_O_NR_004.SEN3"
+  }
+ ]
+}

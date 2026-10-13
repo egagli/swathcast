@@ -169,7 +169,15 @@ place, or when. The map resolves them to the ESA burst grid:
 
 ## Acquisition plans
 
-The schedule is read from the agencies' own plans (`plans.py`):
+The schedule is read from the agencies' own plans (`plans.py`), except for the sensors that have
+none:
+
+- **MODIS, VIIRS, Sentinel-3: no plan.** MODIS (Terra, Aqua), VIIRS (Suomi NPP, NOAA-20, NOAA-21)
+  and Sentinel-3's SLSTR image on every orbit, day and night, and OLCI in daylight; no agency
+  publishes an acquisition plan for them because there is nothing to choose. Their passes are
+  predicted from the orbit alone (`wideswath.py`, below), as far ahead as the schedule reaches (30
+  days). Sentinel-3C was in orbit on 2026-10-13 (CelesTrak) but had no products at CDSE, so it is not
+  scheduled.
 
 - **Sentinel-1/2: ESA plan KMLs, newest wins.** ESA's acquisition-plans pages link one KML per
   platform per plan update (Sentinel-1: several a week, each running ~3 weeks ahead; Sentinel-2:
@@ -261,6 +269,7 @@ reaches only as far as each agency publishes. As of 2026-10-01:
 | Sentinel-2A/2B/2C | ESA, a KML per platform every 2 weeks, each 18 days long | 19 Oct (S2A, S2C), 12 Oct (S2B) | S2B's newest file was issued 24 Sep; the next one extends it |
 | Landsat 8/9 | USGS acquisition calendar (paths per day, a fixed 16-day cycle) | all 30 days | |
 | NISAR | NASA observation plan (KMZ) | all 30 days | the plan covers the whole of 2026 |
+| MODIS, VIIRS, Sentinel-3 | no plan: predicted from the orbit | all 30 days | elements propagated up to 30 days; the schedule is rebuilt daily |
 
 Nothing past a plan's end is filled in: extending a 12-day (S1) or 5-day (S2) repeat would be a
 guess, since ESA re-plans datatakes in every file. The daily schedule job picks up each new file, so
@@ -283,6 +292,64 @@ Compared on 2026-10-01 with this site's plan for cycle 32: 95% of the passes bot
 inside ISRO's planned window, so the orbit-derived times stand. 18% of NASA's planned frames had no
 ISRO segment; in the previous cycle (31) frames like these were still acquired 75.5% of the time,
 so the ROP is not a better list of what will be acquired, and the map keeps the NASA plan.
+
+## MODIS, VIIRS and Sentinel-3 timing
+
+Without plans, the orbit says both *whether* and *when* (`wideswath.py`, CelesTrak elements, SGP4):
+
+1. **Swaths, measured.** For 150 LANCE granules per sensor and 400 Sentinel-3 frames (2026-10-12/13),
+   the signed cross-track distance of the footprint's vertices from the SGP4 ground track at the same
+   along-track position (+ to the right of travel), medians: MODIS ±1,171 (Aqua) to ±1,178 km (Terra);
+   VIIRS ±1,518 (NOAA-21), ±1,526 (NOAA-20), ±1,548 km (Suomi NPP); Sentinel-3 OLCI −336 to +975 km and
+   SLSTR nadir −500 to +996 km (both tilted away from the sun, to the right of travel).
+2. **Tiles.** The map's footprints are the MODIS sinusoidal tiles (10°, h00–35 × v00–17; the 460 that
+   hold any of the Earth), the grid of the MODIS/VIIRS land and snow products (MOD09GA, MOD10A1,
+   VNP10A1, …). A tile is imaged by a pass whose swath covers the tile centre; its time is the closest
+   approach of the ground track (10 s steps, parabolic refinement), and the centre's cross-track
+   distance gives the view zenith angle (spherical Earth; MODIS reaches ~65°, VIIRS ~70° at the edges).
+   Checked against LANCE's near-real-time Level-1B granules whose CMR footprint holds the tile centre,
+   for 60 random tiles, 2026-10-11 00:00 to 10-12 09:00 UTC: predicted passes with a real granule
+   Terra 265/268, Aqua 247/265 (14 of the 18 misses fall in two Aqua NRT outages that window), Suomi
+   NPP 323/323, NOAA-20 335/335, NOAA-21 321/321; real passes predicted 98–99 % (Terra 265/268, Aqua
+   247/252, Suomi NPP 323/330, NOAA-20 335/339, NOAA-21 321/329; CMR's granule outlines are four
+   corners joined straight, so a granule can claim a tile centre just outside its swath). In the same
+   check, all three VIIRS NRT streams were empty from about 17:00 on 12 Oct to 12:00 on 13 Oct (an
+   outage, back-filled later), which is why the window ends on the 12th.
+3. **At the AOI.** A tile is 1,100 km across, so over an AOI each candidate pass (from the tiles within
+   2,400 km of it) is timed again at the AOI itself in the browser (`site/swathgeom.js`
+   `closestApproach`, satellite.js with the poller's `tle.json`) and kept only if its swath reaches the
+   AOI. Run on the same elements as the Python, the browser's times match to under 1 s and its
+   cross-track distances to under 3 km (`tests/test_site_swath.py`). MODIS and VIIRS fly on
+   satellites that are not yaw-steered, so a scan line is perpendicular to the orbit's *inertial*
+   direction, 2.9° (median; up to ~4° at the equator) off the perpendicular to the ground track: at
+   the swath edge a place is imaged up to ~10 s before or after the closest approach. So the AOI's
+   time is when a scan line passes through it (`scanTime`). On the corners of 200 LANCE granules
+   (2026-10-13), each imaged at its granule's start or end: median 0.8 s (MODIS), 1.0 s (VIIRS) from
+   it, against 8–11 s for the closest approach. (A tile's own time stays its closest approach.)
+4. **Sentinel-3 frames.** Sentinel-3 products are cut in 3-minute frames on a fixed grid: relative
+   orbit (1–385; a 27-day exact repeat) and the frame's start in seconds after the ascending node (0,
+   180, … 5940), named in every product (`…_0179_145_081_3420_…`: duration, cycle, relative orbit,
+   frame). Relative orbit *r* crosses the node at a fixed longitude, L₁ − (*r* − 1) · 25.2468°, with L₁
+   fitted on 15 orbits per platform (S3A 0.6219°, S3B 0.1564°; std 0.0001°; each platform numbers its
+   own tracks). Against the 1,450 CDSE products of 2026-10-12: 1,438 matched a predicted frame, full
+   frames starting within 0.12 s of the prediction (median 0.06 s); the other 12, S3B SLSTR products
+   named frame 6120, start a minute after the node. The predicted outline of a frame (the SLSTR nadir
+   swath over its 180 s) overlapped the real footprint by a median IoU of 0.996 (5th percentile
+   0.993; 200 frames). The frames are ~1,300 km wide and every place lies under ~20 of them, which on
+   the map hid everything beneath, so Sentinel-3 is drawn on the sinusoidal tiles too, and each pass
+   carries its relative orbit and time after the node, hence its frame (over Paradise, Mt. Rainier,
+   the four passes of 11–12 Oct had exactly the real products' relative orbit and frame).
+5. **Instruments and light.** A Sentinel-3 pass lists OLCI only in daylight at the AOI and when the
+   AOI is inside OLCI's narrower strip. Day or night is the sun's elevation at the AOI (or tile
+   centre) at the pass; the map's *Light* filter starts with night off, as Landsat's night side does.
+
+The live satellites draw the same strips (MODIS ±1,175 km, VIIRS ±1,531 km, Sentinel-3 SLSTR), always
+filled: these sensors image on every orbit. Their placement was checked on 502 real products of 13 Oct
+(the map's own `swathgeom.js` with satellite.js and `tle.json`): the satellite's nadir lay inside every
+real footprint, 7–21 km (median) from the real swath's centre line; Sentinel-3 strips overlapped the
+real frames by a median IoU of 0.996 (boundaries ~3–4 km apart, OLCI and SLSTR alike). MODIS/VIIRS
+strips are drawn across the inertial direction of travel (above): their corners then lie a median
+17–35 km from the real granule corners, against 61–77 km across the ground track.
 
 ## Landsat and NISAR timing
 
@@ -325,6 +392,9 @@ direction of travel over the rotating Earth (what a zero-Doppler radar looks alo
 | NISAR | 446–688 left | ~240 km swath; frame centres 561–579 km left (see above) |
 | Sentinel-2 MSI | 145 either side | 290 km swath |
 | Landsat OLI | 92.5 either side | 185 km swath |
+| MODIS | 1,175 either side, across the orbit's inertial direction | measured on LANCE granules: ±1,171–1,178 km; no yaw steering |
+| VIIRS | 1,531 either side, across the orbit's inertial direction | measured: ±1,518–1,548 km; no yaw steering |
+| Sentinel-3 SLSTR | 500 left to 996 right | measured on CDSE frames; OLCI: 336 left to 975 right |
 
 The strip is filled where the plan has the satellite imaging: inside a Sentinel-1/2 datatake, within
 half a frame (18 s) of a NISAR frame time or half a scene (16 s) of a Landsat scene time. Checked on
@@ -395,6 +465,9 @@ rows, learned coverage, timeouts) are unchanged. Only the universes and matching
 | Landsat 8/9 | USGS STAC `landsat-c2l1` and `landsat-c2l2-sr`, by `created` | Earth Search and Planetary Computer `landsat-c2-l2`; HLS L30 | L2 id without processing date and `_SR`; HLS `LANDSAT_PRODUCT_ID` = the L1 id |
 | NISAR (L-band) | CMR L0B RRSD and L1 RSLC (ASF, PROVISIONAL_V1), by `created_at` | GCOV | the RSLC name with the product prefix swapped (`InputGranules` confirms) |
 | NISAR S-band | ISRO Bhoonidhi `NISAR_SSAR_RSLC` sensed in the last 10 days (needs a login) | Bhoonidhi GCOV | the RSLC name with `L1`→`L2`, `RSLC`→`GCOV` (assumed, see below) |
+| MODIS | LANCE NRT Level-1B 1 km (`MOD021KM`, `MYD021KM`) by CMR `created_at` | LAADS Level-1B collections 6.1 and 7; snow cover `MOD10_L2`/`MYD10_L2` at LANCE (NRT) and NSIDC | platform + granule start stamp `AYYYYDDD.HHMM` |
+| VIIRS | LANCE NRT Level-1B 750 m (`VNP02MOD`, `VJ102MOD`, `VJ202MOD`) by CMR `created_at` | LAADS Level-1B; snow cover `VNP10`/`VJ110`/`VJ210` at LANCE (NRT) and NSIDC | platform + granule start stamp |
+| Sentinel-3 | CDSE NRT OLCI `OL_1_EFR` and SLSTR `SL_1_RBT` by `PublicationDate` | CDSE NTC of both; EUMETSAT Data Store OLCI EFR; OLCI `OL_2_LFR` and SLSTR `SL_2_LST` at CDSE and Planetary Computer | platform, instrument, cycle, relative orbit, frame |
 
 - **Why a Sentinel-2 sample.** CDSE publishes ~15,000 L1C and ~15,400 L2A products a day
   (2026-09-28); tracking all of them at four sources would multiply the hourly job's table and lookups
@@ -410,6 +483,21 @@ rows, learned coverage, timeouts) are unchanged. Only the universes and matching
   enter as T1/T2 7–12 days after sensing, so they are rarely *prompt* and Landsat 8 statistics mostly
   reflect Landsat 9 until that changes.
 - **NISAR** products are provisional; searching is anonymous, downloading needs an Earthdata login.
+- **MODIS and VIIRS granules** are 5 (MODIS) or 6 (VIIRS) minutes of swath, day and night: about 288
+  and 240 a day per platform. LANCE names its products in the `ProducerGranuleId`
+  (`MOD021KM.A2026286.1525.061.2026286160422.NRT.hdf`; its `GranuleUR` is an opaque number), and every
+  product of one granule shares the platform and the start stamp, so other sources are looked up by
+  the granules' time window and matched on that stamp (CMR cannot search producer ids without
+  wildcards). LANCE deletes its products after 7 days (their CMR `Delete` date), so its snow source
+  times out after 5. Snow products are made for daytime land granules only: learned coverage on
+  day/night × a 10° box of the granule centre. MODIS collection 6.1 and 7 Level-1B are both being
+  produced (2026-10-13), and both are tracked.
+- **Sentinel-3 frames** keep their key across processings: a frame's NRT and NTC products, EUMETSAT's
+  copy (processed elsewhere, so named `_MAR_` where CDSE's is `_PS1_`) and its Level-2 products share
+  platform, instrument, cycle, relative orbit and frame. A frame can be dumped in two NRT pieces (two
+  reference products, one key); both match. EUMETSAT's OLCI collection holds NTC copies too; its first
+  sighting counts. Level-2 land (LFR) and temperature (LST) products use learned coverage (per
+  relative orbit and frame); Planetary Computer's are NTC only.
 - **NISAR S-band** (`sources/bhoonidhi.py`) is ISRO's, distributed by
   [Bhoonidhi](https://bhoonidhi.nrsc.gov.in), whose [STAC search API](https://bhoonidhi.nrsc.gov.in/bhoonidhi-api/)
   needs a Bhoonidhi account. The poller reads `BHOONIDHI_USER_ID` and `BHOONIDHI_PASSWORD` from
@@ -440,7 +528,8 @@ rows, learned coverage, timeouts) are unchanged. Only the universes and matching
 
 ---
 
-**Status & next steps** (last updated 2026-10-12): implemented and unit-tested for every mission,
+**Status & next steps** (last updated 2026-10-13): implemented and unit-tested for every mission,
 including Sentinel-1 burst timing and Sentinel-2 tile timing; the hourly poller has run since
-2026-09-29. Next: revisit the 2.5 h prompt tolerance and 3 h gap rule against observed outages; add
+2026-09-29. MODIS, VIIRS and Sentinel-3 added 2026-10-13 (orbit-predicted passes, validated as above;
+their latency starts accumulating with the poller's first runs). Next: revisit the 2.5 h prompt tolerance and 3 h gap rule against observed outages; add
 a direction/region split when sample sizes allow.

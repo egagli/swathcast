@@ -199,6 +199,55 @@ with `curl` and the package's own source classes. The recorded responses are in 
   the GCOV of a frame has the same name after `NISAR_L2_PR_GCOV_`, and each RSLC's `InputGranules` is
   its L0B. ProviderDates Insert − start (2026-09-28): L0B median 6.5 h, RSLC 44.2 h, GCOV 45.9 h.
 
+- **MODIS and VIIRS at LANCE, LAADS and NSIDC** (NASA CMR; checked 2026-10-13): every collection
+  answers anonymous `granules.umm_json` searches. LANCE near-real-time Level-1B
+  (`C1426414410-LANCEMODIS` `MOD021KM` 6.1NRT, `C1426616847-LANCEMODIS` `MYD021KM`,
+  `C2185497928-LANCEMODIS` `VNP02MOD_NRT`, `C2208778455-LANCEMODIS` `VJ102MOD_NRT`,
+  `C3383723948-LANCEMODIS` `VJ202MOD_NRT`): `GranuleUR` is an opaque `LANCEMODIS:<number>`, the name
+  is `DataGranule.Identifiers[ProducerGranuleId]` (`MOD021KM.A2026286.1525.061.2026286160422.NRT.hdf`,
+  `VJ102MOD_NRT.A2026286.1418.021.….nc`); `ProviderDates` carries Insert, Update and a Delete 7 days
+  after insert (LANCE keeps a rolling week: 1,482 `VNP02MOD_NRT` granules in all). Insert − sensing:
+  MODIS ~40 min, VIIRS ~1.5–2 h (2026-10-13). A day has 288 (MODIS) or 242 (VIIRS) granules per
+  platform, flagged `Day`, `Night` or `Both`. Standard Level-1B at LAADS: MODIS collection 6.1
+  (`C1378227407-LAADS`, `C1379758607-LAADS`; newest Terra granule 05:55, inserted 13:15) **and**
+  collection 7 (`C3861664481-LAADS`, `C3861713185-LAADS`; record from 2000, newest 09:45 inserted
+  15:51) are both being produced; VIIRS `C2105087643-LAADS` (`VNP02MOD` v2), `C2103811746-LAADS`
+  (`VJ102MOD` v2.1), `C3478403600-LAADS` (`VJ202MOD` v2.1). Snow cover swath products: LANCE
+  `MOD10_L2`/`MYD10_L2` NRT (`C2007659515`, `C2007631329-LANCEMODIS`), `VNP10_NRT`/`VJ110_NRT`/
+  `VJ210_NRT` (`C2780575359`, `C2781269342`, `C4232151476-LANCEMODIS`); NSIDC `MOD10_L2`/`MYD10_L2`
+  v61 (`C3024162910`, `C3090964320-NSIDC_CPRD`), `VNP10`/`VJ110`/`VJ210` v2 (`C3173404788`,
+  `C3173450415`, `C3824913163-NSIDC_CPRD`; `VNP10`'s newest granule was 3.5 days old). Snow products
+  existed for 39 of 72 (MODIS) and 39 of 60 (VIIRS) consecutive granules of one morning: the daytime
+  ones. Platforms in `Platforms[].ShortName`: `Terra`, `Aqua`, `Suomi-NPP`, `NOAA-20`, `NOAA-21`. CMR
+  `temporal` matches overlapping granules, and `page_size` 2000 works. **Outage seen:** all three
+  VIIRS NRT streams had no granules from ~17:00 on 12 Oct to ~12:00 on 13 Oct, then back-filled
+  (granules sensed on the 12th inserted on the 13th); Aqua's NRT stream had gaps of 30–110 min on 11
+  and 12 Oct.
+- **Sentinel-3 at CDSE** (checked 2026-10-13): `Collection/Name eq 'SENTINEL-3'`, names
+  `S3A_OL_1_EFR____<start>_<stop>_<created>_<duration>_<cycle>_<relorbit>_<frame>_<centre>_O_<NR|NT|ST>_<baseline>.SEN3`.
+  Attributes include `timeliness` (`NR`, `NT`), `relativeOrbitNumber`, `orbitNumber`,
+  `orbitDirection`, `cycleNumber`, `productType`. On 2026-10-12, NRT: 459 OLCI EFR (daylight, partial
+  frames at the terminator) and 991 SLSTR RBT. `PublicationDate` − sensing for NRT ~1.5–2 h; NTC a day
+  later (`_NT_`, often a different processing centre). The frame field is the start in seconds after
+  the ascending node (see methodology); 12 S3B SLSTR NRT products were named frame `6120`, starting a
+  minute after the node. Frames can be split: `…_0540_…` twice (030610–030645 and 030645–030910).
+  Products of past years are still being republished (old `SL_2_AOD`), hence the reference listing's
+  name filter and the poller's 14-day sensing limit. No `S3C` products yet (S3C is in orbit,
+  CelesTrak 2026-10-13).
+- **EUMETSAT Data Store** (2026-10-13): OpenSearch at `api.eumetsat.int/data/search-products/1.0.0/os`
+  (`format=json`, `pi=EO:EUM:DAT:0409` for OLCI EFR, `dtstart`/`dtend`, `bbox` or `geo`, `si`/`c`
+  paging), anonymous, CORS-open. The collection holds NR and NT products, named by EUMETSAT's own
+  processing (`…_MAR_O_NR_004.SEN3` where CDSE's is `…_PS1_O_NR_004`); `updated` per item. A page of
+  500 sorted by start sometimes timed out at the gateway, whose error carries no CORS header; pages of
+  100 did not.
+- **Planetary Computer Sentinel-3** (2026-10-13): `sentinel-3-olci-lfr-l2-netcdf` and
+  `sentinel-3-slstr-lst-l2-netcdf` are current (NTC only, `s3:processing_timeliness: NT`); ids
+  `S3B_OL_2_LFR_<start>_<stop>_<duration>_<cycle>_<relorbit>_<frame>`. `sentinel-3-olci-wfr-l2-netcdf`
+  ended in February 2026, so it is not used.
+- **NASA Worldview GIBS** (2026-10-13): WMS 1.1.1 `GetMap` in EPSG:4326 for
+  `MODIS_Terra|Aqua_CorrectedReflectance_TrueColor` and `VIIRS_SNPP|NOAA20|NOAA21_CorrectedReflectance_TrueColor`
+  with `TIME=<date>` returns the day's mosaic as PNG/JPEG with `access-control-allow-origin: *`.
+
 ## Acquisition plans (for the map, not latency sources)
 
 - **ESA acquisition-plans pages** (`sentinels.copernicus.eu/web/sentinel/copernicus/sentinel-{1,2}/acquisition-plans`):
@@ -280,7 +329,8 @@ is the live version of this section. The first numbers from the local test runs 
 
 ---
 
-**Status & next steps** (last updated 2026-09-29): every field and identifier above was checked
+**Status & next steps** (last updated 2026-10-13; MODIS, VIIRS and Sentinel-3 entries checked that
+day): every field and identifier above was checked
 against the live APIs on 2026-09-29. Unvalidated: CDSE `PublicationDate` as a visibility time (to be
 judged from first-seen data). Re-check when a new platform appears, when ASF latency changes by an
 order of magnitude, or if a provider adds a publication timestamp.

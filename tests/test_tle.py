@@ -91,3 +91,6 @@ def test_recent_complete_file_is_not_refetched(tmp_path):
 
 def test_norad_ids_cover_every_schedule_platform():
     assert {"S1C", "S1D", "S2A", "S2B", "S2C", "L8", "L9", "NISAR"} <= set(tle.NORAD)
+    from swathcast.wideswath import PLATFORMS
+
+    assert {p for ps in PLATFORMS.values() for p in ps} <= set(tle.NORAD)

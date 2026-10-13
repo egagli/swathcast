@@ -140,7 +140,7 @@ export class LiveSatellites {
     for (let dt = -SWATH_BACK_S; dt <= 0; dt += SWATH_STEP_S) {
       const t = now + dt * 1000;
       const st = this.imaging(s.platform, t);
-      const x = crossTrack(s.satrec, t, swathRange(s.sensor, st && st.mode));
+      const x = crossTrack(s.satrec, t, swathRange(s.sensor, st && st.mode), s.sensor);
       if (x) samples.push({ t, a: x.a, b: x.b, on: Boolean(st) });
     }
     // continuous longitudes along both edges
@@ -153,7 +153,7 @@ export class LiveSatellites {
       });
       prev = p.a[0];
     });
-    return { samples, cur: crossTrack(s.satrec, now, range), imaging: im };
+    return { samples, cur: crossTrack(s.satrec, now, range, s.sensor), imaging: im };
   }
 
   paint(ctx, proj) {

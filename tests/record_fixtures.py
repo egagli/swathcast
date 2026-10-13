@@ -89,5 +89,94 @@ def main():
     dump("opera_rtc_umm.json", payload)
 
 
+def wide_swath():
+    """MODIS/VIIRS granules of one stamp at LANCE and LAADS (CMR), and one
+    Sentinel-3 frame's products at CDSE (NRT, NTC, L2), EUMETSAT and
+    Planetary Computer."""
+    s = requests.Session()
+    cmr = "https://cmr.earthdata.nasa.gov/search/granules.umm_json"
+    out = {}
+    for key, concept, temporal in (
+        (
+            "modis_nrt",
+            "C1426414410-LANCEMODIS",
+            "2026-10-13T09:45:00Z,2026-10-13T09:46:00Z",
+        ),
+        ("modis_c7", "C3861664481-LAADS", "2026-10-13T09:45:00Z,2026-10-13T09:46:00Z"),
+        (
+            "viirs_nrt",
+            "C2208778455-LANCEMODIS",
+            "2026-10-13T14:24:00Z,2026-10-13T14:25:00Z",
+        ),
+        (
+            "viirs_snow",
+            "C3173450415-NSIDC_CPRD",
+            "2026-10-12T15:36:00Z,2026-10-12T15:37:00Z",
+        ),
+    ):
+        r = s.get(
+            cmr,
+            params={
+                "collection_concept_id": concept,
+                "temporal": temporal,
+                "page_size": 1,
+            },
+            timeout=60,
+        )
+        r.raise_for_status()
+        item = r.json()["items"][0]
+        item["umm"].pop("RelatedUrls", None)
+        out[key] = item
+    dump("cmr_wideswath_umm.json", out)
+
+    frame = "_125_304_1620_"
+    r = s.get(
+        "https://catalogue.dataspace.copernicus.eu/odata/v1/Products",
+        params={
+            "$filter": "Collection/Name eq 'SENTINEL-3' and contains(Name,'"
+            + frame
+            + "') and ContentDate/Start ge 2026-10-12T04:00:00.000Z"
+            " and ContentDate/Start le 2026-10-12T05:00:00.000Z",
+            "$expand": "Attributes",
+            "$top": 20,
+        },
+        timeout=60,
+    )
+    r.raise_for_status()
+    payload = r.json()
+    keep = ("_OL_1_EFR_", "_SL_1_RBT_", "_OL_2_LFR_", "_SL_2_LST_")
+    payload["value"] = [
+        v for v in payload["value"] if any(k in v["Name"] for k in keep)
+    ]
+    for v in payload["value"]:
+        v.pop("Footprint", None)
+        ring = v["GeoFootprint"]["coordinates"][0]
+        v["GeoFootprint"]["coordinates"] = [ring[::8] + [ring[0]]]
+    dump("cdse_s3_products.json", payload)
+    r = s.get(
+        "https://api.eumetsat.int/data/search-products/1.0.0/os",
+        params={
+            "format": "json",
+            "pi": "EO:EUM:DAT:0409",
+            "dtstart": "2026-10-12T04:28:00Z",
+            "dtend": "2026-10-12T04:30:00Z",
+            "c": 5,
+        },
+        timeout=60,
+    )
+    r.raise_for_status()
+    payload = r.json()
+    for f in payload.get("features", []):
+        f.pop("geometry", None)
+        f["properties"] = {
+            k: f["properties"][k] for k in ("identifier", "updated", "date")
+        }
+    dump(
+        "eumetsat_s3_efr.json",
+        {"totalResults": payload["totalResults"], "features": payload["features"]},
+    )
+
+
 if __name__ == "__main__":
     main()
+    wide_swath()

@@ -261,6 +261,18 @@ const MISSIONS = [
     key: "nisar_s", label: "NISAR S-band", file: "latency_nisar_s.json", question: "a NISAR S-band product",
     note: "S-band, from ISRO's Bhoonidhi (its search needs a login; the poller uses repository secrets). Universe: every NISAR_SSAR_RSLC item sensed in the last 10 days; latency is the first hourly sighting after sensing. Bhoonidhi documents no publication time, so a sighting counts only when the previous poll ran within 3 h. GCOV is matched to its RSLC by name, assuming ISRO names S-band products like JPL's L-band ones.",
   },
+  {
+    key: "modis", label: "MODIS", file: "latency_modis.json", question: "a MODIS granule (Terra, Aqua)",
+    note: "Universe: every 5-minute Level-1B 1 km granule (MOD021KM, MYD021KM) that NASA's near-real-time system LANCE lists in CMR, day and night. The other sources are matched on platform and granule start: the standard Level-1B at LAADS (collections 6.1 and 7) and the snow-cover swath product MOD10_L2/MYD10_L2 (LANCE NRT, NSIDC), made for daytime land granules only (learned coverage). LANCE deletes its NRT products after 7 days.",
+  },
+  {
+    key: "viirs", label: "VIIRS", file: "latency_viirs.json", question: "a VIIRS granule (Suomi NPP, NOAA-20, NOAA-21)",
+    note: "Universe: every 6-minute Level-1B 750 m granule (VNP02MOD, VJ102MOD, VJ202MOD) that LANCE lists in CMR, day and night. Matched on platform and granule start: the standard Level-1B at LAADS and the snow-cover swath product VNP10/VJ110/VJ210 (LANCE NRT, NSIDC), daytime land only (learned coverage).",
+  },
+  {
+    key: "s3", label: "Sentinel-3", file: "latency_s3.json", question: "a Sentinel-3 frame (OLCI, SLSTR)",
+    note: "Universe: every near-real-time OLCI full-resolution (OL_1_EFR) and SLSTR radiance (SL_1_RBT) frame CDSE publishes. Matched on the frame (platform, cycle, relative orbit, frame): the non-time-critical versions at CDSE, EUMETSAT's OLCI copy, and the Level-2 land products OLCI LFR and SLSTR LST at CDSE and Planetary Computer (land frames only: learned coverage).",
+  },
 ];
 let meta = {};
 

@@ -12,6 +12,12 @@ export const SOURCE_SLOT = {
   usgs_landsat_l1: 1, usgs_landsat_l2: 7, es_landsat_l2: 8, pc_landsat_l2: 3, hls_l30: 4,
   asf_nisar_l0b: 1, asf_nisar_rslc: 7, asf_nisar_gcov: 5,
   bhoonidhi_nisar_s_rslc: 7, bhoonidhi_nisar_s_gcov: 5,
+  // MODIS/VIIRS: LANCE near-real-time 1, standard Level-1B 2/8, snow 5 (NRT) and 4 (NSIDC)
+  lance_modis_l1b: 1, laads_modis_l1b: 2, laads_modis_l1b_c7: 8, lance_modis_snow: 5, nsidc_modis_snow: 4,
+  lance_viirs_l1b: 1, laads_viirs_l1b: 2, lance_viirs_snow: 5, nsidc_viirs_snow: 4,
+  // Sentinel-3: CDSE NRT 1/7, NTC 2/8, EUMETSAT 6, Level-2 5/4, Planetary Computer 3 (two products, labelled)
+  cdse_s3_efr: 1, cdse_s3_rbt: 7, cdse_s3_efr_ntc: 2, cdse_s3_rbt_ntc: 8, eumetsat_s3_efr: 6,
+  cdse_s3_lfr: 5, cdse_s3_lst: 4, pc_s3_lfr: 3, pc_s3_lst: 3,
 };
 export const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 export const sourceColor = (key) => css(`--c${SOURCE_SLOT[key] || 1}`);

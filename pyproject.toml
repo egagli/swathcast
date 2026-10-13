@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "swathcast"
 version = "0.1.0"
-description = "Upcoming satellite acquisitions (Sentinel-1/2, Landsat 8/9, NISAR) from the agencies' own plans, and measured time until data delivery."
+description = "Upcoming satellite acquisitions (Sentinel-1/2/3, Landsat 8/9, NISAR, MODIS, VIIRS) from the agencies' own plans or the orbit, and measured time until data delivery."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "Apache-2.0"
@@ -68,7 +68,8 @@ swathcast = { path = ".", editable = true }
 [tool.pixi.feature.schedule.dependencies]
 geopandas = ">=1.0"
 shapely = ">=2.0"
-# orbit timing for Sentinel-2 tiles, Landsat scenes, NISAR frames (ephemeris.py)
+# orbit timing for Sentinel-2 tiles, Landsat scenes, NISAR frames, and the
+# MODIS/VIIRS/Sentinel-3 passes (ephemeris.py, wideswath.py)
 sgp4 = ">=2.23"
 
 [tool.pixi.feature.dev.dependencies]

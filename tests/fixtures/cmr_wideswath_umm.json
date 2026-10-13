@@ -1,0 +1,457 @@
+{
+ "modis_c7": {
+  "meta": {
+   "collection-concept-id": "C3861664481-LAADS",
+   "concept-id": "G4362608448-LAADS",
+   "concept-type": "granule",
+   "format": "application/echo10+xml",
+   "native-id": "LAADS:10073442469",
+   "provider-id": "LAADS",
+   "revision-date": "2026-10-13T16:00:05.375Z",
+   "revision-id": 1
+  },
+  "umm": {
+   "CollectionReference": {
+    "ShortName": "MOD021KM",
+    "Version": "7"
+   },
+   "DataGranule": {
+    "ArchiveAndDistributionInformation": [
+     {
+      "Checksum": {
+       "Algorithm": "MD5",
+       "Value": "0bb7fcde957f549b25913b8bec366444"
+      },
+      "Name": "Not provided",
+      "Size": 66.9600067138672,
+      "SizeInBytes": 70212656,
+      "SizeUnit": "MB"
+     }
+    ],
+    "DayNightFlag": "Night",
+    "Identifiers": [
+     {
+      "Identifier": "MOD021KM.A2026286.0940.007.2026286155158.nc",
+      "IdentifierType": "ProducerGranuleId"
+     }
+    ],
+    "ProductionDateTime": "2026-10-13T15:53:38.000Z"
+   },
+   "GranuleUR": "LAADS:10073442469",
+   "MetadataSpecification": {
+    "Name": "UMM-G",
+    "URL": "https://cdn.earthdata.nasa.gov/umm/granule/v1.6.7",
+    "Version": "1.6.7"
+   },
+   "PGEVersionClass": {
+    "PGEVersion": "7.0.20_19"
+   },
+   "Platforms": [
+    {
+     "Instruments": [
+      {
+       "ShortName": "MODIS"
+      }
+     ],
+     "ShortName": "Terra"
+    }
+   ],
+   "Projects": [
+    {
+     "Campaigns": [
+      "Terra"
+     ],
+     "ShortName": "Not provided"
+    }
+   ],
+   "ProviderDates": [
+    {
+     "Date": "2026-10-13T15:54:31.900Z",
+     "Type": "Insert"
+    },
+    {
+     "Date": "2026-10-13T15:59:59.590Z",
+     "Type": "Update"
+    }
+   ],
+   "SpatialExtent": {
+    "HorizontalSpatialDomain": {
+     "Geometry": {
+      "GPolygons": [
+       {
+        "Boundary": {
+         "Points": [
+          {
+           "Latitude": -11.772234,
+           "Longitude": 175.597871
+          },
+          {
+           "Latitude": -14.563939,
+           "Longitude": 154.336347
+          },
+          {
+           "Latitude": -32.775299,
+           "Longitude": 156.824093
+          },
+          {
+           "Latitude": -29.445863,
+           "Longitude": -179.083503
+          },
+          {
+           "Latitude": -11.772234,
+           "Longitude": 175.597871
+          }
+         ]
+        }
+       }
+      ]
+     }
+    }
+   },
+   "TemporalExtent": {
+    "RangeDateTime": {
+     "BeginningDateTime": "2026-10-13T09:40:00.000Z",
+     "EndingDateTime": "2026-10-13T09:45:00.000Z"
+    }
+   }
+  }
+ },
+ "modis_nrt": {
+  "meta": {
+   "collection-concept-id": "C1426414410-LANCEMODIS",
+   "concept-id": "G4362056926-LANCEMODIS",
+   "concept-type": "granule",
+   "format": "application/echo10+xml",
+   "native-id": "LANCEMODIS:3066933613",
+   "provider-id": "LANCEMODIS",
+   "revision-date": "2026-10-13T10:31:49.168Z",
+   "revision-id": 1
+  },
+  "umm": {
+   "CollectionReference": {
+    "ShortName": "MOD021KM",
+    "Version": "6.1NRT"
+   },
+   "DataGranule": {
+    "ArchiveAndDistributionInformation": [
+     {
+      "Checksum": {
+       "Algorithm": "MD5",
+       "Value": "6becf6a8f950783d3eceebe8c8a54a25"
+      },
+      "Name": "Not provided",
+      "Size": 68.0413703918457,
+      "SizeInBytes": 71346548,
+      "SizeUnit": "MB"
+     }
+    ],
+    "DayNightFlag": "Night",
+    "Identifiers": [
+     {
+      "Identifier": "MOD021KM.A2026286.0940.061.2026286103130.NRT.hdf",
+      "IdentifierType": "ProducerGranuleId"
+     }
+    ],
+    "ProductionDateTime": "2026-10-13T10:31:30.000Z"
+   },
+   "GranuleUR": "LANCEMODIS:3066933613",
+   "MetadataSpecification": {
+    "Name": "UMM-G",
+    "URL": "https://cdn.earthdata.nasa.gov/umm/granule/v1.6.7",
+    "Version": "1.6.7"
+   },
+   "PGEVersionClass": {
+    "PGEVersion": "6.2.2_134"
+   },
+   "Platforms": [
+    {
+     "Instruments": [
+      {
+       "ShortName": "MODIS"
+      }
+     ],
+     "ShortName": "Terra"
+    }
+   ],
+   "ProviderDates": [
+    {
+     "Date": "2026-10-13T10:31:39.050Z",
+     "Type": "Insert"
+    },
+    {
+     "Date": "2026-10-13T10:31:49.050Z",
+     "Type": "Update"
+    },
+    {
+     "Date": "2026-10-20T10:31:49.040Z",
+     "Type": "Delete"
+    }
+   ],
+   "SpatialExtent": {
+    "HorizontalSpatialDomain": {
+     "Geometry": {
+      "GPolygons": [
+       {
+        "Boundary": {
+         "Points": [
+          {
+           "Latitude": -11.772322,
+           "Longitude": 175.597564
+          },
+          {
+           "Latitude": -14.563984,
+           "Longitude": 154.336049
+          },
+          {
+           "Latitude": -32.775021,
+           "Longitude": 156.823698
+          },
+          {
+           "Latitude": -29.445642,
+           "Longitude": -179.083953
+          },
+          {
+           "Latitude": -11.772322,
+           "Longitude": 175.597564
+          }
+         ]
+        }
+       }
+      ]
+     }
+    }
+   },
+   "TemporalExtent": {
+    "RangeDateTime": {
+     "BeginningDateTime": "2026-10-13T09:40:00.000Z",
+     "EndingDateTime": "2026-10-13T09:45:00.000Z"
+    }
+   }
+  }
+ },
+ "viirs_nrt": {
+  "meta": {
+   "collection-concept-id": "C2208778455-LANCEMODIS",
+   "concept-id": "G4362642312-LANCEMODIS",
+   "concept-type": "granule",
+   "format": "application/echo10+xml",
+   "native-id": "LANCEMODIS:3067038621",
+   "provider-id": "LANCEMODIS",
+   "revision-date": "2026-10-13T16:17:22.301Z",
+   "revision-id": 1
+  },
+  "umm": {
+   "CollectionReference": {
+    "ShortName": "VJ102MOD_NRT",
+    "Version": "2.1"
+   },
+   "DataGranule": {
+    "ArchiveAndDistributionInformation": [
+     {
+      "Checksum": {
+       "Algorithm": "MD5",
+       "Value": "ef22dd5178c319ec9ac49ebffdaf18a7"
+      },
+      "Name": "Not provided",
+      "Size": 62.5153217315674,
+      "SizeInBytes": 65552066,
+      "SizeUnit": "MB"
+     }
+    ],
+    "DayNightFlag": "Night",
+    "Identifiers": [
+     {
+      "Identifier": "VJ102MOD_NRT.A2026286.1418.021.2026286161604.nc",
+      "IdentifierType": "ProducerGranuleId"
+     }
+    ],
+    "ProductionDateTime": "2026-10-13T12:16:17.000Z"
+   },
+   "GranuleUR": "LANCEMODIS:3067038621",
+   "MetadataSpecification": {
+    "Name": "UMM-G",
+    "URL": "https://cdn.earthdata.nasa.gov/umm/granule/v1.6.7",
+    "Version": "1.6.7"
+   },
+   "PGEVersionClass": {
+    "PGEVersion": "3.0.34"
+   },
+   "Platforms": [
+    {
+     "Instruments": [
+      {
+       "ShortName": "VIIRS"
+      }
+     ],
+     "ShortName": "NOAA-20"
+    }
+   ],
+   "ProviderDates": [
+    {
+     "Date": "2026-10-13T16:17:08.230Z",
+     "Type": "Insert"
+    },
+    {
+     "Date": "2026-10-13T16:17:20.390Z",
+     "Type": "Update"
+    },
+    {
+     "Date": "2026-10-20T16:17:20.380Z",
+     "Type": "Delete"
+    }
+   ],
+   "SpatialExtent": {
+    "HorizontalSpatialDomain": {
+     "Geometry": {
+      "GPolygons": [
+       {
+        "Boundary": {
+         "Points": [
+          {
+           "Latitude": -11.971313,
+           "Longitude": -179.517075
+          },
+          {
+           "Latitude": -7.709718,
+           "Longitude": 153.169647
+          },
+          {
+           "Latitude": -27.937424,
+           "Longitude": 146.080048
+          },
+          {
+           "Latitude": -32.844452,
+           "Longitude": 177.574921
+          },
+          {
+           "Latitude": -11.971313,
+           "Longitude": -179.517075
+          }
+         ]
+        }
+       }
+      ]
+     }
+    }
+   },
+   "TemporalExtent": {
+    "RangeDateTime": {
+     "BeginningDateTime": "2026-10-13T14:18:00.000Z",
+     "EndingDateTime": "2026-10-13T14:24:00.000Z"
+    }
+   }
+  }
+ },
+ "viirs_snow": {
+  "meta": {
+   "collection-concept-id": "C3173450415-NSIDC_CPRD",
+   "concept-id": "G4360855052-NSIDC_CPRD",
+   "concept-type": "granule",
+   "format": "application/echo10+xml",
+   "native-id": "VJ110.A2026285.1530.002.2026285210943.nc_LGlw0U7-",
+   "provider-id": "NSIDC_CPRD",
+   "revision-date": "2026-10-12T21:13:18.166Z",
+   "revision-id": 1
+  },
+  "umm": {
+   "AdditionalAttributes": [
+    {
+     "Name": "identifier_product_doi",
+     "Values": [
+      "10.5067/VIIRS/VJ110.002"
+     ]
+    },
+    {
+     "Name": "identifier_product_doi_authority",
+     "Values": [
+      "http://dx.doi.org"
+     ]
+    }
+   ],
+   "CollectionReference": {
+    "EntryTitle": "VIIRS/JPSS1 Snow Cover 6-Min L2 Swath 375m V002"
+   },
+   "DataGranule": {
+    "ArchiveAndDistributionInformation": [
+     {
+      "Checksum": {
+       "Algorithm": "MD5",
+       "Value": "061f9743643f843eb312cf39e0aae31a"
+      },
+      "Name": "Not provided",
+      "Size": 251.00406646728516,
+      "SizeInBytes": 263196840,
+      "SizeUnit": "MB"
+     }
+    ],
+    "DayNightFlag": "Day",
+    "Identifiers": [
+     {
+      "Identifier": "VJ110.A2026285.1530.002.2026285210943.nc",
+      "IdentifierType": "ProducerGranuleId"
+     }
+    ],
+    "ProductionDateTime": "2026-10-12T21:09:43.000Z"
+   },
+   "GranuleUR": "VJ110.A2026285.1530.002.2026285210943.nc_LGlw0U7-",
+   "MetadataSpecification": {
+    "Name": "UMM-G",
+    "URL": "https://cdn.earthdata.nasa.gov/umm/granule/v1.6.7",
+    "Version": "1.6.7"
+   },
+   "PGEVersionClass": {
+    "PGEVersion": "2.0.6"
+   },
+   "ProviderDates": [
+    {
+     "Date": "2026-10-12T21:13:13.987Z",
+     "Type": "Insert"
+    },
+    {
+     "Date": "2026-10-12T21:13:13.987Z",
+     "Type": "Update"
+    }
+   ],
+   "SpatialExtent": {
+    "HorizontalSpatialDomain": {
+     "Geometry": {
+      "GPolygons": [
+       {
+        "Boundary": {
+         "Points": [
+          {
+           "Latitude": 15.1927757263184,
+           "Longitude": -46.2599678039551
+          },
+          {
+           "Latitude": 19.4559555053711,
+           "Longitude": -18.1753425598145
+          },
+          {
+           "Latitude": 40.3630828857422,
+           "Longitude": -20.5622959136963
+          },
+          {
+           "Latitude": 35.213752746582,
+           "Longitude": -54.5960884094238
+          },
+          {
+           "Latitude": 15.1927757263184,
+           "Longitude": -46.2599678039551
+          }
+         ]
+        }
+       }
+      ]
+     }
+    }
+   },
+   "TemporalExtent": {
+    "RangeDateTime": {
+     "BeginningDateTime": "2026-10-12T15:30:00.000Z",
+     "EndingDateTime": "2026-10-12T15:36:00.000Z"
+    }
+   }
+  }
+ }
+}

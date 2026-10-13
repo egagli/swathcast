@@ -20,7 +20,10 @@ applies documented post-processing:
 
 Beside ``upcoming_passes.parquet`` it writes the footprint grids the map loads
 lazily: ``wrs2_grid.parquet`` + ``landsat_scenes.parquet`` (per planned scene,
-timed from the orbit), and ``s2_grid.parquet`` + ``s2_tile_passes.parquet``.
+timed from the orbit), ``s2_grid.parquet`` + ``s2_tile_passes.parquet``, and,
+for the wide-swath sensors that have no plan (:mod:`swathcast.wideswath`),
+``sin_grid.parquet`` + ``modis_tile_passes.parquet`` / ``viirs_tile_passes.parquet``
+/ ``s3_tile_passes.parquet``.
 """
 
 from __future__ import annotations
@@ -57,7 +60,17 @@ SITE_SIMPLIFY_DEG = 0.01
 #: delivered. About the p90 delivery time of the sensor's first source
 #: (2026-10: Sentinel-1 CDSE 6 h, Sentinel-2 CDSE 7 h, NISAR L0B 9 h, Landsat
 #: Level-1 at USGS 244 h), plus a day.
-LOOKBACK_DAYS = {"sentinel-1": 2, "sentinel-2": 2, "nisar": 3, "landsat": 11}
+LOOKBACK_DAYS = {
+    "sentinel-1": 2,
+    "sentinel-2": 2,
+    "nisar": 3,
+    "landsat": 11,
+    # no plans: passes predicted from the orbit (wideswath.py); LANCE NRT and
+    # CDSE NRT deliver within hours
+    "modis": 2,
+    "viirs": 2,
+    "sentinel-3": 2,
+}
 
 
 def solar_direction(when: datetime, lon: float, lat: float) -> str:
@@ -289,7 +302,54 @@ def orbital_elements() -> dict:
     return {p: s["omm"] for p, s in payload["satellites"].items()}
 
 
-ALL_SENSORS = ["sentinel-1", "sentinel-2", "landsat", "nisar"]
+ALL_SENSORS = [
+    "sentinel-1",
+    "sentinel-2",
+    "landsat",
+    "nisar",
+    "modis",
+    "viirs",
+    "sentinel-3",
+]
+#: Wide-swath sensors without a plan (wideswath.py): the files written for them
+WIDESWATH_FILES = {
+    "modis": "modis_tile_passes.parquet",
+    "viirs": "viirs_tile_passes.parquet",
+    "sentinel-3": "s3_tile_passes.parquet",
+}
+
+
+def build_wideswath(out_dir: Path, sensors, sats: dict, start, end, days: int) -> dict:
+    """The sinusoidal tiles and when MODIS, VIIRS and Sentinel-3 image each
+    (predicted from the orbit; Sentinel-3 passes labelled with their frame),
+    written beside the schedule.
+    Returns counts for the sidecar; a mission whose platforms have no
+    elements is left out (and said so)."""
+    import pandas as pd
+
+    from swathcast import wideswath
+
+    fixes: dict = {}
+    tiles = [m for m in ("modis", "viirs", "sentinel-3") if m in sensors]
+    if tiles:
+        grid = wideswath.sin_grid()
+        wideswath.site_sin_grid(grid).to_parquet(
+            out_dir / "sin_grid.parquet", index=False, compression="zstd"
+        )
+        fixes["sin_tiles"] = int(len(grid))
+        for m in tiles:
+            back = start - pd.Timedelta(days=LOOKBACK_DAYS[m])
+            passes = wideswath.sin_tile_passes(grid, sats, m, back, end)
+            if passes.empty:
+                fixes[f"{m}_error"] = "no orbital elements for any platform"
+                continue
+            passes.to_parquet(
+                out_dir / WIDESWATH_FILES[m], index=False, compression="zstd"
+            )
+            fixes[f"{m}_tile_passes"] = {
+                str(k): int(v) for k, v in passes["platform"].value_counts().items()
+            }
+    return fixes
 
 
 def build(output: Path, days: int = 12, sensors: list[str] | None = None) -> Path:
@@ -331,6 +391,14 @@ def build(output: Path, days: int = 12, sensors: list[str] | None = None) -> Pat
         except RuntimeError as exc:
             LOGGER.warning("NISAR plan unavailable: %s", exc)
             fixes["nisar_error"] = str(exc)
+    if not parts:  # only plan-less sensors asked for
+        parts.append(
+            gpd.GeoDataFrame(
+                {c: [] for c in plans.SCHEDULE_COLUMNS if c != "geometry"},
+                geometry=[],
+                crs="EPSG:4326",
+            )
+        )
     gdf = gpd.GeoDataFrame(pd.concat(parts, ignore_index=True), crs="EPSG:4326")
     gdf = gdf[plans.SCHEDULE_COLUMNS].copy()
     if "nisar" in sensors and (gdf["sensor"] == "nisar").any():
@@ -400,6 +468,12 @@ def build(output: Path, days: int = 12, sensors: list[str] | None = None) -> Pat
         except (RuntimeError, KeyError, ValueError) as exc:
             LOGGER.warning("Landsat plan unavailable: %s", exc)
             fixes["landsat_error"] = str(exc)
+
+    try:
+        fixes.update(build_wideswath(output.parent, sensors, sats, start, end, days))
+    except (OSError, RuntimeError, ValueError) as exc:
+        LOGGER.warning("wide-swath passes unavailable: %s", exc)
+        fixes["wideswath_error"] = str(exc)
 
     fixes["non_s1_simplified_deg"] = simplify_non_s1(gdf, SITE_SIMPLIFY_DEG)
     gdf.to_parquet(output, index=False, compression="zstd")

@@ -48,6 +48,11 @@ STUBS = {  # catalogue hosts -> an empty answer of the shape the page expects
     "earth-search.aws.element84.com": {"type": "FeatureCollection", "features": []},
     "planetarycomputer.microsoft.com": {"type": "FeatureCollection", "features": []},
     "catalogue.dataspace.copernicus.eu": {"value": []},
+    "api.eumetsat.int": {
+        "type": "FeatureCollection",
+        "features": [],
+        "totalResults": 0,
+    },
 }
 
 
@@ -142,7 +147,81 @@ def build_site(root, now):
     )
     (data / "health.json").write_text(json.dumps({"sources": {}}))
     (data / "orbits.json").write_text(json.dumps({"platforms": {}}))
+    wide_swath_site(data, now)
     return site
+
+
+SEATTLE_TILE = [
+    (-126.0, 44.0),
+    (-118.0, 44.0),
+    (-118.0, 50.0),
+    (-126.0, 50.0),
+    (-126.0, 44.0),
+]
+
+
+def wide_swath_site(data, now):
+    """MODIS (Terra) and Sentinel-3 (S3A, S3B) on one tile over Seattle: their
+    passes from the fixture's orbital elements (wideswath.py, as the schedule
+    job), and the same elements as tle.json, which the page times passes at
+    the AOI with. Skipped without sgp4 (the page then has no such files)."""
+    try:
+        from swathcast import wideswath
+        from swathcast.ephemeris import satrec
+    except ImportError:
+        return
+    import pandas as pd
+
+    from conftest import load_fixture
+
+    omm = load_fixture("celestrak_omm.json")
+    # 8 days ahead and both Sentinel-3s: daytime passes whatever the hour
+    t0, t1 = (
+        pd.Timestamp(now) - pd.Timedelta(days=2),
+        pd.Timestamp(now) + pd.Timedelta(days=8),
+    )
+    centre = pd.DataFrame({"tile": ["h09v04"], "lon": [-122.0], "lat": [47.0]})
+    sats = {p: satrec(omm[p]) for p in ("Terra", "S3A", "S3B")}
+    pq.write_table(
+        pa.table(
+            {
+                "tile": ["h09v04"],
+                "h": pa.array([9], pa.int8()),
+                "v": pa.array([4], pa.int8()),
+                "geometry": [wkb_polygon(SEATTLE_TILE)],
+            }
+        ),
+        data / "sin_grid.parquet",
+    )
+    for mission, name in (
+        ("modis", "modis_tile_passes"),
+        ("sentinel-3", "s3_tile_passes"),
+    ):
+        p = wideswath.sin_tile_passes(centre, sats, mission, t0, t1)
+        cols = {
+            "tile": [str(x) for x in p["tile"]],
+            "platform": [str(x) for x in p["platform"]],
+            "time": pa.array(
+                [int(t.timestamp() * 1000) for t in p["time"]],
+                pa.timestamp("ms", tz="UTC"),
+            ),
+            "direction": [str(x) for x in p["direction"]],
+            "xtrack_km": pa.array(p["xtrack_km"].astype(int).tolist(), pa.int16()),
+        }
+        if mission == "sentinel-3":
+            cols["track"] = pa.array(p["track"].astype(int).tolist(), pa.int16())
+            cols["anx_s"] = pa.array(p["anx_s"].astype(int).tolist(), pa.int16())
+        pq.write_table(pa.table(cols), data / f"{name}.parquet")
+    (data / "tle.json").write_text(
+        json.dumps(
+            {
+                "generated_at": now.isoformat(),
+                "satellites": {
+                    p: {"norad": omm[p]["NORAD_CAT_ID"], "omm": omm[p]} for p in sats
+                },
+            }
+        )
+    )
 
 
 @pytest.fixture(scope="module")
@@ -536,4 +615,59 @@ def test_now_sticks(browser, server):
     head_bottom, now_top, box_top = rows
     assert now_top == pytest.approx(head_bottom, abs=2)
     assert now_top > box_top
+    page.close()
+
+
+def test_wide_swath_missions_over_an_aoi(browser, server):
+    """MODIS and Sentinel-3 (no plans: passes predicted from the orbit) over
+    an AOI: each pass timed at the AOI, kept only inside its swath, with its
+    view angle, light and (Sentinel-3) frame; the Light and view-angle
+    filters, and their place in the link."""
+    pytest.importorskip("sgp4")
+    page = open_page(browser, server, "aoi=-122.3,47.6&m=modis,s3")
+    assert page.errors == []
+    page.wait_for_function(
+        "window.__state.passes.some(p => p.mission === 'modis') && window.__state.passes.some(p => p.mission === 's3')",
+        timeout=30000,
+    )
+    passes = js(
+        page,
+        """window.__state.passes.filter(p => ['modis', 's3'].includes(p.mission)).map(p => ({
+          m: p.mission, plat: p.platform, timed: p.timedAtAOI, x: p.xtrack, vza: p.vza, light: p.light,
+          track: p.track, frame: p.frame, inst: p.instruments || null, shapes: p.shapes.length }))""",
+    )
+    assert {p["m"] for p in passes} == {"modis", "s3"}
+    for p in passes:
+        assert p["timed"] and p["shapes"] == 1  # the strip imaged around the AOI
+        assert p["light"] == "day"  # night passes are off at the start
+        lo, hi = (-1178, 1178) if p["plat"] == "Terra" else (-500, 996)
+        assert lo - 30 <= p["x"] <= hi + 30
+        if p["m"] == "s3":
+            assert 1 <= p["track"] <= 385 and p["frame"] % 180 == 0
+            assert "SLSTR" in p["inst"]
+        else:
+            assert 0 <= p["vza"] < 70
+    # the light filter: Day ticked, Night not; the view angle in the link
+    pills = js(
+        page,
+        """[...document.querySelectorAll('.mission-block')].filter(b => b.innerText.startsWith('MODIS'))
+          .flatMap(b => [...b.querySelectorAll('.frow')].filter(r => r.querySelector('.flabel').textContent === 'Light')
+          .flatMap(r => [...r.querySelectorAll('label.check')].map(l => [l.textContent.trim(), l.querySelector('input').checked])))""",
+    )
+    assert pills == [["Day", True], ["Night", False]]
+    assert "predicted to" in js(
+        page, "document.getElementById('detail-hint').innerText"
+    )
+    page.close()
+    page = open_page(
+        browser, server, "aoi=-122.3,47.6&m=modis&modis.vza=30&modis.light=day,night"
+    )
+    page.wait_for_timeout(3000)
+    vza = js(
+        page,
+        "window.__state.passes.filter(p => p.mission === 'modis').map(p => [p.vza, p.light])",
+    )
+    assert all(v <= 30 for v, _ in vza)
+    assert "modis.vza=30" in js(page, "location.hash")
+    assert page.errors == []
     page.close()

@@ -6,10 +6,12 @@
 //   Landsat scene      Earth Search landsat-c2-l2 by WRS-2 path/row (USGS L2, days behind),
 //                      merged with USGS's Level-1 list (this site's landsat_l1 files)
 //   NISAR frame        NASA CMR, ASF L1 RSLC by track and frame (L-band; S-band needs a Bhoonidhi login)
+//   MODIS/VIIRS tile   NASA CMR, LAADS Level-1B granules over the tile centre (one per pass)
+//   Sentinel-3 tile    CDSE, OLCI EFR and SLSTR RBT products over the tile centre (one per orbit)
 // Each acquisition carries links to its product (a viewer a person can use:
 // ASF Vertex, STAC Browser, Earthdata Search) and what fetchBrowse() needs to
 // find a browse image of it (see there).
-import { ASF, CMR, ES as EARTH_SEARCH, PC as PC_STAC, getJSON, iso, plat as platName } from "./catalogues.js";
+import { ASF, CMR, ES as EARTH_SEARCH, ODATA, PC as PC_STAC, getJSON, iso, plat as platName } from "./catalogues.js";
 import { sunElevation } from "./common.js";
 
 const NISAR_RSLC = "C2853145197-ASF";
@@ -198,6 +200,80 @@ async function nisarFrame(c, since) {
     note: "L-band only: S-band products are at ISRO's Bhoonidhi, whose search needs a login." };
 }
 
+// MODIS/VIIRS: the LAADS Level-1B granules (5-minute MODIS, 6-minute VIIRS,
+// day and night) whose footprint holds the tile centre, one acquisition per
+// pass (consecutive granules of a pass merged), with the view zenith angle
+// at the centre from the granule's own geometry not being in CMR: the pass
+// is listed with its day/night flag. Preview: NASA Worldview's (GIBS) true
+// colour of that platform and day over the tile.
+export const WIDE_L1B = {
+  Terra: "C3861664481-LAADS", Aqua: "C3861713185-LAADS", // MOD021KM/MYD021KM collection 7
+  SNPP: "C2105087643-LAADS", N20: "C2103811746-LAADS", N21: "C3478403600-LAADS",
+};
+// and LANCE's near-real-time copies (kept 7 days), for the newest passes
+const WIDE_NRT = {
+  Terra: "C1426414410-LANCEMODIS", Aqua: "C1426616847-LANCEMODIS",
+  SNPP: "C2185497928-LANCEMODIS", N20: "C2208778455-LANCEMODIS", N21: "C3383723948-LANCEMODIS",
+};
+const WIDE_PLATS = { modis: ["Terra", "Aqua"], viirs: ["SNPP", "N20", "N21"] };
+async function wideTile(c, since) {
+  const [lon, lat] = c.center;
+  const plats = WIDE_PLATS[c.mission];
+  const q = new URLSearchParams([
+    ...plats.flatMap((p) => [["collection_concept_id", WIDE_L1B[p]], ["collection_concept_id", WIDE_NRT[p]]]), ["point", `${lon.toFixed(4)},${lat.toFixed(4)}`],
+    ["temporal[]", `${iso(since)},`], ["sort_key", "-start_date"], ["page_size", "2000"],
+  ]);
+  const d = await getJSON(`${CMR}?${q}`);
+  const raw = (d.items || []).map(({ umm: u }) => {
+    const platform = (u.Platforms || []).map((x) => platName(x.ShortName)).find(Boolean) || null;
+    const name = ((u.DataGranule || {}).Identifiers || []).map((x) => x.Identifier)[0] || u.GranuleUR;
+    const flag = (u.DataGranule || {}).DayNightFlag || "";
+    const when = new Date(u.TemporalExtent.RangeDateTime.BeginningDateTime);
+    const nrt = /NRT/.test(name);
+    return {
+      when, platform, id: name, nrt, level: nrt ? "NRT" : null, light: flag === "Night" ? "night" : flag === "Day" ? "day" : null,
+      links: [{ href: earthdata(nrt ? WIDE_NRT[platform] : WIDE_L1B[platform] || "", name), text: "Earthdata Search", title: name }],
+      browse: flag !== "Night" && platform ? { kind: "gibs", platform, date: when.toISOString().slice(0, 10), bbox: c.bbox } : null,
+    };
+  }).sort((a, b) => a.when - b.when || a.nrt - b.nrt); // a granule's standard product before its NRT copy
+  // one pass: granules of one platform less than 15 min apart
+  const items = [];
+  raw.forEach((x) => {
+    const prev = items.find((y) => y.platform === x.platform && x.when - y.last <= 15 * 60e3);
+    if (prev) {
+      prev.last = Math.max(prev.last, x.when);
+      if (x.light === "day") prev.light = "day";
+      if (!x.nrt) prev.level = null; // the standard product is there too
+    } else items.push({ ...x, last: x.when });
+  });
+  return { source: `NASA CMR, LAADS Level-1B granules over the tile centre (${plats.join(", ")}), and LANCE's near-real-time ones of the last 7 days`, items: items.map(({ last, nrt, ...x }) => x),
+    note: "Times are each pass's first granule over the tile centre (granules are 5-6 min long)." };
+}
+
+// Sentinel-3: the OLCI EFR and SLSTR RBT products at CDSE (near-real time
+// and non-time-critical) whose footprint holds the tile centre, one
+// acquisition per platform and orbit (cycle and relative orbit in the name),
+// with its relative orbit and frame.
+async function s3Tile(c, since) {
+  const [lon, lat] = c.center;
+  const filter = `Collection/Name eq 'SENTINEL-3' and OData.CSC.Intersects(area=geography'SRID=4326;POINT(${lon.toFixed(4)} ${lat.toFixed(4)})') and (contains(Name,'_OL_1_EFR_') or contains(Name,'_SL_1_RBT_')) and ContentDate/Start gt ${iso(since).replace("Z", ".000Z")}`;
+  const d = await getJSON(`${ODATA}?${new URLSearchParams({ $filter: filter, $top: "1000", $orderby: "ContentDate/Start desc" })}`);
+  const by = new Map();
+  (d.value || []).forEach((p) => {
+    const m = /_\d{4}_(\d{3})_(\d{3})_(\d{4})_/.exec(p.Name);
+    if (!m) return;
+    const when = new Date(p.ContentDate.Start), plat = p.Name.slice(0, 3), k = `${plat}|${m[1]}|${m[2]}`;
+    const inst = p.Name.includes("_OL_1_") ? "OLCI" : "SLSTR";
+    const g = by.get(k) || by.set(k, { when, platform: plat, track: Number(m[2]), frame: Number(m[3]), id: p.Name.replace(/\.SEN3$/, ""), instruments: [], links: [] }).get(k);
+    if (when < g.when) Object.assign(g, { when, frame: Number(m[3]) });
+    if (!g.instruments.includes(inst)) g.instruments.push(inst);
+    if (!g.links.some((l) => l.text === inst)) g.links.push({ href: `${ODATA}(${p.Id})?$expand=Attributes`, text: inst, title: p.Name });
+  });
+  const items = [...by.values()].map((x) => ({ ...x, instruments: x.instruments.sort(), light: x.instruments.includes("OLCI") ? "day" : null }));
+  return { source: "CDSE, Sentinel-3 OLCI EFR and SLSTR RBT products over the tile centre", items,
+    note: "Sentinel-3 has no browse image that can be placed on the map (its quicklooks are in instrument geometry)." };
+}
+
 function ummBBox(u) {
   const g = (((u.SpatialExtent || {}).HorizontalSpatialDomain || {}).Geometry) || {};
   const pts = (g.GPolygons || []).flatMap((p) => p.Boundary.Points.map((q) => [q.Longitude, q.Latitude]));
@@ -214,6 +290,8 @@ export async function fetchHistory(c) {
   if (c.mission === "s1") p = c.burst ? s1Burst(c, since) : s1Swath(c, since);
   else if (c.mission === "s2") p = c.tile ? s2Tile(c, since) : Promise.resolve({ source: "", items: null, note: "Zoom in to a tile (level 4+) for its acquisition history." });
   else if (c.mission === "landsat") p = landsatScene(c, since);
+  else if (c.mission === "modis" || c.mission === "viirs") p = wideTile(c, since);
+  else if (c.mission === "s3") p = s3Tile(c, since);
   else p = nisarFrame(c, since);
   p = p.then((h) => ({ ...h, items: h.items && h.items.filter((x) => x.when < new Date()).sort((a, b) => b.when - a.when) }));
   cache.set(key, p);
@@ -244,7 +322,7 @@ export function medianRevisit(items) {
 // (dense revisits; longest gaps are placed first) is still in each dot's tooltip.
 // One lane per platform (S2A, S2B, S2C...), like the AOI's timeline; gaps
 // between consecutive passes (any platform) are labelled above the lanes.
-const LANES = ["S1A", "S1C", "S1D", "S2A", "S2B", "S2C", "L8", "L9", "NISAR"];
+const LANES = ["S1A", "S1C", "S1D", "S2A", "S2B", "S2C", "L8", "L9", "NISAR", "Terra", "Aqua", "SNPP", "N20", "N21", "S3A", "S3B"];
 export function timelineSVG(past, upcoming, color, { daysBack = HISTORY_DAYS, daysAhead = 30, width = 320 } = {}) {
   const now = Date.now(), pad = 8, labelW = 40, laneH = 14, top = 30;
   const t0 = now - daysBack * 864e5, t1 = now + daysAhead * 864e5;
@@ -333,7 +411,32 @@ export function fetchBrowse(b) {
   return browseCache.get(key);
 }
 
+// NASA Worldview (GIBS): the day's corrected-reflectance true colour of one
+// platform, a WMS image in lat/lon (EPSG:4326) over a box, served with CORS.
+const GIBS_LAYER = {
+  Terra: "MODIS_Terra_CorrectedReflectance_TrueColor", Aqua: "MODIS_Aqua_CorrectedReflectance_TrueColor",
+  SNPP: "VIIRS_SNPP_CorrectedReflectance_TrueColor", N20: "VIIRS_NOAA20_CorrectedReflectance_TrueColor", N21: "VIIRS_NOAA21_CorrectedReflectance_TrueColor",
+};
+export function gibsURL(layer, date, [w, s, e, n], size = 1024) {
+  const h = Math.max(64, Math.round((size * (n - s)) / Math.max(1e-6, e - w)));
+  const q = new URLSearchParams({ SERVICE: "WMS", REQUEST: "GetMap", VERSION: "1.1.1", LAYERS: layer, SRS: "EPSG:4326", STYLES: "", BBOX: [w, s, e, n].join(","), WIDTH: String(size), HEIGHT: String(Math.min(2048, h)), FORMAT: "image/png", TRANSPARENT: "TRUE", TIME: date });
+  return `https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?${q}`;
+}
+
 const BROWSE = {
+  // MODIS/VIIRS: the day's mosaic of that platform from NASA Worldview (all
+  // its passes that day, not this pass alone), placed exactly (lat/lon box)
+  async gibs(b) {
+    const layer = GIBS_LAYER[b.platform];
+    if (!layer || !b.bbox) return { note: "No Worldview layer for this platform." };
+    const [w, s, e, n] = b.bbox;
+    return {
+      thumb: gibsURL(layer, b.date, b.bbox, 256), full: gibsURL(layer, b.date, b.bbox, 1024),
+      source: `NASA Worldview (GIBS) ${layer.replace(/_/g, " ")}, ${b.date}: the day's mosaic of this platform's passes`,
+      links: [{ href: `https://worldview.earthdata.nasa.gov/?v=${w},${s},${e},${n}&l=${layer}&t=${b.date}`, text: "Worldview" }],
+      georef: { url: gibsURL(layer, b.date, b.bbox, 1024), corners: bboxCorners(b.bbox), where: { kind: "latlon", bbox: b.bbox }, key: "black" },
+    };
+  },
   // Planetary Computer's RTC preview (terrain-corrected, UTM), else its GRD
   // preview (warped to lat/lon), of the pass over the footprint, each also as
   // single channels (bands: VV, VH or HH, HV); else OPERA's RTC-S1 browse of

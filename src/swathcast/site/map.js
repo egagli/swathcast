@@ -1,7 +1,7 @@
 // Upcoming-pass map: one view. Every selected mission's native footprints
 // (Sentinel-1 IW bursts, Sentinel-2 MGRS tiles, Landsat WRS-2 scenes, NISAR
-// frames) are coloured by the time to their next acquisition that passes the
-// filters. Filters are per mission (FILTERS: platform, direction, mode,
+// frames, MODIS/VIIRS sinusoidal tiles, Sentinel-3 frames) are coloured by
+// the time to their next acquisition that passes the filters. Filters are per mission (FILTERS: platform, direction, mode,
 // polarisation for the SAR missions only, track/path, frame/row/burst/tile);
 // the dates and the AOI are shared. An AOI is
 // an optional filter: with one, only footprints over it are drawn and the list
@@ -26,6 +26,7 @@ import { GlobeOverlay, PolarCaps } from "./overlay.js";
 import { fitUtmToData, resample, utmBox, utmEpsg } from "./drape.js";
 import { fetchBrowse, fetchHistory, landsatL1, medianRevisit, timelineSVG, usgsItem, widenToImage, HISTORY_DAYS } from "./history.js";
 import { Tour, flash, handOver, markTourSeen, pendingStep, sleep, tourSeen, waitFor } from "./tour.js";
+import { ALTITUDE_KM, S3_OLCI_KM, WIDE_SWATH_KM, closestApproach, destination, position, scanHeadingAt, scanTime, sensorOf, viewZenith } from "./swathgeom.js";
 import { RECENT_DAYS, SOURCES as SEARCHABLE, NOT_SEARCHABLE, PORTAL, registerSource, searchSources, groupAcquisitions } from "./recent.js";
 
 // Zoom levels are MapLibre's. minZoom: below it the footprints in view are too
@@ -38,6 +39,12 @@ const MISSIONS = [
   { key: "s2", label: "Sentinel-2", cssVar: "--s2", footprint: "MGRS tiles", minZoom: 4, overview: "planned swaths", trackName: "relative orbit", frameName: "tile", sensor: "sentinel-2" },
   { key: "landsat", label: "Landsat 8/9", cssVar: "--l8", footprint: "WRS-2 scenes", minZoom: 3, trackName: "path", frameName: "row", sensor: "landsat" },
   { key: "nisar", label: "NISAR", cssVar: "--nisar", footprint: "frames", minZoom: 0, trackName: "track", frameName: "frame", sensor: "nisar" },
+  // no plans: passes predicted from the orbit (see "MODIS, VIIRS, Sentinel-3" below)
+  { key: "modis", label: "MODIS", cssVar: "--m6", footprint: "sinusoidal tiles", minZoom: 0, trackName: "tile h", frameName: "tile v", sensor: "modis" },
+  { key: "viirs", label: "VIIRS", cssVar: "--m7", footprint: "sinusoidal tiles", minZoom: 0, trackName: "tile h", frameName: "tile v", sensor: "viirs" },
+  // its products' frames are ~1,300 km wide and every place lies under ~20
+  // of them: drawn on the same tiles, each pass labelled with its frame
+  { key: "s3", label: "Sentinel-3", cssVar: "--m8", footprint: "sinusoidal tiles", minZoom: 0, trackName: "relative orbit", frameName: "frame", sensor: "sentinel-3" },
 ];
 // Per-mission filters. Polarisation exists only for the SAR missions. Every
 // mission has its two directions, labelled with the local solar time of its
@@ -49,6 +56,13 @@ const FILTERS = {
   s2: { dirs: true, pols: false, track: "Relative orbit", frame: "MGRS tile", trackPh: "e.g. 13 or 10-20", framePh: "e.g. 10TET or 10T", tiles: true },
   landsat: { dirs: true, pols: false, track: "WRS-2 path", frame: "WRS-2 row", trackPh: "e.g. 46 or 40-48", framePh: "e.g. 27 or 20-30" },
   nisar: { dirs: true, pols: true, track: "Track", frame: "Frame", trackPh: "e.g. 134 or 1-20", framePh: "e.g. 59 or 50-80" },
+  // The wide-swath sensors image day and night: their filter is the light at
+  // the footprint (night off at the start, as Landsat's night side), and for
+  // MODIS/VIIRS the view zenith angle (pixels grow ~2-5x towards the swath
+  // edges). Tile h/v filter the tiles, not the passes.
+  modis: { lights: true, vza: true, cellRanges: true, track: "Tile h", frame: "Tile v", trackPh: "e.g. 9 or 8-10", framePh: "e.g. 4 or 3-5" },
+  viirs: { lights: true, vza: true, cellRanges: true, track: "Tile h", frame: "Tile v", trackPh: "e.g. 9 or 8-10", framePh: "e.g. 4 or 3-5" },
+  s3: { lights: true, framePass: true, track: "Relative orbit", frame: "Frame", trackPh: "e.g. 81 or 80-90", framePh: "e.g. 1800 or 1620-2160" },
 };
 const SOLAR = {
   s1: { ascending: "~6 PM", descending: "~6 AM" },
@@ -62,15 +76,20 @@ const DIRS_NONE = { s2: ["ascending"] };
 const dirsOff = (key) => [...(DIRS_OFF[key] || []), ...(DIRS_NONE[key] || [])];
 // "descending (~10 AM solar time)"
 const dirText = (mission, dir) => (dir && SOLAR[mission] && SOLAR[mission][dir] ? `${dir} (${SOLAR[mission][dir]} solar time)` : dir || "");
-const missionOf = (platform) => (platform.startsWith("S1") ? "s1" : platform.startsWith("S2") ? "s2" : platform.startsWith("L") ? "landsat" : "nisar");
+const WIDE_PLATFORMS = { modis: ["Terra", "Aqua"], viirs: ["SNPP", "N20", "N21"], s3: ["S3A", "S3B"] };
+const WIDE_MISSION = Object.fromEntries(Object.entries(WIDE_PLATFORMS).flatMap(([k, ps]) => ps.map((p) => [p, k])));
+const missionOf = (platform) => WIDE_MISSION[platform] || (platform.startsWith("S1") ? "s1" : platform.startsWith("S2") ? "s2" : platform.startsWith("L") ? "landsat" : "nisar");
 const MISSION = Object.fromEntries(MISSIONS.map((m) => [m.key, m]));
 const POPUP_SOURCES = ["cdse_grd", "cdse_slc", "pc_grd", "pc_rtc", "asf_grd", "asf_slc", "opera_rtc", "opera_cslc"];
 const MAX_LIST = 400;
-const PLATFORM_NAMES = { S1A: "Sentinel-1A", S1C: "Sentinel-1C", S1D: "Sentinel-1D", S2A: "Sentinel-2A", S2B: "Sentinel-2B", S2C: "Sentinel-2C", L8: "Landsat 8", L9: "Landsat 9", NISAR: "NISAR" };
+const PLATFORM_NAMES = {
+  S1A: "Sentinel-1A", S1C: "Sentinel-1C", S1D: "Sentinel-1D", S2A: "Sentinel-2A", S2B: "Sentinel-2B", S2C: "Sentinel-2C", L8: "Landsat 8", L9: "Landsat 9", NISAR: "NISAR",
+  Terra: "Terra (MODIS)", Aqua: "Aqua (MODIS)", SNPP: "Suomi NPP (VIIRS)", N20: "NOAA-20 (VIIRS)", N21: "NOAA-21 (VIIRS)", S3A: "Sentinel-3A", S3B: "Sentinel-3B",
+};
 
 const missionColor = (key) => css((MISSION[key] || { cssVar: "--muted" }).cssVar);
 // satellites and chips: sensor keys (landsat-8/-9 keep their own colours)
-const sensorColor = (sensor) => css({ "sentinel-1": "--s1", "sentinel-2": "--s2", "landsat-8": "--l8", "landsat-9": "--l9", nisar: "--nisar" }[sensor] || "--muted");
+const sensorColor = (sensor) => css({ "sentinel-1": "--s1", "sentinel-2": "--s2", "landsat-8": "--l8", "landsat-9": "--l9", nisar: "--nisar", modis: "--m6", viirs: "--m7", "sentinel-3": "--m8" }[sensor] || "--muted");
 
 let globeOn = true;
 try { globeOn = localStorage.getItem("s1lat.globe") !== "flat"; } catch { /* storage unavailable */ }
@@ -79,7 +98,7 @@ let basemap = new URLSearchParams(location.hash.slice(1)).get("bm");
 if (!BASEMAPS[basemap]) { try { basemap = localStorage.getItem("swathcast.basemap"); } catch { /* storage unavailable */ } }
 const view = new MapView("map", {
   globe: globeOn, basemap: BASEMAPS[basemap] ? basemap : DEFAULT_BASEMAP,
-  attribution: 'plans: <a href="https://sentinels.copernicus.eu/" target="_blank" rel="noopener">ESA</a>, <a href="https://landsat.usgs.gov/" target="_blank" rel="noopener">USGS</a>, <a href="https://science.nasa.gov/mission/nisar/" target="_blank" rel="noopener">NASA</a> · bursts: <a href="https://asf.alaska.edu/" target="_blank" rel="noopener">ASF</a> · orbits: <a href="https://celestrak.org/" target="_blank" rel="noopener">CelesTrak</a>',
+  attribution: 'plans: <a href="https://sentinels.copernicus.eu/" target="_blank" rel="noopener">ESA</a>, <a href="https://landsat.usgs.gov/" target="_blank" rel="noopener">USGS</a>, <a href="https://science.nasa.gov/mission/nisar/" target="_blank" rel="noopener">NASA</a> · bursts: <a href="https://asf.alaska.edu/" target="_blank" rel="noopener">ASF</a> · orbits: <a href="https://celestrak.org/" target="_blank" rel="noopener">CelesTrak</a> · previews: <a href="https://worldview.earthdata.nasa.gov/" target="_blank" rel="noopener">NASA Worldview</a>',
 });
 const map = view.map;
 view.onBasemap.push((k) => {
@@ -119,8 +138,9 @@ const state = window.__state = {
 // the overlay (overlay.js): footprints poleward of 85 deg on the globe, and
 // the live satellites over everything.
 // One layer per mission, so a change to one mission's footprints re-sends only
-// that mission's to the map. Bottom to top: Landsat, Sentinel-2, NISAR, Sentinel-1.
-const DRAW_ORDER = ["landsat", "s2", "nisar", "s1"];
+// that mission's to the map. Bottom to top: the wide-swath sensors' large
+// tiles and frames, Landsat, Sentinel-2, NISAR, Sentinel-1.
+const DRAW_ORDER = ["modis", "viirs", "s3", "landsat", "s2", "nisar", "s1"];
 const gridLayers = Object.fromEntries(DRAW_ORDER.map((k) => [k, view.group(`grid-${k}`)]));
 const highlightLayer = view.group("highlight", { interactive: false });
 const aoiLayer = view.group("aoi", { interactive: false, dashed: true });
@@ -248,7 +268,7 @@ async function load() {
   showFreshness({ scheduleAt: meta.generated_at, latencyAt: latency && latency.data_as_of, failing: failingSources(health) });
   // each mission's filters, from what is in its data
   const platforms = new Set(Object.keys(summary.ends));
-  ["L8", "L9"].forEach((p) => platforms.add(p));
+  ["L8", "L9", ...Object.values(WIDE_PLATFORMS).flat()].forEach((p) => platforms.add(p));
   state.allPlatforms = platforms;
   MISSIONS.forEach(({ key, sensor }) => {
     const spec = FILTERS[key];
@@ -259,7 +279,8 @@ async function load() {
       dirs: spec.dirs ? new Set(["ascending", "descending"].filter((d) => !dirsOff(key).includes(d))) : null,
       modes: spec.modes ? new Set(spec.modes) : null,
       allPols: pols, pols: pols ? new Set(pols) : null,
-      trackText: "", frameText: "",
+      lights: spec.lights ? new Set(["day"]) : null,
+      trackText: "", frameText: "", vzaText: "",
     };
   });
   const restored = readHash();
@@ -343,6 +364,111 @@ function nisarFrames() {
   return state.nisar;
 }
 
+// ---------------------------------------------------------------- MODIS, VIIRS, Sentinel-3
+// None of them has a plan: they image on every orbit (OLCI in daylight).
+// The schedule job predicts their passes from the orbit (wideswath.py), per
+// MODIS sinusoidal tile: each pass whose swath covers the tile centre, with
+// the centre's cross-track distance (Sentinel-3's also with its relative
+// orbit and time after the node, which give its products' frame). Over an AOI every
+// candidate pass is timed again at the AOI itself (swathgeom.closestApproach,
+// with the poller's tle.json) and kept only if its swath covers the AOI.
+const WIDE_FILES = { modis: "modis_tile_passes.parquet", viirs: "viirs_tile_passes.parquet", s3: "s3_tile_passes.parquet" };
+const S3_FRAME_S = 180;
+const isWide = (key) => key in WIDE_FILES;
+const WIDE_MODE = { modis: "MODIS", viirs: "VIIRS", s3: "SLSTR" };
+const wideLoads = {};
+const vzaOf = (platform, xtrack) => (xtrack == null || !ALTITUDE_KM[platform] ? null : viewZenith(xtrack, ALTITUDE_KM[platform]));
+function loadWide(key) {
+  if (!wideLoads[key]) {
+    const p = (async () => {
+      const [grid, passes] = await Promise.all([parquet("sin_grid.parquet"), parquet(WIDE_FILES[key])]);
+      const by = new Map(), ends = {};
+      passes.forEach((r) => {
+        const k = String(r.tile);
+        const t = {
+          when: toDate(r.time), platform: String(r.platform), direction: String(r.direction), pol: null, estimated: true,
+          xtrack: Number(r.xtrack_km), track: r.track == null ? null : Number(r.track),
+        };
+        if (r.anx_s != null) { // Sentinel-3: its frame, and its orbit's node
+          t.frame = Math.floor(Number(r.anx_s) / S3_FRAME_S) * S3_FRAME_S;
+          t.node = t.when.getTime() - Number(r.anx_s) * 1000;
+        }
+        t.vza = vzaOf(t.platform, t.xtrack);
+        (by.get(k) || by.set(k, []).get(k)).push(t);
+        if (!ends[t.platform] || t.when > ends[t.platform]) ends[t.platform] = t.when;
+      });
+      const cells = grid.map((c) => {
+        const geojson = decodeWKB(c.geometry), center = centerOf(geojson);
+        const times = (by.get(String(c.tile)) || []).sort((a, b) => a.when - b.when);
+        times.forEach((t) => { t.light = lightAt(t.when, center[0], center[1]); });
+        return { tile: String(c.tile), h: Number(c.h), v: Number(c.v), title: `tile ${c.tile}`, geojson, bbox: turf.bbox(geojson), center, times };
+      });
+      state.planEnds[key] = ends; // predicted to the schedule's end
+      legendMissions();
+      return cells;
+    })();
+    wideLoads[key] = p;
+    p.catch(() => { delete wideLoads[key]; });
+  }
+  return wideLoads[key];
+}
+
+// Orbital elements for timing passes at the AOI (the live satellites' file).
+let wideSatrecs = null;
+function satrecsFor() {
+  wideSatrecs ||= getJSON("./data/tle.json").then((j) => Object.fromEntries(
+    Object.entries(j.satellites || {}).filter(([p]) => WIDE_MISSION[p]).map(([p, x]) => [p, satellite.json2satrec(x.omm)]),
+  )).catch(() => ({}));
+  return wideSatrecs;
+}
+
+// A pass of a wide-swath sensor over the AOI, from the footprints' candidate
+// times: timed at the AOI centre, its cross-track distance there, whether the
+// swath reaches the AOI (its corners and centre: any of it), the view zenith
+// angle and, for Sentinel-3, which instruments see it (OLCI: by day, and
+// within its narrower strip). null if the swath misses the AOI.
+function refineAtAOI(p, satrec) {
+  const [lon, lat] = aoiCenter();
+  // no elements to time it with: the footprint's own time, unchecked
+  if (!satrec) return { ...p, timedAtAOI: false };
+  const r = closestApproach(satrec, lon, lat, p.when.getTime() - 900e3, p.when.getTime() + 900e3);
+  if (!r) return null;
+  const [lo, hi] = WIDE_SWATH_KM[p.platform];
+  const [w, s, e, n] = aoiBBox(state.aoi);
+  const pts = state.aoi.type === "Point" ? [[lon, lat]] : [[lon, lat], [w, s], [w, n], [e, s], [e, n]];
+  const xs = pts.map(([x, y]) => (x === lon && y === lat ? r.xtrack : (closestApproach(satrec, x, y, r.t - 300e3, r.t + 300e3, 5) || r).xtrack));
+  const covered = xs.some((x) => x >= lo && x <= hi) || (Math.min(...xs) < lo && Math.max(...xs) > hi);
+  if (!covered) return null;
+  // MODIS/VIIRS scan lines are skewed: the AOI is imaged when one passes through it
+  const when = new Date(p.mission === "s3" ? r.t : scanTime(satrec, lon, lat, r.t)), light = lightAt(when, lon, lat);
+  const q = { ...p, when, whenEnd: when, xtrack: r.xtrack, vza: vzaOf(p.platform, r.xtrack), light, timedAtAOI: true };
+  if (p.mission === "s3") {
+    // the frame imaging the AOI: its time after the orbit's node
+    if (p.node != null) q.frame = Math.floor((r.t - p.node) / 1000 / S3_FRAME_S) * S3_FRAME_S;
+    const olci = light === "day" && xs.some((x) => x >= S3_OLCI_KM[0] && x <= S3_OLCI_KM[1]);
+    q.instruments = olci ? ["OLCI", "SLSTR"] : ["SLSTR"];
+    q.mode = q.instruments.join(" + ");
+  }
+  return q;
+}
+
+// The strip a wide-swath pass images around the AOI (±3 min of the pass):
+// what the list highlights for it, rather than a 1,000 km tile.
+function swathStrip(platform, satrec, t) {
+  const [lo, hi] = WIDE_SWATH_KM[platform], ring = [], back = [];
+  for (let dt = -180; dt <= 180; dt += 15) {
+    const at = t + dt * 1000, p = position(satrec, new Date(at)), h = scanHeadingAt(satrec, at, sensorOf(platform));
+    if (!p || h == null) continue;
+    ring.push(destination(p.lon, p.lat, h + 90, hi));
+    back.unshift(destination(p.lon, p.lat, h - 90, -lo));
+  }
+  const pts = [...ring, ...back];
+  if (pts.length < 4) return null;
+  let prev = null;
+  const cont = pts.map(([x, y]) => { let l = x; if (prev != null) l += 360 * Math.round((prev - l) / 360); prev = l; return [l, y]; });
+  return { type: "Polygon", coordinates: [[...cont, cont[0]]] };
+}
+
 // ---------------------------------------------------------------- filters
 // A polarization field: "VV+VH" (Sentinel-1), or per band for NISAR, one
 // entry per mode imaged that date: "L HH+HV, S RH+RV" -> [{band, pol}, ...].
@@ -415,8 +541,13 @@ function filters() {
   const m = {};
   MISSIONS.forEach(({ key }) => {
     const mf = state.mf[key];
-    const out = { track: null, frames: null, tiles: () => true, errors: [] };
+    const out = { track: null, frames: null, tiles: () => true, vzaMax: null, errors: [] };
     try { out.track = parseRanges(mf.trackText); } catch (e) { out.errors.push(`${FILTERS[key].track}: ${e.message}`); }
+    if (FILTERS[key].vza && mf.vzaText.trim()) {
+      const v = Number(mf.vzaText.trim());
+      if (Number.isFinite(v) && v > 0 && v <= 90) out.vzaMax = v;
+      else out.errors.push(`${VZA_LABEL}: give an angle in degrees, 1 to 90`);
+    }
     try {
       if (FILTERS[key].tiles) out.tiles = tileFilter(mf.frameText);
       else out.frames = parseRanges(mf.frameText);
@@ -427,6 +558,7 @@ function filters() {
   return { m, t0, t1 };
 }
 
+const VZA_LABEL = "Max view zenith (°)";
 // Does one acquisition pass its mission's filters? A SAR acquisition whose
 // polarisation is unknown is kept; one imaged in several modes (NISAR) passes
 // if any of them is selected.
@@ -441,7 +573,10 @@ function filterOK(t, f) {
     && (!mf.dirs || !t.direction || mf.dirs.has(t.direction))
     && (!mf.modes || !t.mode || mf.modes.has(t.mode))
     && (!mf.pols || t.pol == null || polEntries(t.pol).some((e) => mf.pols.has(polKey(e))))
-    && inRanges(f.m[key].track, t.track);
+    && (!mf.lights || !t.light || mf.lights.has(t.light))
+    && (f.m[key].vzaMax == null || t.vza == null || t.vza <= f.m[key].vzaMax)
+    && (FILTERS[key].cellRanges || inRanges(f.m[key].track, t.track))
+    && (!FILTERS[key].framePass || inRanges(f.m[key].frames, t.frame));
 }
 
 const shiftLon = (g, dx) => ({ type: g.type, coordinates: g.coordinates.map((ring) => ring.map(([x, y]) => [x + dx, y])) });
@@ -485,7 +620,7 @@ function datatakeCells(key, area, keep) {
 // delivered anywhere is still listed (the catalogues list the rest): as far
 // back as the schedule keeps them (schedule.py LOOKBACK_DAYS, about each
 // mission's p90 delivery time plus a day; Landsat Level-1 takes ~10 days).
-const PAST_MS = { s1: 2 * 864e5, s2: 2 * 864e5, nisar: 3 * 864e5, landsat: 11 * 864e5 };
+const PAST_MS = { s1: 2 * 864e5, s2: 2 * 864e5, nisar: 3 * 864e5, landsat: 11 * 864e5, modis: 2 * 864e5, viirs: 2 * 864e5, s3: 2 * 864e5 };
 const pastOf = (list, now, key) => (list || []).filter((x) => x.when.getTime() < now && x.when.getTime() >= now - PAST_MS[key]);
 
 // The zoom the page reasons with. On the globe MapLibre changes its zoom as
@@ -597,6 +732,24 @@ async function missionCells(key, area, f, token) {
         times: c.times.filter((x) => x.when.getTime() >= now), past: pastOf(c.times, now, "landsat"),
       });
     });
+  } else if (isWide(key)) {
+    const grid = await loadWide(key);
+    if (token !== state.token) return null;
+    const wf = f.m[key], byTile = FILTERS[key].cellRanges; // MODIS/VIIRS: h and v filter the tiles
+    // with an AOI, also the tiles around it: a pass can cover the AOI without
+    // covering the centre of any tile under it (candidates, see wideOverAOI)
+    const [alon, alat] = state.aoi ? aoiCenter() : [0, 0];
+    grid.forEach((c) => {
+      if (byTile && (!inRanges(wf.track, c.h) || !inRanges(wf.frames, c.v))) return;
+      const over = bboxOverlapWrapped(c.bbox, area);
+      const near = state.aoi && turf.distance([alon, alat], c.center, { units: "kilometers" }) < 2400;
+      if (!over && !near) return;
+      cells.push({
+        mission: key, geojson: c.geojson, bbox: c.bbox, center: c.center, title: c.title, tile: c.tile,
+        track: null, frame: null, frameLabel: c.tile, direction: null,
+        times: c.times.filter((x) => x.when.getTime() >= now), past: pastOf(c.times, now, key), candidate: !over,
+      });
+    });
   } else {
     await ensureSensor("nisar");
     if (token !== state.token) return null;
@@ -622,13 +775,18 @@ function aoiCenter() {
 
 function passKey(c, t) {
   if (c.mission === "s1") return `s1|${t.platform}|${t.pass.begin.getTime()}`;
+  // one orbit: Sentinel-3 frames share their node; tiles are minutes apart
+  // (made exact by refineAtAOI, then merged by wideOverAOI)
+  if (c.mission === "s3" && t.node != null) return `s3|${t.platform}|${Math.round(t.node / 60e3)}`;
+  if (isWide(c.mission)) return `${c.mission}|${t.platform}|${Math.round(t.when.getTime() / 1200e3)}`;
   if (c.mission === "s2") return `s2|${t.platform}|${t.begin.getTime()}`;
   const day = t.when.toISOString().slice(0, 10);
   return c.mission === "landsat" ? `ls|${t.platform}|${t.track}|${t.direction}|${day}` : `ni|${t.track}|${t.direction}|${day}`;
 }
 
 function buildPasses(cells) {
-  const out = groupPasses(cells, (c) => c.visible);
+  const out = groupPasses(cells.filter((c) => !isWide(c.mission)), (c) => c.visible);
+  MISSIONS.filter((m) => isWide(m.key) && state.missions.has(m.key)).forEach((m) => out.push(...wideOverAOI(m.key, filters())));
   // Whole datatakes without native footprints: S1 EW/SM, S2 calibration takes.
   const f = filters();
   state.rows.forEach((r) => {
@@ -647,6 +805,35 @@ function buildPasses(cells) {
   return out;
 }
 
+// The passes of a wide-swath mission over the AOI (ahead, or of the recent
+// past), from its footprints' candidate times: each timed again at the AOI,
+// dropped if its swath misses the AOI, then filtered with what was found
+// there (light, view angle). Each pass highlights the strip it images
+// around the AOI (MODIS, VIIRS) or its frames over the AOI (Sentinel-3).
+function wideOverAOI(key, f, past = false) {
+  const b = built[key];
+  if (!b || !b.candidates || !state.aoi) return [];
+  const now = Date.now(), mf = state.mf[key];
+  const pick = (c) => (past ? c.past || [] : c.times).filter((t) => mf.platforms.has(t.platform));
+  const merged = new Map();
+  groupPasses(b.candidates, pick).forEach((p) => {
+    const q = refineAtAOI(p, (state.satrecs || {})[p.platform]);
+    if (!q || !(past ? q.when.getTime() < now && filterOK(q, f) : timeOK(q, f))) return;
+    const k = `${key}|${q.platform}|${Math.round(q.when.getTime() / 60e3)}`;
+    const have = merged.get(k);
+    if (have) { have.cells.push(...q.cells); return; }
+    merged.set(k, { ...q, key: k, cells: [...p.cells] });
+  });
+  return [...merged.values()].map((q) => {
+    q.cells = [...new Set(q.cells)].filter((c) => intersects(state.aoi, c.geojson, c.bbox));
+    const satrec = (state.satrecs || {})[q.platform];
+    const strip = satrec && q.timedAtAOI ? swathStrip(q.platform, satrec, q.when.getTime()) : null;
+    q.shapes = strip ? [strip] : q.cells.map((c) => c.geojson);
+    q.footprints = footprintLabel(q);
+    return q;
+  });
+}
+
 // The footprints' acquisitions (timesOf(cell)) grouped into passes over the AOI.
 function groupPasses(cells, timesOf) {
   const passes = new Map();
@@ -655,8 +842,8 @@ function groupPasses(cells, timesOf) {
     if (!passes.has(k)) {
       passes.set(k, {
         key: k, mission: c.mission, sensor: MISSION[c.mission].sensor, platform: t.platform, direction: t.direction || c.direction || null,
-        track: t.track ?? c.track, pol: t.pol, mode: t.mode || t.radarMode || (c.mission === "s2" ? "NOBS" : c.mission === "landsat" ? "OLI/TIRS" : null),
-        modeSource: t.modeSource || null, light: t.light || null,
+        track: t.track ?? c.track, pol: t.pol, mode: t.mode || t.radarMode || (c.mission === "s2" ? "NOBS" : c.mission === "landsat" ? "OLI/TIRS" : WIDE_MODE[c.mission] || null),
+        modeSource: t.modeSource || null, light: t.light || null, vza: t.vza ?? null, xtrack: t.xtrack ?? null, node: t.node ?? null, frame: t.frame ?? null,
         estimated: t.estimated, pass: t.pass || null, cells: [], times: [], ll: aoiCenter(),
       });
     }
@@ -691,6 +878,8 @@ function nearAOI(geojson) {
 
 function footprintLabel(p) {
   const n = p.cells.length;
+  if (p.mission === "s3" && p.frame != null) return `frame ${p.frame}`;
+  if (isWide(p.mission)) return !n ? "" : n <= 2 ? p.cells.map((c) => c.tile).sort().join(" ") : `${n} tiles`;
   if (p.cells.length && p.cells.every((c) => c.datatake)) return "swath";
   if (p.mission === "s1") return `${n} burst${n > 1 ? "s" : ""}`;
   if (p.mission === "s2") return n <= 3 ? p.cells.map((c) => c.tile).sort().join(" ") : `${n} tiles`;
@@ -702,8 +891,22 @@ function footprintLabel(p) {
   return frames.length === 1 ? `frame ${frames[0]}` : `frames ${frames[0]}–${frames[frames.length - 1]}`;
 }
 
+// "the AOI 412 km right of the ground track, view zenith 38°"
+function wideGeometryText(p) {
+  if (p.xtrack == null) return "";
+  const side = p.xtrack >= 0 ? "right" : "left";
+  return `the AOI ${Math.round(Math.abs(p.xtrack))} km ${side} of the ground track${p.vza != null ? `, view zenith ${Math.round(p.vza)}°` : ""}`;
+}
 function passNote(p) {
   if (p.note) return p.note;
+  if (isWide(p.mission)) {
+    const name = MISSION[p.mission].label;
+    const timed = p.timedAtAOI ? `timed at the AOI from the orbit (SGP4): ${wideGeometryText(p)}` : "timed at its footprint from the orbit (SGP4; the AOI could not be timed: no orbital elements)";
+    const what = p.mission === "s3"
+      ? `Relative orbit ${p.track}, ${p.footprints || "frame unknown"} (the products' frame: seconds after the ascending node). Sentinel-3 has no acquisition plan: SLSTR images on every orbit, OLCI in daylight${p.instruments ? ` (here: ${p.instruments.join(" and ")})` : ""}.`
+      : `${name} has no acquisition plan: it images on every orbit, day and night; the pass is predicted from the orbit (${p.footprints}).`;
+    return `${what} ${cap(timed)}.`;
+  }
   const span = Math.round((p.whenEnd - p.when) / 1000);
   if (p.mission === "s1" && p.cells.some((c) => c.datatake)) {
     return `${p.mode} datatake ${fmtWhen(p.pass.begin)}–${p.pass.end.toISOString().slice(11, 16)} UTC${p.pol ? `, ${polText(p.pol)}` : ""} (bursts are drawn for IW only); the swath is clipped to the AOI's surroundings.`;
@@ -723,13 +926,22 @@ function passNote(p) {
 // ---------------------------------------------------------------- latency
 // Measured delivery latency per mission: the poller's latency files
 // (Sentinel-1's loads with the page, the others once an AOI is drawn).
-const LATENCY_FILES = { s2: ["latency_s2.json"], landsat: ["latency_landsat.json"], nisar: ["latency_nisar.json", "latency_nisar_s.json"] };
+const LATENCY_FILES = {
+  s2: ["latency_s2.json"], landsat: ["latency_landsat.json"], nisar: ["latency_nisar.json", "latency_nisar_s.json"],
+  modis: ["latency_modis.json"], viirs: ["latency_viirs.json"], s3: ["latency_s3.json"],
+};
 const MISSION_SOURCES = {
   s1: POPUP_SOURCES,
   s2: ["cdse_s2_l1c", "cdse_s2_l2a", "es_s2_l1c", "es_s2_l2a", "pc_s2_l2a", "hls_s30"],
   landsat: ["usgs_landsat_l1", "usgs_landsat_l2", "es_landsat_l2", "pc_landsat_l2", "hls_l30"],
   nisar: ["asf_nisar_l0b", "asf_nisar_rslc", "asf_nisar_gcov", "bhoonidhi_nisar_s_rslc", "bhoonidhi_nisar_s_gcov"],
+  modis: ["lance_modis_l1b", "laads_modis_l1b", "laads_modis_l1b_c7", "lance_modis_snow", "nsidc_modis_snow"],
+  viirs: ["lance_viirs_l1b", "laads_viirs_l1b", "lance_viirs_snow", "nsidc_viirs_snow"],
+  s3: ["cdse_s3_efr", "eumetsat_s3_efr", "cdse_s3_efr_ntc", "cdse_s3_lfr", "pc_s3_lfr", "cdse_s3_rbt", "cdse_s3_rbt_ntc", "cdse_s3_lst", "pc_s3_lst"],
 };
+// Daytime-only products: snow cover (MODIS, VIIRS), and OLCI (Sentinel-3)
+const DAY_ONLY = new Set(["lance_modis_snow", "nsidc_modis_snow", "lance_viirs_snow", "nsidc_viirs_snow"]);
+const OLCI_SOURCES = new Set(["cdse_s3_efr", "eumetsat_s3_efr", "cdse_s3_efr_ntc", "cdse_s3_lfr", "pc_s3_lfr"]);
 const S_BAND_SOURCES = new Set(["bhoonidhi_nisar_s_rslc", "bhoonidhi_nisar_s_gcov"]);
 const latencyLoads = {};
 function missionLatency(key) { // {expected, sources}, or null while loading or unavailable
@@ -754,8 +966,12 @@ function sourceLabel(key, mission = "s1") {
 }
 // The sources that deliver a pass. NISAR: Bhoonidhi (S-band) only for a pass
 // with S-band, ASF (L-band) unless the pass is S-band only.
-function sourcesFor(mission, pol) {
+function sourcesFor(mission, pol, p = null) {
   const keys = MISSION_SOURCES[mission];
+  // a night pass: no snow products; Sentinel-3 without OLCI over the AOI: SLSTR's only
+  if ((mission === "modis" || mission === "viirs") && p && p.light === "night") return keys.filter((k) => !DAY_ONLY.has(k));
+  if (mission === "s3" && p && p.instruments && !p.instruments.includes("OLCI")) return keys.filter((k) => !OLCI_SOURCES.has(k));
+  if (mission === "s3" && p && !p.instruments && p.light === "night") return keys.filter((k) => !OLCI_SOURCES.has(k));
   if (mission !== "nisar") return keys;
   const bands = new Set(polEntries(pol).map((e) => e.band));
   return keys.filter((k) => (S_BAND_SOURCES.has(k) ? bands.has("S") : bands.has("L") || !bands.size));
@@ -764,7 +980,7 @@ function expectations(p) {
   if (p.mission === "s1" && p.mode && p.mode !== "IW") return { note: `Latency is measured for IW only (this pass is ${p.mode}).`, list: [] };
   const lat = missionLatency(p.mission);
   if (!lat) return { note: latencyLoading(p.mission) ? "Loading measured latency…" : "Latency data unavailable.", list: [] };
-  const list = sourcesFor(p.mission, p.pol).filter((k) => lat.expected[k]).map((key) => ({
+  const list = sourcesFor(p.mission, p.pol, p).filter((k) => lat.expected[k]).map((key) => ({
     key, label: sourceLabel(key, p.mission), exp: expectedAvailability(p.when, p.platform, lat.expected[key]), failing: failingFor(p.mission, key),
   }));
   return { note: null, list };
@@ -796,7 +1012,7 @@ function earliest(p) {
 }
 const fw = (d, p, ref) => fmtBoth(d, p.ll, ref);
 // Optical passes: is the AOI sunlit? Landsat's ascending passes are at night.
-const OPTICAL = new Set(["s2", "landsat"]);
+const OPTICAL = new Set(["s2", "landsat", "modis", "viirs", "s3"]);
 function sunAt(p) {
   if (!OPTICAL.has(p.mission) || !p.ll) return null;
   return sunElevation(p.when, p.ll[0], p.ll[1]);
@@ -810,6 +1026,11 @@ const sunNote = (p) => { const e = sunAt(p); return e == null ? "" : e > 0 ? ` S
 // Instrument or mode, as listed: ESA's "NOBS" (nominal observation) is the MSI imaging normally.
 function modeText(p) {
   if (p.mission === "nisar") return nisarModeText(p.mode, p.pol) || '<span class="nm">not in the plan</span>';
+  if (isWide(p.mission)) {
+    const sun = sunText(p), inst = p.mission === "s3" ? (p.instruments || ["SLSTR"]).join(" + ") : WIDE_MODE[p.mission];
+    const sub = [p.vza != null ? `<span title="view zenith angle at the AOI: pixels grow towards the swath edges">VZA ${Math.round(p.vza)}°</span>` : null, sun].filter(Boolean).join(" · ");
+    return `${inst}${sub ? `<div class="nm${sun === "night" ? " warn-ink" : ""}">${sub}</div>` : ""}`;
+  }
   if (p.mission === "s1") return [p.pol ? polText(p.pol) : null, p.mode !== "IW" ? p.mode : null].filter(Boolean).join(" ") || p.mode || "";
   const inst = p.mission === "s2" ? (p.mode === "NOBS" ? "MSI" : p.mode || "MSI") : p.mode || "OLI/TIRS";
   const sun = sunText(p);
@@ -865,7 +1086,7 @@ function detailCard(p) {
 // product if it is up, else when it is expected from the measured latency.
 const PLAN_MATCH_MS = 20 * 60e3;
 // Sources that do not process every acquisition (see README: how latency is defined)
-const PARTIAL_SOURCES = new Set(["pc_grd", "pc_rtc", "opera_rtc", "opera_cslc"]);
+const PARTIAL_SOURCES = new Set(["pc_grd", "pc_rtc", "opera_rtc", "opera_cslc", "lance_modis_snow", "nsidc_modis_snow", "lance_viirs_snow", "nsidc_viirs_snow", "cdse_s3_lfr", "pc_s3_lfr", "cdse_s3_lst", "pc_s3_lst"]);
 function updateRecent() {
   const missions = MISSIONS.filter((m) => state.missions.has(m.key)).map((m) => m.key);
   const sig = `${state.aoiVersion}|${missions.join(",")}`;
@@ -910,7 +1131,8 @@ function rebuildRecent() {
       // shown time: over the AOI (the plan's, or a tile/scene product's), not a datatake start
       const local = g.products.filter((x) => !/^(cdse_s2|pc_s2|asf_nisar_l0b)/.test(x.source)); // those carry the datatake start
       g.shown = p ? p.when : local.length ? local[0].when : g.when;
-      if (m === "landsat") { const [lon, lat] = aoiCenter(); g.light = lightAt(g.shown, lon, lat); }
+      if (m === "landsat" || isWide(m)) { const [lon, lat] = aoiCenter(); g.light = p && p.light ? p.light : lightAt(g.shown, lon, lat); }
+      if (m === "s3") g.instruments = p ? p.instruments : null;
       g.key = `r|${m}|${g.platform || ""}|${Math.round(g.shown / 6e4)}`;
       if (g.platform && !filterOK({ platform: g.platform, direction: g.direction, track: g.track, pol: null, light: g.light }, f)) return;
       acqs.push(g);
@@ -924,7 +1146,7 @@ function rebuildRecent() {
 const IW_ONLY = new Set(["pc_rtc", "opera_rtc", "opera_cslc"]);
 function availability(a) {
   const lat = missionLatency(a.mission), rec = state.recent, now = Date.now();
-  return sourcesFor(a.mission, a.pol).map((k) => {
+  return sourcesFor(a.mission, a.pol, a).map((k) => {
     const r = rec.results[k] || { status: "unsearchable" };
     let exp = lat && lat.expected[k] ? expectedAvailability(a.when, a.platform || "all", lat.expected[k]) : null;
     const products = a.products.filter((x) => x.source === k);
@@ -966,7 +1188,7 @@ function recentCard(a) {
   const pol = a.mission === "nisar" ? nisarModeText(a.plan && a.plan.mode, a.pol).replace(/<[^>]+>/g, " ") : a.pol ? polText(a.pol) : "";
   const night = a.light === "night" ? " Night at the AOI: thermal data only." : "";
   card.innerHTML = `<div class="headline">${passLabel(a)}</div>`
-    + `<div class="nm">${pol ? `${pol}. ` : ""}${a.products.length ? `Found in ${new Set(a.products.map((x) => x.source)).size} catalogue(s).` : "Not in any catalogue yet: from the acquisition plan."}${night}</div>`;
+    + `<div class="nm">${pol ? `${pol}. ` : ""}${a.products.length ? `Found in ${new Set(a.products.map((x) => x.source)).size} catalogue(s).` : isWide(a.mission) ? "Not in any catalogue yet: predicted from the orbit." : "Not in any catalogue yet: from the acquisition plan."}${night}</div>`;
   const ul = document.createElement("ul");
   ul.className = "lat-list avail";
   const today = new Date();
@@ -1033,20 +1255,27 @@ const nextOf = (c) => (c.visible.length ? c.visible[0].when.getTime() : Infinity
 // Popup table columns: when (UTC, local, time until/since), platform,
 // direction, track and frame (or their equivalent), polarization (SAR) or
 // cloud cover (optical).
-const DETAIL_HEAD = { s1: "Polarization", nisar: "Polarization", s2: "Cloud · coverage", landsat: "Cloud" };
+const DETAIL_HEAD = { s1: "Polarization", nisar: "Polarization", s2: "Cloud · coverage", landsat: "Cloud", modis: "View · light", viirs: "View · light", s3: "Instruments · view · light" };
 const TIMING_NOTE = {
   s1: "times from the plan and the orbit timing, to about a second",
   s2: "tile times from the orbit (SGP4), to within ~10 s",
   landsat: "scene times from the orbit (SGP4), to within a few seconds",
   nisar: "times from the orbit (SGP4), to within ~15 s",
+  modis: "when the ground track passes closest to the tile centre (SGP4); view zenith at the centre",
+  viirs: "when the ground track passes closest to the tile centre (SGP4); view zenith at the centre",
+  s3: "when the ground track passes closest to the tile centre (SGP4); frames from the orbit, within ~0.1 s of CDSE's products",
 };
-const PLAN_OF = { s1: "ESA's Sentinel-1 plan", s2: "ESA's Sentinel-2 plan", landsat: "USGS's acquisition calendar", nisar: "NASA's NISAR plan" };
+const PLAN_OF = {
+  s1: "ESA's Sentinel-1 plan", s2: "ESA's Sentinel-2 plan", landsat: "USGS's acquisition calendar", nisar: "NASA's NISAR plan",
+  modis: "predicted from the orbit (MODIS has no plan: it images on every orbit)", viirs: "predicted from the orbit (VIIRS has no plan: it images on every orbit)",
+  s3: "predicted from the orbit (Sentinel-3 has no plan: SLSTR images on every orbit, OLCI in daylight)",
+};
 // The footprint popup's head: mission, the footprint's ID (one form), and
 // what is the same for every row (its track and direction; for a tile,
 // which crosses several relative orbits, only the direction).
 function cellHead(c) {
   const m = MISSION[c.mission];
-  const what = c.mission === "s1" && c.burst ? `IW burst ${c.title}` : c.mission === "s2" ? `MGRS tile ${c.tile}` : c.title;
+  const what = c.mission === "s1" && c.burst ? `IW burst ${c.title}` : c.mission === "s2" ? `MGRS tile ${c.tile}` : isWide(c.mission) && c.tile ? `sinusoidal tile ${c.tile}` : c.title;
   const fixed = [
     c.mission === "s1" && c.track != null ? `${m.trackName} ${c.track}` : null, // a burst ID or a swath does not say it
     dirText(c.mission, c.direction || (c.mission === "s2" ? "descending" : null)),
@@ -1054,12 +1283,12 @@ function cellHead(c) {
   return `<div class="headline"><span class="chip" style="background:${missionColor(c.mission)}"></span> ${m.label} · ${what}</div>${fixed ? `<div class="nm">${fixed}</div>` : ""}`;
 }
 // Only a tile's rows carry their relative orbit (a tile crosses several).
-const rowTrack = (c) => c.mission === "s2";
+const rowTrack = (c) => c.mission === "s2" || c.mission === "s3";
 
 // The frame-like part of a footprint: burst, tile, row or frame (one per popup).
 function frameOf(c) {
   if (c.mission === "s1") return c.burst ? `${String(c.burst.bid).padStart(6, "0")} ${c.burst.swath}` : "";
-  if (c.mission === "s2") return c.tile || "";
+  if (c.mission === "s2" || (isWide(c.mission) && c.tile)) return c.tile || "";
   return c.frame == null ? "" : String(c.frame);
 }
 
@@ -1073,6 +1302,11 @@ function acqRow(c, x, planned, now) {
     detail = planned ? nisarModeText(x.radarMode, x.pol) : nisarModeText(null, x.pol, x.bandwidth);
     if (planned && x.modeSource === "earlier cycle") detail += '<div class="sub" title="The plan leaves this date\'s mode blank: this is the frame\'s last listed mode, which matched ASF\'s products for 97% of L-band frames.">mode assumed from an earlier cycle</div>';
     if (!planned && x.partial) detail += '<div class="sub">partial frame</div>';
+  } else if (isWide(c.mission)) {
+    const light = x.light === "night" ? '<span class="warn-ink">night</span>' : x.light === "day" ? "day" : "";
+    const inst = c.mission === "s3" ? (x.instruments ? x.instruments.join(" + ") : planned ? (x.light === "day" ? "OLCI + SLSTR" : "SLSTR") : "") : "";
+    const frame = c.mission === "s3" && x.frame != null ? `<span class="sub" title="the products' frame: seconds after the orbit's ascending node">frame ${x.frame}</span>` : "";
+    detail = [inst, x.vza != null ? `VZA ${Math.round(x.vza)}°` : "", light, frame, x.level ? `<span class="sub">${esc(x.level)}</span>` : ""].filter(Boolean).join(" · ");
   } else if (c.mission === "s1") {
     detail = x.pol ? polText(x.pol) : "";
     if (x.mode && x.mode !== "IW") detail = `${x.mode}${detail ? ` ${detail}` : ""}`;
@@ -1348,7 +1582,8 @@ function nextLine(c, h) {
   const parts = [t ? `Next <b>${rel(t.when, now)}</b>` : `<b>Nothing planned</b>${c.times.length ? " that matches your filters" : ""}`];
   if (h && h.items && h.items.length) {
     const rev = medianRevisit(h.items);
-    if (rev) parts.push(`typically every ${rev < 1.5 ? rev.toFixed(1) : Math.round(rev)} d`);
+    // (MODIS, VIIRS: passes hours apart)
+    if (rev) parts.push(`typically every ${rev < 1 ? `${(rev * 24).toFixed(1)} h` : rev < 1.5 ? `${rev.toFixed(1)} d` : `${Math.round(rev)} d`}`);
     parts.push(`last imaged ${rel(h.items[0].when, now)}`);
   } else if (h && h.items && !h.items.length) {
     parts.push(`not imaged in the last ${HISTORY_DAYS} days`);
@@ -1370,6 +1605,7 @@ function cellPopup(c) {
 function planEndNote(key) {
   const ends = state.planEnds[key] || {};
   const parts = Object.entries(ends).sort().map(([p, d]) => `${p} ${fmtWhen(d).split(" ").slice(0, 3).join(" ")}`);
+  if (parts.length && isWide(key)) return `Predicted to: ${parts.join(" · ")}`;
   return parts.length ? `Plans reach: ${parts.join(" · ")}` : `Schedule to ${fmtWhen(state.scheduleEnd)} UTC`;
 }
 
@@ -1539,8 +1775,16 @@ const FOOTPRINT_SOURCES = {
   s2: ["es_s2_l1c", "es_s2_l2a", "cdse_s2_l1c", "cdse_s2_l2a", "pc_s2_l2a"],
   landsat: ["es_landsat_l2", "pc_landsat_l2"],
   nisar: ["asf_nisar_rslc", "asf_nisar_gcov"], // not Level-0B: its footprint is the whole datatake (thousands of km)
+  modis: ["laads_modis_l1b_c7", "laads_modis_l1b", "lance_modis_l1b"],
+  viirs: ["laads_viirs_l1b", "lance_viirs_l1b"],
+  s3: ["cdse_s3_rbt", "cdse_s3_rbt_ntc", "cdse_s3_efr", "cdse_s3_efr_ntc"],
 };
 const isArea = (g) => g && (g.type === "Polygon" || g.type === "MultiPolygon");
+// A box of about 600 km around a point, for a GIBS preview
+function gibsBox(lon, lat) {
+  const dy = 2.7, dx = Math.min(30, 2.7 / Math.max(0.1, Math.cos((lat * Math.PI) / 180)));
+  return [Math.max(-180, lon - dx), Math.max(-90, lat - dy), Math.min(180, lon + dx), Math.min(90, lat + dy)].map((v) => Math.round(v * 1e4) / 1e4);
+}
 function recentShapes(a) {
   const prods = a.products || [];
   for (const src of FOOTPRINT_SOURCES[a.mission] || []) {
@@ -1568,6 +1812,11 @@ function recentBrowse(a) {
   if (a.mission === "nisar") {
     const x = ["asf_nisar_rslc", "asf_nisar_gcov"].map(of).find((y) => y && y.browseUrls && y.browseUrls.length);
     return x ? { kind: "nisar", urls: x.browseUrls, bbox: isArea(x.geometry) ? turf.bbox(x.geometry) : null } : null;
+  }
+  // MODIS/VIIRS by day: NASA Worldview's (GIBS) true colour of that platform and day, around the AOI
+  if ((a.mission === "modis" || a.mission === "viirs") && a.platform && a.light !== "night") {
+    const [lon, lat] = aoiCenter();
+    return { kind: "gibs", platform: a.platform, date: a.shown.toISOString().slice(0, 10), bbox: gibsBox(lon, lat) };
   }
   return null;
 }
@@ -1599,9 +1848,9 @@ function listItems() {
 // between markers.
 const TL_DAYS = 30;
 const tlBox = document.getElementById("aoi-timeline");
-const LANE_ORDER = ["S1A", "S1C", "S1D", "S1", "S2A", "S2B", "S2C", "S2", "L8", "L9", "L8/9", "NISAR"];
+const LANE_ORDER = ["S1A", "S1C", "S1D", "S1", "S2A", "S2B", "S2C", "S2", "L8", "L9", "L8/9", "NISAR", "Terra", "Aqua", "MODIS", "SNPP", "N20", "N21", "VIIRS", "S3A", "S3B", "S3"];
 // products whose platform the catalogue does not give (HLS, for one)
-const LANE_UNKNOWN = { s1: "S1", s2: "S2", landsat: "L8/9", nisar: "NISAR" };
+const LANE_UNKNOWN = { s1: "S1", s2: "S2", landsat: "L8/9", nisar: "NISAR", modis: "MODIS", viirs: "VIIRS", s3: "S3" };
 let tlItems = [];
 function renderTimeline() {
   const on = Boolean(state.aoi);
@@ -1680,7 +1929,7 @@ function sortRows(rows, keyFn, dir, tie) {
     .map((x) => x[2]);
 }
 const chip = (mission) => `<span class="chip" style="background:${missionColor(mission)}"></span>`;
-const TRACK_SHORT = { s1: "rel. orbit", s2: "rel. orbit", landsat: "path", nisar: "track" };
+const TRACK_SHORT = { s1: "rel. orbit", s2: "rel. orbit", landsat: "path", nisar: "track", s3: "rel. orbit" };
 const PAST_LIST_MAX = 600;
 
 // After a new AOI the list opens at "Now" (until the person scrolls it).
@@ -1848,7 +2097,7 @@ function computeViewBounds(w, h) {
 // rebuild nothing and send nothing to the map; only the list follows the view.
 const built = {};
 const drawn = {}; // per mission, the build its layer shows (null: empty)
-const MARGIN = { s1: 0.25, s2: 0.5, landsat: 0.5, nisar: 1 }; // of the view's width/height, each side
+const MARGIN = { s1: 0.25, s2: 0.5, landsat: 0.5, nisar: 1, modis: 1, viirs: 1, s3: 1 }; // of the view's width/height, each side
 function padded([w, s, e, n], k) {
   const dx = (e - w) * k, dy = (n - s) * k;
   if (e - w + 2 * dx >= 360) return [-180, Math.max(-90, s - dy), 180, Math.min(90, n + dy)];
@@ -1864,7 +2113,7 @@ function contains(a, v) {
 const setKey = (x) => (x ? [...x].sort().join(",") : "");
 function missionSig(key) {
   const mf = state.mf[key];
-  return [state.start, state.end, state.aoiVersion, overviewOf(key), setKey(mf.platforms), setKey(mf.dirs), setKey(mf.modes), setKey(mf.pols), mf.trackText, mf.frameText].join("|");
+  return [state.start, state.end, state.aoiVersion, overviewOf(key), setKey(mf.platforms), setKey(mf.dirs), setKey(mf.modes), setKey(mf.pols), setKey(mf.lights), mf.trackText, mf.frameText, mf.vzaText].join("|");
 }
 
 async function refresh() {
@@ -1873,6 +2122,10 @@ async function refresh() {
   updateFilterSummaries();
   const token = ++state.token;
   const f = filters();
+  if (state.aoi && !state.satrecs && MISSIONS.some((m) => isWide(m.key) && state.missions.has(m.key))) {
+    state.satrecs = await satrecsFor();
+    if (token !== state.token) return;
+  }
   MISSIONS.forEach(({ key }) => { const el = document.getElementById(`err-${key}`); if (el) el.textContent = f.m[key].errors.join(" · "); });
   const zoom = viewZoom();
   const viewArea = viewBounds();
@@ -1890,14 +2143,16 @@ async function refresh() {
     try {
       const got = await missionCells(m.key, area, f, token);
       if (got == null || token !== state.token) return;
-      let shown = state.aoi ? got.filter((c) => intersects(state.aoi, c.geojson, c.bbox)) : got;
+      // MODIS/VIIRS/Sentinel-3 over an AOI: their passes come from these candidates (wideOverAOI)
+      const candidates = state.aoi && isWide(m.key) ? got : null;
+      let shown = state.aoi ? got.filter((c) => !c.candidate && intersects(state.aoi, c.geojson, c.bbox)) : got.filter((c) => !c.candidate);
       const pastCells = state.aoi ? shown.filter((c) => c.past && c.past.length) : [];
       shown.forEach((c) => { c.visible = c.times.filter((t) => timeOK(t, f)).sort((x, y) => x.when - y.when); });
       // Only footprints with a planned acquisition that passes the filters are
       // drawn: one with nothing planned (or all of it filtered out) is left
       // transparent, so the basemap shows through.
       shown = shown.filter((c) => c.visible.length);
-      built[m.key] = { sig, area, cells: shown, pastCells, fallback: Boolean(got.fallback) };
+      built[m.key] = { sig, area, cells: shown, pastCells, candidates, fallback: Boolean(got.fallback) };
     } catch (err) {
       if (token !== state.token) return;
       built[m.key] = { sig: null, area: [0, 0, 0, 0], cells: [], pastCells: [], error: err.message };
@@ -1913,7 +2168,8 @@ async function refresh() {
     if (state.sel && state.sel.kind === "cell") select(null);
     state.passes = state.aoi ? buildPasses(state.cells) : [];
     const pastCells = MISSIONS.filter((m) => state.missions.has(m.key) && built[m.key]).flatMap((m) => built[m.key].pastCells || []);
-    state.recentPlanned = state.aoi ? groupPasses(pastCells, (c) => c.past.filter((t) => filterOK(t, f))) : [];
+    state.recentPlanned = state.aoi ? groupPasses(pastCells.filter((c) => !isWide(c.mission)), (c) => c.past.filter((t) => filterOK(t, f))) : [];
+    MISSIONS.filter((m) => isWide(m.key) && state.missions.has(m.key)).forEach((m) => state.recentPlanned.push(...wideOverAOI(m.key, f, true)));
     drawCells(changed);
     changed.forEach((key) => { drawn[key] = want(key); });
   }
@@ -1972,7 +2228,7 @@ function legendMissions() {
     if (end && st.mode === "native" && !st.native && !st.swaths && end < new Date(`${state.start}T00:00:00Z`)) {
       what = '<span class="warn-ink">nothing known in your dates: the plan ends before them</span>';
     }
-    const endTxt = end ? `<span class="${end < endSel ? "warn-ink" : "nm"}" title="${end < endSel ? "your dates run past the end of this plan: nothing is known after it" : "the agency's plan reaches this date"}">plan to ${fmtWhen(end).split(" ").slice(0, 3).join(" ")}</span>` : "";
+    const endTxt = end ? `<span class="${end < endSel ? "warn-ink" : "nm"}" title="${end < endSel ? "your dates run past the end of this plan: nothing is known after it" : isWide(m.key) ? "no plan: passes predicted from the orbit up to this date" : "the agency's plan reaches this date"}">${isWide(m.key) ? "predicted" : "plan"} to ${fmtWhen(end).split(" ").slice(0, 3).join(" ")}</span>` : "";
     const zoomBtn = btn !== "" ? `<button type="button" data-z="${btn}" title="Zoom in to level ${btn}">Zoom in</button>` : "";
     // native footprints: one line; otherwise what is shown goes on a second line
     const short = st.mode === "native" && !/warn-ink/.test(what);
@@ -2070,9 +2326,10 @@ function polRows(mf) {
 }
 
 function textFilter(key, which) {
-  const spec = FILTERS[key];
+  const spec = { ...FILTERS[key], vza: VZA_LABEL, vzaPh: "e.g. 45 (any if empty)" };
   const l = document.createElement("label");
   const input = Object.assign(document.createElement("input"), { placeholder: spec[`${which}Ph`], value: state.mf[key][`${which}Text`] });
+  if (which === "vza") l.title = "Leave out passes that see the footprint more obliquely than this: MODIS/VIIRS pixels grow 2-5x towards the swath edges (VZA up to ~65-70°)";
   if (!(which === "frame" && spec.tiles)) input.inputMode = "numeric";
   let timer = null;
   input.addEventListener("input", () => { state.mf[key][`${which}Text`] = input.value; clearTimeout(timer); timer = setTimeout(refresh, 300); });
@@ -2122,10 +2379,15 @@ function buildControls() {
       box2.append(row);
     }
     if (mf.modes) box2.append(checkRow("Mode", spec.modes, mf.modes));
+    if (mf.lights) {
+      box2.append(checkRow("Light", ["day", "night"], mf.lights, cap,
+        (v) => (v === "day" ? "Passes with the sun up at the footprint" : `Passes in the dark at the footprint: thermal data only${m.key === "s3" ? " (SLSTR; OLCI images by day)" : ""}`)));
+    }
     if (mf.pols && mf.allPols.length) box2.append(...polRows(mf));
     const texts = document.createElement("div");
     texts.className = "filters";
     texts.append(textFilter(m.key, "track"), textFilter(m.key, "frame"));
+    if (spec.vza) texts.append(textFilter(m.key, "vza"));
     box2.append(texts, Object.assign(document.createElement("div"), { className: "err", id: `err-${m.key}` }));
     wrap.append(row, box2);
     return wrap;
@@ -2140,7 +2402,7 @@ function filterSummary(key) {
   const mf = state.mf[key], def = defaultsOf(key), spec = FILTERS[key];
   const parts = [];
   const name = {
-    platforms: (v) => v, dirs: cap, modes: (v) => v,
+    platforms: (v) => v, dirs: cap, modes: (v) => v, lights: cap,
     pols: (v) => { const e = polEntries(v)[0]; const p = POL_PILL[e.pol] || e.pol; return e.band ? `${e.band}-band ${p}` : p; },
   };
   SET_FIELDS.forEach(([, field]) => {
@@ -2148,7 +2410,7 @@ function filterSummary(key) {
     const init = initialOf(key, field);
     if (sameSet(mf[field], init)) return;
     const on = def[field].filter((v) => mf[field].has(v)), off = def[field].filter((v) => !mf[field].has(v));
-    if (!on.length) parts.push(`no ${field === "dirs" ? "direction" : field === "pols" ? "polarization" : field.replace(/s$/, "")}`);
+    if (!on.length) parts.push(`no ${field === "dirs" ? "direction" : field === "pols" ? "polarization" : field === "lights" ? "light" : field.replace(/s$/, "")}`);
     else if (off.length < on.length) parts.push(`no ${off.map(name[field]).join(", ")}`);
     else parts.push(on.map(name[field]).join("+"));
   });
@@ -2156,6 +2418,7 @@ function filterSummary(key) {
   const bad = (which) => f.errors.some((e) => e.startsWith(spec[which]));
   if (mf.trackText.trim()) parts.push(bad("track") ? `${MISSION[key].trackName}: invalid` : `${MISSION[key].trackName} ${mf.trackText.trim()}`);
   if (mf.frameText.trim()) parts.push(bad("frame") ? `${MISSION[key].frameName}: invalid` : `${MISSION[key].frameName} ${mf.frameText.trim()}`);
+  if (mf.vzaText.trim()) parts.push(f.errors.some((e) => e.startsWith(VZA_LABEL)) ? "view zenith: invalid" : `VZA ≤ ${mf.vzaText.trim()}°`);
   return parts;
 }
 function updateFilterSummaries() {
@@ -2227,7 +2490,7 @@ try {
 // shares it: #aoi=-121.735,46.786&m=s1,s2&to=2026-10-20&s1.dir=descending&tab=recent&bm=imagery.
 // Only what differs from the defaults is written. An AOI is a point
 // ("lon,lat"), a polygon ring ("lon,lat;lon,lat;…") or GeoJSON.
-const SET_FIELDS = [["plat", "platforms"], ["dir", "dirs"], ["mode", "modes"], ["pol", "pols"]];
+const SET_FIELDS = [["plat", "platforms"], ["dir", "dirs"], ["mode", "modes"], ["pol", "pols"], ["light", "lights"]];
 const r5 = (v) => Math.round(v * 1e5) / 1e5;
 // Every value a mission's set filter can take (null: no such filter).
 function defaultsOf(key) {
@@ -2235,11 +2498,13 @@ function defaultsOf(key) {
   return {
     platforms: [...state.allPlatforms].filter((p) => missionOf(p) === key),
     dirs: spec.dirs ? ["ascending", "descending"] : null,
-    modes: spec.modes || null, pols: state.mf[key].allPols,
+    modes: spec.modes || null, pols: state.mf[key].allPols, lights: spec.lights ? ["day", "night"] : null,
   };
 }
-// What a set filter starts with: everything, but Landsat's ascending (night) passes.
-const initialOf = (key, field) => (field === "dirs" ? defaultsOf(key).dirs.filter((d) => !dirsOff(key).includes(d)) : defaultsOf(key)[field]);
+// What a set filter starts with: everything, but Landsat's ascending (night)
+// passes and the wide-swath sensors' night passes.
+const initialOf = (key, field) => (field === "dirs" ? defaultsOf(key).dirs.filter((d) => !dirsOff(key).includes(d))
+  : field === "lights" ? ["day"] : defaultsOf(key)[field]);
 const sameSet = (set, list) => set.size === list.length && list.every((v) => set.has(v));
 // The default date range: today to a month out (within the schedule).
 const isoDay = (d) => d.toISOString().slice(0, 10);
@@ -2265,6 +2530,7 @@ function writeHash() {
     });
     if (mf.trackText.trim()) q.set(`${key}.track`, mf.trackText.trim());
     if (mf.frameText.trim()) q.set(`${key}.frame`, mf.frameText.trim());
+    if (mf.vzaText.trim()) q.set(`${key}.vza`, mf.vzaText.trim());
   });
   if (view.basemap !== DEFAULT_BASEMAP) q.set("bm", view.basemap);
   const hash = q.toString().replace(/%2C/g, ",").replace(/%3B/g, ";");
@@ -2292,6 +2558,7 @@ function readHash() {
     });
     if (q.has(`${key}.track`)) mf.trackText = q.get(`${key}.track`);
     if (q.has(`${key}.frame`)) mf.frameText = q.get(`${key}.frame`);
+    if (q.has(`${key}.vza`) && FILTERS[key].vza) mf.vzaText = q.get(`${key}.vza`);
   });
   // links from the short-lived day/night filter: day was descending, night ascending
   const light = q.get("landsat.light");
@@ -2502,6 +2769,8 @@ const planLoaded = (platform) => {
   return state.loadedSensors.has(MISSION[m].sensor);
 };
 function imagingAt(platform, t) {
+  // no plan: MODIS, VIIRS and SLSTR image on every orbit (OLCI by day)
+  if (WIDE_MISSION[platform]) return { mode: WIDE_MODE[WIDE_MISSION[platform]], label: WIDE_MISSION[platform] === "s3" ? "SLSTR, and OLCI in daylight" : "on every orbit" };
   if (!state.scheduleEnd || !planLoaded(platform)) return null;
   const list = imagingIndex().get(platform) || [];
   // the last interval starting at or before t (intervals do not nest)
@@ -2632,10 +2901,15 @@ async function landsatOnly(current) {
     if (input.checked !== want) await tour.click(input, `${want ? "Ticking" : "Unticking"} ${name}`);
   }
 }
+// The missions with plans (Sentinel-1/2, Landsat, NISAR); MODIS, VIIRS and
+// Sentinel-3 image every place daily and would fill the list.
+const TOUR_MISSIONS = ["s1", "s2", "landsat", "nisar"];
 async function tickAll(current) {
-  for (const input of document.querySelectorAll(".mission-row label.mission input")) {
+  for (const block of document.querySelectorAll(".mission-block")) {
     if (!current()) return;
-    if (!input.checked) await tour.click(input, `Ticking ${input.closest("label").textContent.trim()}`);
+    const input = block.querySelector(".mission-row label.mission input"), name = input.closest("label").textContent.trim();
+    const want = TOUR_MISSIONS.some((k) => MISSION[k].label === name);
+    if (input.checked !== want) await tour.click(input, `${want ? "Ticking" : "Unticking"} ${name}`);
   }
 }
 // Preview buttons tried in order until a scene shows all of Mt. Rainier
@@ -2723,7 +2997,7 @@ const tour = new Tour([
   },
   {
     title: "Analyse an area",
-    body: "<p>With <b>every mission</b> ticked, drop a <b>point</b> (or draw a box or polygon, or paste one). Here: <b>Paradise, Mt. Rainier</b>.</p>",
+    body: "<p>With <b>the planned missions</b> ticked, drop a <b>point</b> (or draw a box or polygon, or paste one). Here: <b>Paradise, Mt. Rainier</b>.</p>",
     marks: [{ target: ".aoi-head", label: "Your area of interest", side: "right" }],
     dirty: true,
     enter: async (current) => {
@@ -2751,7 +3025,7 @@ const tour = new Tour([
     busy: "Finding the passes…",
     enter: async (current) => {
       clearPreviews();
-      if ([...document.querySelectorAll(".mission-row label.mission input")].some((x) => !x.checked)) await tickAll(current);
+      if (TOUR_MISSIONS.some((k) => !state.missions.has(k))) await tickAll(current);
       if (!current()) return;
       if (!atParadise()) { view.closePopup(); setAOI({ type: "Point", coordinates: PARADISE }, { fly: true }); }
       showAOIPart();

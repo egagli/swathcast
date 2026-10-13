@@ -15,6 +15,8 @@ const PLATFORM = {
   "sentinel-1a": "S1A", "sentinel-1c": "S1C", "sentinel-1d": "S1D",
   "sentinel-2a": "S2A", "sentinel-2b": "S2B", "sentinel-2c": "S2C",
   "landsat-8": "L8", "landsat-9": "L9", "landsat_8": "L8", "landsat_9": "L9", nisar: "NISAR",
+  terra: "Terra", aqua: "Aqua", "suomi-npp": "SNPP", "noaa-20": "N20", "noaa-21": "N21",
+  "sentinel-3a": "S3A", "sentinel-3b": "S3B",
 };
 export const plat = (p) => PLATFORM[String(p || "").toLowerCase()] || null;
 
