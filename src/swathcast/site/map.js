@@ -23,8 +23,8 @@ import { MapView, BASEMAPS, DEFAULT_BASEMAP } from "./mlmap.js";
 import { HORIZON_D, TICKS_D, colorForDays, gradientCSS, scaleT } from "./colors.js";
 import { LiveSatellites } from "./sats.js";
 import { GlobeOverlay, PolarCaps } from "./overlay.js";
-import { fitUtmToData, resample, utmBox, utmEpsg } from "./drape.js";
-import { fetchBrowse, fetchHistory, landsatL1, medianRevisit, timelineSVG, usgsItem, widenToImage, HISTORY_DAYS } from "./history.js";
+import { clipToShape, fitUtmToData, resample, utmBox, utmEpsg } from "./drape.js";
+import { fetchBrowse, fetchHistory, granuleTimes, landsatL1, medianRevisit, timelineSVG, usgsItem, widenToImage, HISTORY_DAYS } from "./history.js";
 import { Tour, flash, handOver, markTourSeen, pendingStep, sleep, tourSeen, waitFor } from "./tour.js";
 import { ALTITUDE_KM, S3_OLCI_KM, WIDE_SWATH_KM, closestApproach, destination, position, scanHeadingAt, scanTime, sensorOf, viewZenith } from "./swathgeom.js";
 import { RECENT_DAYS, SOURCES as SEARCHABLE, NOT_SEARCHABLE, PORTAL, registerSource, searchSources, groupAcquisitions } from "./recent.js";
@@ -1357,14 +1357,26 @@ const QUEUE_OPACITY = 0.95;
 // px), its background (black or white) made transparent, its data's extent
 // found, then resampled onto a grid regular in Web Mercator (drape.js), so
 // MapLibre's four corners place it exactly. Returns {url, corners}.
+// Several images of one grid (g.urls: a pass's granules) are laid over each
+// other; with no data in any, g.fallback is used instead. g.clip (a lon/lat
+// Polygon or MultiPolygon) leaves only the image inside it.
 async function drapedImage(g) {
-  const r = await fetch(g.url, { mode: "cors" });
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
-  const bmp = await createImageBitmap(await r.blob());
+  const got = await Promise.allSettled((g.urls || [g.url]).map(async (url) => {
+    const r = await fetch(url, { mode: "cors" });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return createImageBitmap(await r.blob());
+  }));
+  const bmps = got.filter((x) => x.status === "fulfilled").map((x) => x.value);
+  if (!bmps.length) {
+    if (g.fallback) return drapedImage({ ...g, url: g.fallback, urls: null, fallback: null, fellBack: true });
+    throw got[0].reason;
+  }
+  const bmp = bmps[0];
   const scale = Math.min(1, 2048 / Math.max(bmp.width, bmp.height));
   const cv = Object.assign(document.createElement("canvas"), { width: Math.round(bmp.width * scale), height: Math.round(bmp.height * scale) });
   const ctx = cv.getContext("2d");
-  ctx.drawImage(bmp, 0, 0, cv.width, cv.height);
+  bmps.forEach((b) => ctx.drawImage(b, 0, 0, cv.width, cv.height));
+  if (g.clip && g.where) clipToShape(cv, g.where, g.clip);
   const d = ctx.getImageData(0, 0, cv.width, cv.height), px = d.data, key = g.key;
   // the pixels left opaque: the image's data, and its extent in pixels
   let x0 = cv.width, y0 = cv.height, x1 = -1, y1 = -1;
@@ -1375,6 +1387,7 @@ async function drapedImage(g) {
     if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
   }
   ctx.putImageData(d, 0, 0);
+  if (x1 < 0 && g.fallback) return drapedImage({ ...g, url: g.fallback, urls: null, fallback: null, fellBack: true });
   let where = g.where;
   // no published grid (OPERA's burst browse): fitted to the footprint
   if (!where && g.fit && x1 >= 0) {
@@ -1388,9 +1401,9 @@ async function drapedImage(g) {
     const c = widenToImage(bboxCorners(where.bbox), [x0, y0, x1, y1], cv.width, cv.height);
     where = { kind: "latlon", bbox: [c[0][0], c[2][1], c[1][0], c[0][1]] };
   }
-  if (!where) return { url: cv.toDataURL("image/png"), corners: g.corners, canvas: null };
+  if (!where) return { url: cv.toDataURL("image/png"), corners: g.corners, canvas: null, fellBack: Boolean(g.fellBack) };
   const out = resample(cv, where);
-  return { url: out.canvas.toDataURL("image/png"), corners: out.corners, canvas: out.canvas };
+  return { url: out.canvas.toDataURL("image/png"), corners: out.corners, canvas: out.canvas, fellBack: Boolean(g.fellBack) };
 }
 const bboxCorners = ([w, s, e, n]) => [[w, n], [e, n], [e, s], [w, s]];
 
@@ -1419,6 +1432,10 @@ async function togglePreview(btn) {
     if (!queue.includes(q)) return;
     q.corners = img.corners;
     q.canvas = img.canvas; // Web Mercator, north up (previewCovers)
+    if (img.fellBack && b.georef.fallbackSource) { // this pass's granules are not in Worldview yet
+      q.b = { ...b, source: b.georef.fallbackSource };
+      q.note = "Worldview does not have this pass's own granules yet (they follow it by a few hours)";
+    }
     map.addSource(q.id, { type: "image", url: img.url, coordinates: img.corners });
     map.addLayer({ id: q.id, type: "raster", source: q.id, paint: { "raster-opacity": q.opacity, "raster-fade-duration": 0 } }, map.getLayer("highlight-fill") ? "highlight-fill" : undefined);
     q.status = "ok";
@@ -1437,7 +1454,7 @@ async function switchBand(q, i) {
   q.band = i;
   renderQueue();
   try {
-    const img = await drapedImage({ ...q.b.georef, url: band.url });
+    const img = await drapedImage({ ...q.b.georef, url: band.url, urls: null });
     if (!queue.includes(q) || q.band !== i) return;
     const src = map.getSource(q.id);
     if (src) src.updateImage({ url: img.url, coordinates: img.corners });
@@ -1816,10 +1833,21 @@ function recentBrowse(a) {
     const x = ["asf_nisar_rslc", "asf_nisar_gcov"].map(of).find((y) => y && y.browseUrls && y.browseUrls.length);
     return x ? { kind: "nisar", urls: x.browseUrls, bbox: isArea(x.geometry) ? turf.bbox(x.geometry) : null } : null;
   }
-  // MODIS/VIIRS by day: NASA Worldview's (GIBS) true colour of that platform and day, around the AOI
+  // MODIS/VIIRS by day: NASA Worldview's (GIBS) true colour of that platform
+  // (its granules of this pass where it has them, else the day's mosaic),
+  // around the AOI, within this pass's granules
   if ((a.mission === "modis" || a.mission === "viirs") && a.platform && a.light !== "night") {
     const [lon, lat] = aoiCenter();
-    return { kind: "gibs", platform: a.platform, date: a.shown.toISOString().slice(0, 10), bbox: gibsBox(lon, lat) };
+    const grans = (a.products || []).filter((x) => FOOTPRINT_SOURCES[a.mission].includes(x.source) && isArea(x.geometry));
+    const polys = grans.flatMap((x) => (x.geometry.type === "Polygon" ? [x.geometry.coordinates] : x.geometry.coordinates));
+    // a footprint across the antimeridian is not clipped (its lon/lat ring is split)
+    const clip = polys.length && polys.every(([r]) => Math.max(...r.map((q) => q[0])) - Math.min(...r.map((q) => q[0])) < 180)
+      ? { type: "MultiPolygon", coordinates: polys } : null;
+    const starts = grans.map((x) => x.when).filter(Boolean);
+    return {
+      kind: "gibs", platform: a.platform, date: a.shown.toISOString().slice(0, 10), bbox: gibsBox(lon, lat), clip,
+      granules: a.mission === "viirs" && starts.length ? granuleTimes(starts) : null,
+    };
   }
   return null;
 }
