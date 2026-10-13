@@ -1187,7 +1187,7 @@ function recentCard(a) {
   const pol = a.mission === "nisar" ? nisarModeText(a.plan && a.plan.mode, a.pol).replace(/<[^>]+>/g, " ") : a.pol ? polText(a.pol) : "";
   const night = a.light === "night" ? " Night at the AOI: thermal data only." : "";
   card.innerHTML = `<div class="headline">${passLabel(a)}</div>`
-    + `<div class="nm">${pol ? `${pol}. ` : ""}${a.products.length ? `Found in ${new Set(a.products.map((x) => x.source)).size} catalogue(s).` : "Not in any catalogue yet: from the acquisition plan."}${night}</div>`;
+    + `<div class="nm">${pol ? `${pol}. ` : ""}${a.products.length ? `Found in ${new Set(a.products.map((x) => x.source)).size} catalogue(s).` : isWide(a.mission) ? "Not in any catalogue yet: predicted from the orbit." : "Not in any catalogue yet: from the acquisition plan."}${night}</div>`;
   const ul = document.createElement("ul");
   ul.className = "lat-list avail";
   const today = new Date();
@@ -1581,7 +1581,8 @@ function nextLine(c, h) {
   const parts = [t ? `Next <b>${rel(t.when, now)}</b>` : `<b>Nothing planned</b>${c.times.length ? " that matches your filters" : ""}`];
   if (h && h.items && h.items.length) {
     const rev = medianRevisit(h.items);
-    if (rev) parts.push(`typically every ${rev < 1.5 ? rev.toFixed(1) : Math.round(rev)} d`);
+    // (MODIS, VIIRS: passes hours apart)
+    if (rev) parts.push(`typically every ${rev < 1 ? `${(rev * 24).toFixed(1)} h` : rev < 1.5 ? `${rev.toFixed(1)} d` : `${Math.round(rev)} d`}`);
     parts.push(`last imaged ${rel(h.items[0].when, now)}`);
   } else if (h && h.items && !h.items.length) {
     parts.push(`not imaged in the last ${HISTORY_DAYS} days`);

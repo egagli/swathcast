@@ -3,8 +3,10 @@
 **Upcoming satellite acquisitions and time until data delivery.**
 
 swathcast shows when Sentinel-1, Sentinel-2, Landsat 8/9 and NISAR will next image a place, read
-from the agencies' own acquisition plans, and how long each data source takes to deliver the
-products, measured every hour. It is built for planning near-real-time monitoring (wet snow and
+from the agencies' own acquisition plans, and when MODIS (Terra, Aqua), VIIRS (Suomi NPP, NOAA-20,
+NOAA-21) and Sentinel-3 (OLCI, SLSTR) will, predicted from their orbits (they image on every orbit
+and have no plans), and how long each data source takes to deliver the products, measured every
+hour. It is built for planning near-real-time monitoring (wet snow and
 snowmelt, for example), field campaigns, and coordination between missions.
 
 **Live site: <https://egagli.github.io/maps/swathcast.html>**
@@ -17,22 +19,30 @@ snowmelt, for example), field campaigns, and coordination between missions.
 
 - **See every mission's native footprints**, each coloured by how long until it is next imaged:
   Sentinel-1 IW bursts (ESA/OPERA burst IDs, e.g. `T137-292398-IW2`, timed to the second) and EW/SM
-  swaths, Sentinel-2 MGRS tiles, Landsat 8/9 WRS-2 scenes and NISAR frames.
+  swaths, Sentinel-2 MGRS tiles, Landsat 8/9 WRS-2 scenes and NISAR frames; MODIS, VIIRS and
+  Sentinel-3 on the MODIS sinusoidal tiles (the grid of the MODIS/VIIRS land and snow products).
 - **Filter per mission**: platform, direction (labelled with each mission's local solar time, e.g.
   Sentinel-1 ascending ~6 PM, descending ~6 AM), Sentinel-1 mode, track/path, burst/tile/row/frame,
   and for the SAR missions the real polarization channels (e.g. VV+VH, or HH+HV+VH+VV; for NISAR per
   radar, L-band and S-band). Dates are shared across missions. Landsat's ascending (night, thermal
-  only) passes are off by default.
+  only) passes are off by default. MODIS, VIIRS and Sentinel-3 filter by **light** (day or night at
+  the place; night off by default), MODIS and VIIRS also by **maximum view zenith angle** (their
+  pixels grow 2–5× towards the swath edges), Sentinel-3 by relative orbit and frame.
 - **Draw or paste an area of interest** (GeoJSON, WKT or `west,south,east,north`; one crossing 180°
   is split there) to get one list from now outwards: its planned passes, soonest first, then its
   acquisitions of the last 90 days (Sentinel-1 IW, EW and stripmap), newest first. A pass already
   imaged but not yet in any catalogue stays listed until it is delivered. A timeline along the bottom
   of the map shows the same, one lane per satellite; selecting a pass in either highlights it in both.
+  MODIS, VIIRS and Sentinel-3 passes are timed at the AOI itself, kept only if their swath reaches
+  it, and listed with the view zenith angle there (and for Sentinel-3 the products' frame and which
+  instruments see the AOI: SLSTR, and OLCI in daylight within its narrower strip); a selected pass
+  highlights the strip it images around the AOI.
 - **Open any footprint's timeline**: its acquisitions of the last 90 days, read live from the
   catalogues (real products only), each linked to the product, and its planned ones. NISAR frames
   and Landsat scenes are outlined as their latest real products were, not as planned.
 - **Preview a product on the map**: its browse image is draped over the footprint and can be
-  reordered, faded and removed (Sentinel-1 in colour or one channel, VV or VH).
+  reordered, faded and removed (Sentinel-1 in colour or one channel, VV or VH; MODIS and VIIRS: the
+  day's true colour from [NASA Worldview](https://worldview.earthdata.nasa.gov/)).
 - **Watch the satellites**: a globe (or flat map) shows where each selected satellite is now, at its
   altitude, with its orbit and the strip of ground its instrument sees (side-looking for the radars),
   filled while the plan has it imaging. Zoomed out, Sentinel-1/2 show their planned datatake swaths,
@@ -48,7 +58,9 @@ snowmelt, for example), field campaigns, and coordination between missions.
 ### Delivery: when a product will be downloadable
 
 - **For each pass over an AOI**, see when it is likely to be downloadable from each source (for
-  Sentinel-1: ESA CDSE, ASF, Microsoft Planetary Computer and OPERA RTC-S1/CSLC-S1), from delivery
+  Sentinel-1: ESA CDSE, ASF, Microsoft Planetary Computer and OPERA RTC-S1/CSLC-S1; for MODIS and
+  VIIRS: NASA LANCE near-real-time, LAADS and NSIDC; for Sentinel-3: CDSE near-real-time and
+  non-time-critical, EUMETSAT and Planetary Computer), from delivery
   latency **measured by this repository's own hourly poller**, never estimated from documentation.
 - **For each recent acquisition**, every source's catalogue is searched live from the browser, with
   links to the products already up and expected times for the rest. USGS's Landsat STAC does not
@@ -56,8 +68,10 @@ snowmelt, for example), field campaigns, and coordination between missions.
   map to read; ISRO's Bhoonidhi needs a login, so for NISAR S-band only the expected time is shown.
 - **The [dashboard](https://egagli.github.io/swathcast/dashboard.html)** shows the measured
   distributions for Sentinel-1, Sentinel-2 (CDSE, Earth Search, Planetary Computer, HLS S30),
-  Landsat 8/9 (USGS, Earth Search, Planetary Computer, HLS L30) and NISAR (ASF L0B, RSLC and GCOV
-  for L-band; ISRO Bhoonidhi RSLC and GCOV for S-band).
+  Landsat 8/9 (USGS, Earth Search, Planetary Computer, HLS L30), NISAR (ASF L0B, RSLC and GCOV
+  for L-band; ISRO Bhoonidhi RSLC and GCOV for S-band), MODIS and VIIRS (Level-1B at LANCE and LAADS,
+  snow cover at LANCE and NSIDC) and Sentinel-3 (OLCI EFR and SLSTR RBT at CDSE and EUMETSAT, OLCI LFR
+  and SLSTR LST at CDSE and Planetary Computer).
 
 
 ## Footprints and timing
@@ -69,6 +83,8 @@ snowmelt, for example), field campaigns, and coordination between missions.
 | Sentinel-2 | ESA's MGRS tiling grid (56,686 tiles) | when the satellite's orbit (CelesTrak elements, SGP4) passes the tile during a planned datatake: median 0.4 s, max 8.6 s from real sensing times (see [methodology](docs/methodology.md#sentinel-2-tile-timing)) |
 | Landsat 8/9 | WRS-2 scenes on USGS's acquisition calendar (paths *and rows* per day) | the pass nearest the scene centre on that date (SGP4): median 0.3 s, p99 6 s from 4,707 USGS scene times ([methodology](docs/methodology.md#landsat-and-nisar-timing)) |
 | NISAR | track/frame from NASA's observation plan, with polarization | the pass with the frame ~567 km to its left on that date (SGP4): median 0.65 s, p95 14 s from 2,804 RSLC granules |
+| MODIS, VIIRS | MODIS sinusoidal tiles (460); no plan: every pass whose swath (measured: ±1,171–1,548 km) covers the tile centre | closest approach to the tile centre (SGP4), then at the AOI itself: 1,491 of 1,512 predicted tile passes were real LANCE granules (14 of the 21 misses during LANCE outages), and the browser's timing matches the schedule's to under 1 s ([methodology](docs/methodology.md#modis-viirs-and-sentinel-3-timing)) |
+| Sentinel-3 | the same tiles; each pass labelled with its products' frame (relative orbit, seconds after the node) | as MODIS; frames from the orbit: 1,438 of 1,450 CDSE products matched, full frames within 0.12 s |
 
 The plans themselves have datatakes up to 54°/116° of latitude long (S1/S2), per-day paths (Landsat)
 and per-date frames (NISAR); this site resolves them to the footprints above. Times are shown in UTC and in the civil time zone at the
@@ -90,9 +106,12 @@ AOI or footprint ([tz-lookup](https://github.com/photostructure/tz-lookup)).
   area the source serves.
 - OPERA products are per burst: the headline is the *first* burst of an acquisition; the dashboard
   also shows the *last* burst.
+- For MODIS and VIIRS the universe is NASA LANCE's near-real-time Level-1B stream (by CMR insert);
+  for Sentinel-3, CDSE's near-real-time OLCI/SLSTR Level-1 frames. Their Level-2 snow, land (LFR) and
+  temperature (LST) products are made for daytime or land granules only and count on learned coverage.
 - Expected availability for a pass = the time your AOI is imaged (for Sentinel-1 IW, the first burst
-  over the AOI; otherwise the pass start) + the source's latency quantile over the last 30 days. It is
-  a planning aid, not a guarantee.
+  over the AOI; for MODIS, VIIRS and Sentinel-3 the pass timed at the AOI; otherwise the pass start) +
+  the source's latency quantile over the last 30 days. It is a planning aid, not a guarantee.
 
 ## Documentation
 

@@ -4,7 +4,7 @@
 
 | Workflow | When | What |
 |---|---|---|
-| [`schedule.yml`](../.github/workflows/schedule.yml) | daily | plans for the next 30 days, as far as each is published (ESA, USGS, NASA), footprint grids and orbit timing → `data` branch |
+| [`schedule.yml`](../.github/workflows/schedule.yml) | daily | plans for the next 30 days, as far as each is published (ESA, USGS, NASA), orbit-predicted MODIS/VIIRS/Sentinel-3 passes, footprint grids and orbit timing → `data` branch |
 | [`poll.yml`](../.github/workflows/poll.yml) | hourly | latency poller → `data` branch; fails if every source failed or one has failed > 24 h |
 | [`pages.yml`](../.github/workflows/pages.yml) | after each poll/schedule, and on code changes | summarise, check the data contract, deploy Pages |
 | [`watchdog.yml`](../.github/workflows/watchdog.yml) | weekly | opens/updates a `stale-data` issue if data is stale or a source is failing; closes it on recovery |
@@ -30,6 +30,7 @@ src/swathcast/
   schedule.py      assembles the schedule and the footprint grids (+ documented fixes)
   ephemeris.py     SGP4 sub-satellite points and closest-approach timing
   s2grid.py        ESA's Sentinel-2 tiling grid and per-tile times
+  wideswath.py     MODIS/VIIRS/Sentinel-3: no plans; passes on the sinusoidal tiles from the orbit
   orbit.py         Sentinel-1 ANX lattice fitted from CDSE products (burst timing)
   sources/         one module per source behind lookup(ids) / list_new(window)
   tracker.py       hourly state update, censoring, timeouts, health
@@ -51,6 +52,11 @@ docs/              data-sources.md, methodology.md, sources.md, development.md, 
 | `pc_rtc` | Microsoft Planetary Computer | `sentinel-1-rtc` | none exists (`s1:processing_datetime` is ESA's processing time) |
 | `opera_rtc` | OPERA at ASF DAAC (CMR) | `OPERA_L2_RTC-S1_V1`, per burst → parent SLC | min `ProviderDates[Insert]` over bursts |
 | `opera_cslc` | OPERA at ASF DAAC (CMR) | `OPERA_L2_CSLC-S1_V1`, per burst → parent SLC | min `ProviderDates[Insert]` over bursts |
+
+Other missions have their own tracker (`missions.py`): Sentinel-2 (`sources/s2.py`), Landsat
+(`sources/landsat.py`), NISAR (`sources/nisar.py`, `sources/bhoonidhi.py`), MODIS and VIIRS
+(`sources/modis.py`: LANCE, LAADS, NSIDC via CMR) and Sentinel-3 (`sources/s3.py`: CDSE, EUMETSAT,
+Planetary Computer).
 
 **Google Earth Engine is not included**: there is no service account configured, and no asset
 property has been confirmed to record ingest time. OPERA DSWx-S1 and DIST-S1 are possible later
