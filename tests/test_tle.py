@@ -79,7 +79,7 @@ def test_recent_complete_file_is_not_refetched(tmp_path):
     recent = {
         "generated_at": (NOW - timedelta(hours=2)).isoformat(),
         "failed": [],
-        "satellites": {},
+        "satellites": {p: {"norad": n} for p, n in tle.NORAD.items()},
     }
     path.write_text(json.dumps(recent))
     session = FakeSession()
@@ -87,6 +87,22 @@ def test_recent_complete_file_is_not_refetched(tmp_path):
     assert session.calls == 0
     tle.update(path, session=session, now=NOW + timedelta(hours=5), max_age_h=6)
     assert session.calls > 0  # 7 h old now
+
+
+def test_recent_file_missing_a_new_platform_is_refetched(tmp_path):
+    """A platform added to NORAD (MODIS's Terra, say) must not wait out the
+    file's max age: the map draws only satellites in tle.json."""
+    path = tmp_path / "tle.json"
+    sats = {p: {"norad": n} for p, n in tle.NORAD.items() if p != "Terra"}
+    recent = {
+        "generated_at": (NOW - timedelta(hours=1)).isoformat(),
+        "failed": [],
+        "satellites": sats,
+    }
+    path.write_text(json.dumps(recent))
+    session = FakeSession()
+    tle.update(path, session=session, now=NOW, max_age_h=6)
+    assert session.calls > 0
 
 
 def test_norad_ids_cover_every_schedule_platform():
