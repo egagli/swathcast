@@ -247,6 +247,10 @@ with `curl` and the package's own source classes. The recorded responses are in 
 - **NASA Worldview GIBS** (2026-10-13): WMS 1.1.1 `GetMap` in EPSG:4326 for
   `MODIS_Terra|Aqua_CorrectedReflectance_TrueColor` and `VIIRS_SNPP|NOAA20|NOAA21_CorrectedReflectance_TrueColor`
   with `TIME=<date>` returns the day's mosaic as PNG/JPEG with `access-control-allow-origin: *`.
+  `VIIRS_SNPP|NOAA20_CorrectedReflectance_TrueColor_Granule` (none for Terra, Aqua or NOAA-21) has one
+  image per 6-minute granule (`TIME=<granule start>`, a PT6M grid, the last ~90 days, a few hours
+  behind the pass), transparent outside the granule: a VIIRS granule's image matched its CMR
+  footprint.
 
 ## Acquisition plans (for the map, not latency sources)
 

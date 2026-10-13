@@ -222,3 +222,38 @@ console.log(JSON.stringify(out));
         assert max(r["dt"]) < 8, (
             r
         )  # s: a corner is imaged at the granule's start or end
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")
+def test_worldview_preview_of_one_pass_within_its_tile(tmp_path):
+    """A VIIRS pass's preview: Worldview's granules of that pass (6-minute
+    steps, one more either side), the day's mosaic as the fallback, clipped
+    to the tile; MODIS (no granule layer): the day's mosaic, clipped."""
+    out = run_node(
+        tmp_path,
+        """
+out.times = h.granuleTimes(["2026-10-13T18:36:00Z", "2026-10-13T18:42:10Z", "2026-10-13T18:36:00Z"]);
+const clip = {type: "Polygon", coordinates: [[[-100, 30], [-90, 30], [-92, 40], [-102, 40], [-100, 30]]]};
+const box = [-102, 30, -90, 40];
+const v = await h.fetchBrowse({kind: "gibs", platform: "N20", date: "2026-10-13", bbox: box, clip, granules: out.times});
+out.v = {n: v.georef.urls.length, layer: new URL(v.georef.urls[0]).searchParams.get("LAYERS"),
+         time: new URL(v.georef.urls[1]).searchParams.get("TIME"), fallback: new URL(v.georef.fallback).searchParams.get("LAYERS"),
+         clip: v.georef.clip === clip, source: v.source};
+const m = await h.fetchBrowse({kind: "gibs", platform: "Terra", date: "2026-10-13", bbox: box, clip});
+out.m = {urls: m.georef.urls, fallback: m.georef.fallback, layer: new URL(m.georef.url).searchParams.get("LAYERS"), clip: Boolean(m.georef.clip)};
+""",
+    )
+    assert out["times"] == [
+        "2026-10-13T18:30:00Z",
+        "2026-10-13T18:36:00Z",
+        "2026-10-13T18:42:00Z",
+        "2026-10-13T18:48:00Z",
+    ]
+    v = out["v"]
+    assert v["n"] == 4 and v["layer"].endswith("_Granule")
+    assert v["time"] == "2026-10-13T18:36:00Z"
+    assert v["fallback"] == "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
+    assert v["clip"] and "this pass's granules (18:30-18:48 UTC)" in v["source"]
+    m = out["m"]
+    assert m["urls"] is None and m["fallback"] is None and m["clip"]
+    assert m["layer"] == "MODIS_Terra_CorrectedReflectance_TrueColor"

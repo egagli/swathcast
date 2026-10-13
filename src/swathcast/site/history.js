@@ -233,7 +233,7 @@ async function wideTile(c, since) {
     return {
       when, platform, id: name, nrt, level: nrt ? "NRT" : null, light: flag === "Night" ? "night" : flag === "Day" ? "day" : null,
       links: [{ href: earthdata(nrt ? WIDE_NRT[platform] : WIDE_L1B[platform] || "", name), text: "Earthdata Search", title: name }],
-      browse: flag !== "Night" && platform ? { kind: "gibs", platform, date: when.toISOString().slice(0, 10), bbox: c.bbox } : null,
+      browse: flag !== "Night" && platform ? { kind: "gibs", platform, date: when.toISOString().slice(0, 10), bbox: c.bbox, clip: c.geojson } : null,
     };
   }).sort((a, b) => a.when - b.when || a.nrt - b.nrt); // a granule's standard product before its NRT copy
   // one pass: granules of one platform less than 15 min apart
@@ -242,11 +242,18 @@ async function wideTile(c, since) {
     const prev = items.find((y) => y.platform === x.platform && x.when - y.last <= 15 * 60e3);
     if (prev) {
       prev.last = Math.max(prev.last, x.when);
+      prev.starts.push(x.when);
       if (x.light === "day") prev.light = "day";
       if (!x.nrt) prev.level = null; // the standard product is there too
-    } else items.push({ ...x, last: x.when });
+      if (!prev.browse && x.browse) prev.browse = x.browse;
+    } else items.push({ ...x, last: x.when, starts: [x.when] });
   });
-  return { source: `NASA CMR, LAADS Level-1B granules over the tile centre (${plats.join(", ")}), and LANCE's near-real-time ones of the last 7 days`, items: items.map(({ last, nrt, ...x }) => x),
+  // the pass's own granules where Worldview has them (and those either side:
+  // only the ones over the tile centre are listed)
+  items.forEach((x) => {
+    if (x.browse && GIBS_GRANULE[x.platform]) x.browse = { ...x.browse, granules: granuleTimes(x.starts) };
+  });
+  return { source: `NASA CMR, LAADS Level-1B granules over the tile centre (${plats.join(", ")}), and LANCE's near-real-time ones of the last 7 days`, items: items.map(({ last, nrt, starts, ...x }) => x),
     note: "Times are each pass's first granule over the tile centre (granules are 5-6 min long)." };
 }
 
@@ -417,6 +424,20 @@ const GIBS_LAYER = {
   Terra: "MODIS_Terra_CorrectedReflectance_TrueColor", Aqua: "MODIS_Aqua_CorrectedReflectance_TrueColor",
   SNPP: "VIIRS_SNPP_CorrectedReflectance_TrueColor", N20: "VIIRS_NOAA20_CorrectedReflectance_TrueColor", N21: "VIIRS_NOAA21_CorrectedReflectance_TrueColor",
 };
+// and one granule (6 minutes) at a time, for the platforms it has them for
+// (the last ~90 days, a few hours behind)
+const GIBS_GRANULE = {
+  SNPP: "VIIRS_SNPP_CorrectedReflectance_TrueColor_Granule", N20: "VIIRS_NOAA20_CorrectedReflectance_TrueColor_Granule",
+};
+const GRANULE_MS = 6 * 60e3;
+// The 6-minute granule starts (ISO, as Worldview names them) of a pass's
+// granules, with one more either side.
+export function granuleTimes(starts) {
+  const ts = starts.map((t) => Math.floor(new Date(t).getTime() / GRANULE_MS) * GRANULE_MS);
+  const lo = Math.min(...ts) - GRANULE_MS, hi = Math.max(...ts) + GRANULE_MS, out = [];
+  for (let t = lo; t <= hi; t += GRANULE_MS) out.push(new Date(t).toISOString().replace(".000Z", "Z"));
+  return out;
+}
 export function gibsURL(layer, date, [w, s, e, n], size = 1024) {
   const h = Math.max(64, Math.round((size * (n - s)) / Math.max(1e-6, e - w)));
   const q = new URLSearchParams({ SERVICE: "WMS", REQUEST: "GetMap", VERSION: "1.1.1", LAYERS: layer, SRS: "EPSG:4326", STYLES: "", BBOX: [w, s, e, n].join(","), WIDTH: String(size), HEIGHT: String(Math.min(2048, h)), FORMAT: "image/png", TRANSPARENT: "TRUE", TIME: date });
@@ -424,17 +445,25 @@ export function gibsURL(layer, date, [w, s, e, n], size = 1024) {
 }
 
 const BROWSE = {
-  // MODIS/VIIRS: the day's mosaic of that platform from NASA Worldview (all
-  // its passes that day, not this pass alone), placed exactly (lat/lon box)
+  // MODIS/VIIRS from NASA Worldview, placed exactly (lat/lon box): with
+  // b.granules (the pass's granule starts; SNPP and NOAA-20), that pass
+  // alone, else the platform's day mosaic (all its passes that day); shown
+  // only within b.clip (the tile, or the pass's granule footprints)
   async gibs(b) {
     const layer = GIBS_LAYER[b.platform];
     if (!layer || !b.bbox) return { note: "No Worldview layer for this platform." };
     const [w, s, e, n] = b.bbox;
+    const mosaic = gibsURL(layer, b.date, b.bbox, 1024), granule = b.granules && b.granules.length ? GIBS_GRANULE[b.platform] : null;
+    const day = `NASA Worldview (GIBS) ${layer.replace(/_/g, " ")}, ${b.date}: the day's mosaic of this platform's passes`;
     return {
-      thumb: gibsURL(layer, b.date, b.bbox, 256), full: gibsURL(layer, b.date, b.bbox, 1024),
-      source: `NASA Worldview (GIBS) ${layer.replace(/_/g, " ")}, ${b.date}: the day's mosaic of this platform's passes`,
-      links: [{ href: `https://worldview.earthdata.nasa.gov/?v=${w},${s},${e},${n}&l=${layer}&t=${b.date}`, text: "Worldview" }],
-      georef: { url: gibsURL(layer, b.date, b.bbox, 1024), corners: bboxCorners(b.bbox), where: { kind: "latlon", bbox: b.bbox }, key: "black" },
+      thumb: gibsURL(layer, b.date, b.bbox, 256), full: mosaic,
+      source: granule ? `NASA Worldview (GIBS) ${granule.replace(/_/g, " ")}: this pass's granules (${b.granules[0].slice(11, 16)}-${b.granules.at(-1).slice(11, 16)} UTC)` : day,
+      links: [{ href: `https://worldview.earthdata.nasa.gov/?v=${w},${s},${e},${n}&l=${granule || layer}&t=${granule ? b.granules[1] || b.granules[0] : b.date}`, text: "Worldview" }],
+      georef: {
+        url: granule ? gibsURL(granule, b.granules[0], b.bbox, 1024) : mosaic, urls: granule ? b.granules.map((t) => gibsURL(granule, t, b.bbox, 1024)) : null,
+        fallback: granule ? mosaic : null, fallbackSource: granule ? day : null,
+        corners: bboxCorners(b.bbox), where: { kind: "latlon", bbox: b.bbox }, key: "black", clip: b.clip || null,
+      },
     };
   },
   // Planetary Computer's RTC preview (terrain-corrected, UTM), else its GRD

@@ -77,6 +77,27 @@ export function mercatorGrid(where, width, height, outW, outH) {
   return { bbox, toSource };
 }
 
+// Makes an image (a canvas on the grid `where`) transparent outside a lon/lat
+// Polygon or MultiPolygon (the union of its outer rings).
+export function clipToShape(cv, where, shape) {
+  const toPx = lonLatToPixel(where, cv.width, cv.height);
+  const polys = shape.type === "Polygon" ? [shape.coordinates] : shape.type === "MultiPolygon" ? shape.coordinates : [];
+  const mask = Object.assign(document.createElement("canvas"), { width: cv.width, height: cv.height });
+  const m = mask.getContext("2d");
+  m.fillStyle = "#000";
+  polys.forEach(([ring]) => {
+    if (!ring || ring.length < 4) return;
+    m.beginPath();
+    ring.forEach(([lon, lat], i) => { const [u, v] = toPx(lon, lat); if (i) m.lineTo(u, v); else m.moveTo(u, v); });
+    m.closePath();
+    m.fill();
+  });
+  const ctx = cv.getContext("2d");
+  ctx.globalCompositeOperation = "destination-in";
+  ctx.drawImage(mask, 0, 0);
+  ctx.globalCompositeOperation = "source-over";
+}
+
 // Resamples a canvas (the keyed browse image) onto the Mercator grid:
 // returns {canvas, corners}. The source position is computed exactly every
 // STEP pixels and interpolated between (well under a pixel here).

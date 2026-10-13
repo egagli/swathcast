@@ -671,3 +671,26 @@ def test_wide_swath_missions_over_an_aoi(browser, server):
     assert "modis.vza=30" in js(page, "location.hash")
     assert page.errors == []
     page.close()
+
+
+def test_a_preview_is_clipped_to_its_shape(browser, server):
+    """A browse image on a lat/lon grid made transparent outside a shape (a
+    MODIS tile is a slanted quadrilateral in lat/lon: its box is far wider)."""
+    page = open_page(browser, server)
+    alpha = js(
+        page,
+        """(async () => {
+          const d = await import('./drape.js');
+          const cv = Object.assign(document.createElement('canvas'), {width: 100, height: 100});
+          const ctx = cv.getContext('2d'); ctx.fillStyle = '#f00'; ctx.fillRect(0, 0, 100, 100);
+          // the box [0, 0, 10, 10]; the shape: its lower-left triangle
+          d.clipToShape(cv, {kind: 'latlon', bbox: [0, 0, 10, 10]},
+            {type: 'MultiPolygon', coordinates: [[[[0, 0], [10, 0], [0, 10], [0, 0]]]]});
+          const a = (x, y) => ctx.getImageData(x, y, 1, 1).data[3];
+          return [a(10, 90), a(90, 10), a(30, 60), a(60, 30)];
+        })()""",
+    )
+    assert alpha[0] == 255 and alpha[1] == 0  # inside, outside
+    assert alpha[2] == 255 and alpha[3] == 0  # either side of the diagonal
+    assert page.errors == []
+    page.close()
