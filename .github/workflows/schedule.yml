@@ -36,7 +36,7 @@ jobs:
         run: |
           mkdir -p data/schedule
           cp "$RUNNER_TEMP/upcoming_passes.parquet" "$RUNNER_TEMP/upcoming_passes.meta.json" data/schedule/
-          for f in wrs2_grid.parquet landsat_scenes.parquet s2_grid.parquet s2_tile_passes.parquet; do
+          for f in wrs2_grid.parquet landsat_scenes.parquet s2_grid.parquet s2_tile_passes.parquet sin_grid.parquet modis_tile_passes.parquet viirs_tile_passes.parquet s3_frames.parquet s3_frame_passes.parquet; do
             if [ -f "$RUNNER_TEMP/$f" ]; then cp "$RUNNER_TEMP/$f" data/schedule/; fi
           done
           cat data/schedule/upcoming_passes.meta.json

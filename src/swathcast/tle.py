@@ -6,7 +6,8 @@ catalogue number. The browser propagates them with SGP4 (satellite.js
 fetch fails keeps its previous elements, so one CelesTrak hiccup does not
 blank the map.
 
-NORAD numbers checked against CelesTrak's own records on 2026-09-29.
+NORAD numbers checked against CelesTrak's own records on 2026-09-29 (MODIS,
+VIIRS and Sentinel-3 platforms on 2026-10-13).
 """
 
 from __future__ import annotations
@@ -31,6 +32,13 @@ NORAD = {
     "L8": 39084,
     "L9": 49260,
     "NISAR": 65053,
+    "Terra": 25994,
+    "Aqua": 27424,
+    "SNPP": 37849,
+    "N20": 43013,
+    "N21": 54234,
+    "S3A": 41335,
+    "S3B": 43437,
 }
 #: OMM fields SGP4 needs (json2satrec)
 OMM_FIELDS = (

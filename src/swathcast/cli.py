@@ -119,7 +119,7 @@ def main(argv: list[str] | None = None) -> int:
         "--sensors",
         nargs="+",
         default=None,
-        help="default: sentinel-1 sentinel-2 landsat nisar",
+        help="default: sentinel-1 sentinel-2 landsat nisar modis viirs sentinel-3",
     )
     p.set_defaults(func=_cmd_schedule)
 
@@ -132,7 +132,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     p.add_argument(
         "--missions",
-        default="s2,landsat,nisar,nisar_s",
+        default="s2,landsat,nisar,nisar_s,modis,viirs,s3",
         help="other missions to poll after Sentinel-1 (comma-separated; '' for none)",
     )
     p.set_defaults(func=_cmd_poll)

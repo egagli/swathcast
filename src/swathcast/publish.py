@@ -304,6 +304,12 @@ GRID_FILES = (
     "landsat_scenes.parquet",
     "s2_grid.parquet",
     "s2_tile_passes.parquet",
+    # wide-swath sensors without a plan, predicted from the orbit (wideswath.py)
+    "sin_grid.parquet",
+    "modis_tile_passes.parquet",
+    "viirs_tile_passes.parquet",
+    "s3_frames.parquet",
+    "s3_frame_passes.parquet",
 )
 
 
@@ -441,6 +447,7 @@ def check_site(site_dir: Path) -> list[str]:
     problems += _check_s2(data)
     problems += _check_landsat(data)
     problems += _check_landsat_l1(data)
+    problems += _check_wideswath(data)
 
     # what the map loads before the first draw: the index, the Sentinel-1/2
     # schedule files and the small JSONs (NISAR's file waits until selected)
@@ -544,6 +551,50 @@ def _check_landsat_l1(data: Path) -> list[str]:
         paths = set(t.column("path").to_pylist())
         if paths != {int(f.stem)}:
             problems.append(f"{LANDSAT_L1_DIR}/{f.name} holds paths {sorted(paths)}")
+    return problems
+
+
+def _check_wideswath(data: Path) -> list[str]:
+    """MODIS/VIIRS tile passes name tiles of sin_grid.parquet; Sentinel-3
+    frame passes name frames of s3_frames.parquet (all optional)."""
+    import pyarrow.parquet as pq
+
+    problems = []
+    grid_path = data / "sin_grid.parquet"
+    for name in ("modis_tile_passes.parquet", "viirs_tile_passes.parquet"):
+        path = data / name
+        if not path.exists():
+            continue
+        if not grid_path.exists():
+            problems.append(f"{name} published without sin_grid.parquet")
+            continue
+        t = pq.read_table(path)
+        want = {"tile", "platform", "time", "direction", "xtrack_km"}
+        if want - set(t.column_names):
+            problems.append(
+                f"{name} missing columns {sorted(want - set(t.column_names))}"
+            )
+            continue
+        tiles = set(
+            pq.read_table(grid_path, columns=["tile"]).column("tile").to_pylist()
+        )
+        unknown = {str(x) for x in t.column("tile").to_pylist()} - tiles
+        if unknown:
+            problems.append(f"{name} has {len(unknown)} tiles not in sin_grid.parquet")
+    passes, frames = data / "s3_frame_passes.parquet", data / "s3_frames.parquet"
+    if passes.exists() != frames.exists():
+        problems.append(
+            "s3_frames.parquet and s3_frame_passes.parquet must be published together"
+        )
+    elif passes.exists():
+        p = pq.read_table(passes, columns=["track", "frame"]).to_pandas()
+        g = pq.read_table(frames, columns=["track", "frame"]).to_pandas()
+        known = set(zip(g["track"], g["frame"], strict=True))
+        unknown = sum(k not in known for k in zip(p["track"], p["frame"], strict=True))
+        if unknown:
+            problems.append(
+                f"s3_frame_passes.parquet has {unknown} passes of unknown frames"
+            )
     return problems
 
 

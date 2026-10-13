@@ -1,4 +1,5 @@
-"""Latency tracking beyond Sentinel-1: one tracker per mission.
+"""Latency tracking beyond Sentinel-1: one tracker per mission
+(Sentinel-2, Landsat 8/9, NISAR L- and S-band, MODIS, VIIRS, Sentinel-3).
 
 Each mission has its own reference catalog, sources and tracking table under
 ``<data>/missions/<key>/`` (same layout as Sentinel-1's at the data root).
@@ -13,7 +14,7 @@ from datetime import datetime
 from pathlib import Path
 
 from swathcast.config import TrackerConfig
-from swathcast.sources import bhoonidhi, landsat, nisar, s2
+from swathcast.sources import bhoonidhi, landsat, modis, nisar, s2, s3
 from swathcast.sources.base import ReferenceCatalog, Source, make_session
 from swathcast.storage import Store
 
@@ -107,6 +108,47 @@ MISSIONS: dict[str, Mission] = {
             bootstrap_hours=24.0,
             requires_env=(bhoonidhi.ENV_USER, bhoonidhi.ENV_PASSWORD),
             cleanup=bhoonidhi.close,
+        ),
+        # LANCE deletes its near-real-time products after 7 days: their
+        # sources time out before that
+        Mission(
+            "modis",
+            "MODIS (Terra, Aqua)",
+            modis.ModisCatalog,
+            modis.MODIS_SOURCES,
+            {
+                "laads_modis_l1b": 10 * 24.0,
+                "laads_modis_l1b_c7": 10 * 24.0,
+                "lance_modis_snow": 5 * 24.0,
+                "nsidc_modis_snow": 10 * 24.0,
+            },
+        ),
+        Mission(
+            "viirs",
+            "VIIRS (Suomi NPP, NOAA-20, NOAA-21)",
+            modis.ViirsCatalog,
+            modis.VIIRS_SOURCES,
+            {
+                "laads_viirs_l1b": 10 * 24.0,
+                "lance_viirs_snow": 5 * 24.0,
+                "nsidc_viirs_snow": 10 * 24.0,
+            },
+        ),
+        Mission(
+            "s3",
+            "Sentinel-3 (OLCI, SLSTR)",
+            s3.CATALOG,
+            s3.SOURCES,
+            {
+                "cdse_s3_efr_ntc": 7 * 24.0,
+                "cdse_s3_rbt_ntc": 7 * 24.0,
+                "eumetsat_s3_efr": 3 * 24.0,
+                "cdse_s3_lfr": 5 * 24.0,
+                "pc_s3_lfr": 7 * 24.0,
+                "cdse_s3_lst": 5 * 24.0,
+                "pc_s3_lst": 7 * 24.0,
+            },
+            bootstrap_hours=3.0,
         ),
     )
 }
