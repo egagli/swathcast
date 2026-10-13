@@ -23,7 +23,7 @@ lazily: ``wrs2_grid.parquet`` + ``landsat_scenes.parquet`` (per planned scene,
 timed from the orbit), ``s2_grid.parquet`` + ``s2_tile_passes.parquet``, and,
 for the wide-swath sensors that have no plan (:mod:`swathcast.wideswath`),
 ``sin_grid.parquet`` + ``modis_tile_passes.parquet`` / ``viirs_tile_passes.parquet``
-and ``s3_frames.parquet`` + ``s3_frame_passes.parquet``.
+/ ``s3_tile_passes.parquet``.
 """
 
 from __future__ import annotations
@@ -315,13 +315,14 @@ ALL_SENSORS = [
 WIDESWATH_FILES = {
     "modis": "modis_tile_passes.parquet",
     "viirs": "viirs_tile_passes.parquet",
-    "sentinel-3": "s3_frame_passes.parquet",
+    "sentinel-3": "s3_tile_passes.parquet",
 }
 
 
 def build_wideswath(out_dir: Path, sensors, sats: dict, start, end, days: int) -> dict:
-    """The MODIS/VIIRS sinusoidal tiles and Sentinel-3 frames, and when each
-    is imaged (predicted from the orbit), written beside the schedule.
+    """The sinusoidal tiles and when MODIS, VIIRS and Sentinel-3 image each
+    (predicted from the orbit; Sentinel-3 passes labelled with their frame),
+    written beside the schedule.
     Returns counts for the sidecar; a mission whose platforms have no
     elements is left out (and said so)."""
     import pandas as pd
@@ -329,7 +330,7 @@ def build_wideswath(out_dir: Path, sensors, sats: dict, start, end, days: int) -
     from swathcast import wideswath
 
     fixes: dict = {}
-    tiles = [m for m in ("modis", "viirs") if m in sensors]
+    tiles = [m for m in ("modis", "viirs", "sentinel-3") if m in sensors]
     if tiles:
         grid = wideswath.sin_grid()
         wideswath.site_sin_grid(grid).to_parquet(
@@ -346,28 +347,6 @@ def build_wideswath(out_dir: Path, sensors, sats: dict, start, end, days: int) -
                 out_dir / WIDESWATH_FILES[m], index=False, compression="zstd"
             )
             fixes[f"{m}_tile_passes"] = {
-                str(k): int(v) for k, v in passes["platform"].value_counts().items()
-            }
-    if "sentinel-3" in sensors:
-        back = start - pd.Timedelta(days=LOOKBACK_DAYS["sentinel-3"])
-        passes = wideswath.s3_frame_passes(sats, back, end)
-        if passes.empty:
-            fixes["sentinel-3_error"] = "no orbital elements for any platform"
-        else:
-            grid = wideswath.s3_frame_grid(sats, passes)
-            grid.to_parquet(
-                out_dir / "s3_frames.parquet",
-                index=False,
-                compression="zstd",
-                compression_level=19,
-            )
-            passes.to_parquet(
-                out_dir / WIDESWATH_FILES["sentinel-3"],
-                index=False,
-                compression="zstd",
-            )
-            fixes["s3_frames"] = int(len(grid))
-            fixes["s3_frame_passes"] = {
                 str(k): int(v) for k, v in passes["platform"].value_counts().items()
             }
     return fixes

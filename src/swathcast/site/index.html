@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>swathcast · Passes</title>
-<meta name="description" content="swathcast: when will Sentinel-1, Sentinel-2, Landsat or NISAR next image my area, and when can I download it? Planned passes from the agencies' own plans, plus measured delivery latency.">
+<meta name="description" content="swathcast: when will Sentinel-1, Sentinel-2, Landsat, NISAR, MODIS, VIIRS or Sentinel-3 next image my area, and when can I download it? Planned passes from the agencies' own plans (or the orbit, for the sensors that image every orbit), plus measured delivery latency.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23101a2c'/%3E%3Cpath d='M6 22C11 14 18 10 26 9' fill='none' stroke='%238b84f6' stroke-width='6' stroke-linecap='round'/%3E%3Ccircle cx='26' cy='9' r='3' fill='white'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
@@ -466,9 +466,9 @@ table.pass-list tr.now-row td .nm { color: var(--ink-2); font-weight: 400; }
     <div class="panel-scroll"><div id="results"><div id="empty">Loading…</div></div>
       <details class="about" id="about"><summary>How this map works</summary>
         <ul class="note about-list">
-          <li><b>Map:</b> each selected mission's footprints (Sentinel-1 bursts, Sentinel-2 tiles, Landsat scenes, NISAR frames; zoomed out, planned swaths), coloured by the time to their next acquisition that passes your filters. Click one for its last 90 days (live from the catalogues) and its plan.</li>
+          <li><b>Map:</b> each selected mission's footprints (Sentinel-1 bursts, Sentinel-2 tiles, Landsat scenes, NISAR frames, MODIS/VIIRS sinusoidal tiles, Sentinel-3 frames; zoomed out, planned swaths), coloured by the time to their next acquisition that passes your filters. Click one for its last 90 days (live from the catalogues) and its plan.</li>
           <li><b>AOI:</b> draw or paste one to list its passes: the last 90 days (what each catalogue has now) and the planned ones ahead, each with when it is <em>likely downloadable</em>: acquisition time plus the delivery latency this site measures every hour (<a href="dashboard.html">Delivery</a>).</li>
-          <li><b>Sources:</b> plans from <a href="https://sentinels.copernicus.eu/web/sentinel/copernicus/sentinel-1/acquisition-plans" target="_blank" rel="noopener">ESA</a>, <a href="https://landsat.usgs.gov/landsat_acq" target="_blank" rel="noopener">USGS</a> and <a href="https://science.nasa.gov/mission/nisar/data/" target="_blank" rel="noopener">NASA</a>, timed from the orbits (CelesTrak, SGP4). Times are UTC (24 h) and local at the AOI (12 h). Details: <a href="https://github.com/egagli/swathcast#readme" target="_blank" rel="noopener">README</a>.</li>
+          <li><b>Sources:</b> plans from <a href="https://sentinels.copernicus.eu/web/sentinel/copernicus/sentinel-1/acquisition-plans" target="_blank" rel="noopener">ESA</a>, <a href="https://landsat.usgs.gov/landsat_acq" target="_blank" rel="noopener">USGS</a> and <a href="https://science.nasa.gov/mission/nisar/data/" target="_blank" rel="noopener">NASA</a>, timed from the orbits (CelesTrak, SGP4). MODIS, VIIRS and Sentinel-3 have no plans (they image on every orbit): their passes are predicted from the orbit alone, and timed at your AOI. Times are UTC (24 h) and local at the AOI (12 h). Details: <a href="https://github.com/egagli/swathcast#readme" target="_blank" rel="noopener">README</a>.</li>
         </ul>
       </details>
     </div>

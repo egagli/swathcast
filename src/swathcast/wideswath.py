@@ -13,13 +13,19 @@ orbit alone: CelesTrak elements propagated with SGP4
   when the ground track passes closest to it, and the signed cross-track
   distance there (``xtrack_km``, + to the right of the direction of travel)
   gives the view angle.
-* **Sentinel-3: frames.** Sentinel-3 products are cut in 3-minute frames on
-  a fixed grid: relative orbit (1-385, a 27-day exact repeat) and the frame's
-  start in seconds after the ascending node (0, 180, ... 5940), as in
+* **Sentinel-3: the same tiles, each pass labelled with its frame.**
+  Sentinel-3 products are cut in 3-minute frames on a fixed grid: relative
+  orbit (1-385, a 27-day exact repeat) and the frame's start in seconds after
+  the ascending node (0, 180, ... 5940), as in
   ``S3A_OL_1_EFR____..._0179_145_081_3420_...``. Checked on 1,450 CDSE
-  products of 2026-10-12: the frame number matched the start minus the SGP4
-  ascending-node time to a median of 0.04 s. A frame's outline is the SLSTR
-  nadir swath (the widest of the instruments) over its 180 s.
+  products of 2026-10-12: 1,438 matched a predicted frame (the other 12, S3B
+  SLSTR products named frame 6120, start a minute after the node), full
+  frames starting within 0.12 s of the prediction (median 0.06 s), and the
+  frame's predicted outline (the SLSTR nadir swath over its 180 s) overlapped
+  the real footprint by a median IoU of 0.996 (200 frames). The frames are
+  ~1,300 km wide and every place lies under ~20 of them, so the map draws
+  Sentinel-3 on the sinusoidal tiles too, each pass carrying its relative
+  orbit and time after the node (hence its frame).
 
 Swath edges were measured on real products (2026-10-13), as the signed
 cross-track distance of footprint vertices from the SGP4 ground track at the
@@ -253,6 +259,9 @@ def sin_tile_passes(grid, sats: dict, mission: str, start, end) -> pd.DataFrame:
     if not parts:
         return pd.DataFrame(columns=cols)
     out = pd.concat(parts, ignore_index=True).sort_values(["tile", "time"])
+    if mission == "sentinel-3":
+        out = label_s3_frames(out, sats, start, end)
+        cols += ["track", "anx_s"]
     out["time"] = out["time"].astype("datetime64[ms, UTC]")
     for c in ("tile", "platform", "direction"):
         out[c] = out[c].astype("category")
@@ -336,6 +345,31 @@ def s3_frame_passes(sats: dict, start, end) -> pd.DataFrame:
     return out.sort_values(["track", "frame", "time"]).reset_index(drop=True)
 
 
+def label_s3_frames(passes: pd.DataFrame, sats: dict, start, end) -> pd.DataFrame:
+    """Each Sentinel-3 pass's relative orbit (``track``) and its time after
+    the ascending node (``anx_s``, s): the frame is ``anx_s // 180 * 180``,
+    the products' own frame grid (s3_frame_passes)."""
+    frames = s3_frame_passes(
+        sats, start - pd.Timedelta(hours=2), end + pd.Timedelta(hours=2)
+    )
+    frames = frames.assign(
+        node=frames["time"] - pd.to_timedelta(frames["frame"].astype(int), unit="s")
+    )
+    left = passes.assign(
+        time=passes["time"].astype("datetime64[ms, UTC]"),
+        platform=passes["platform"].astype(str),
+    ).sort_values("time")
+    right = frames.assign(
+        time=frames["time"].astype("datetime64[ms, UTC]"),
+        platform=frames["platform"].astype(str),
+    ).sort_values("time")[["time", "platform", "track", "node"]]
+    out = pd.merge_asof(left, right, on="time", by="platform", direction="backward")
+    out["anx_s"] = (
+        (out["time"] - out["node"]).dt.total_seconds().round().astype("int16")
+    )
+    return out.drop(columns="node").sort_values(["tile", "time"])
+
+
 def swath_polygon(sat, t0: float, t1: float, swath_km, step_s: float = 15.0):
     """The strip imaged between t0 and t1 (unix s), as a lon/lat ring with
     continuous longitudes: the right edge forward, the left edge back."""
@@ -382,43 +416,3 @@ def _dest(lon, lat, brg, dist_km):
         np.sin(b) * np.sin(d) * np.cos(p1), np.cos(d) - np.sin(p1) * np.sin(p2)
     )
     return float(np.degrees(l2)), float(np.degrees(p2))
-
-
-def s3_frame_grid(sats: dict, passes: pd.DataFrame):
-    """The outline of every (track, frame) in ``passes``, from its first
-    occurrence: the SLSTR nadir swath over the frame's time, densified along
-    great circles and split at +/-180 (as the plans' footprints are)."""
-    import geopandas as gpd
-    import shapely
-    from shapely.geometry import Polygon
-
-    from swathcast.schedule import geodesic_ring, wrap_antimeridian
-
-    first = passes.drop_duplicates(["track", "frame"])
-    rows = []
-    for r in first.itertuples(index=False):
-        sat = sats[str(r.platform)]
-        ring = swath_polygon(
-            sat, r.time.timestamp(), r.end.timestamp(), SWATH_KM[str(r.platform)]
-        )
-        try:
-            geom = wrap_antimeridian(Polygon(geodesic_ring(ring)))
-        except Exception as exc:  # noqa: BLE001 - shapely raises several kinds
-            LOGGER.warning("S3 frame %s/%s: %s", r.track, r.frame, exc)
-            continue
-        rows.append(
-            {
-                "track": int(r.track),
-                "frame": int(r.frame),
-                "direction": str(r.direction),
-                "geometry": geom,
-            }
-        )
-    grid = gpd.GeoDataFrame(rows, geometry="geometry", crs="EPSG:4326")
-    # ~2 km and 0.001 deg: 1.4 MB for the 13,090 frames instead of 4.2 MB
-    grid["geometry"] = shapely.set_precision(
-        grid.geometry.simplify(0.02, preserve_topology=True).values, 0.001
-    )
-    grid["track"] = grid["track"].astype("int16")
-    grid["frame"] = grid["frame"].astype("int16")
-    return grid

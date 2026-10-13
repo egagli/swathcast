@@ -320,16 +320,11 @@ class CDSES3Product(Source):
         return CDSES3Catalog(session=self.session).lookup(ids)
 
 
-def _ref(key, label, ref):
+def _ref(key, label, ref, product):
     return type(
         key,
         (CDSES3Product,),
-        {
-            "key": key,
-            "label": label,
-            "product": f"{label.split()[-2]} NRT",
-            "reference_product": ref,
-        },
+        {"key": key, "label": label, "product": product, "reference_product": ref},
     )
 
 
@@ -349,8 +344,8 @@ def _src(base, key, label, ref, product, coverage="full", **attrs):
 
 
 SOURCES: list[type[Source]] = [
-    _ref("cdse_s3_efr", "CDSE OLCI EFR (NRT)", "EFR"),
-    _ref("cdse_s3_rbt", "CDSE SLSTR RBT (NRT)", "RBT"),
+    _ref("cdse_s3_efr", "CDSE OLCI EFR (NRT)", "EFR", "OL_1_EFR NRT"),
+    _ref("cdse_s3_rbt", "CDSE SLSTR RBT (NRT)", "RBT", "SL_1_RBT NRT"),
     _src(
         CDSES3Source,
         "cdse_s3_efr_ntc",

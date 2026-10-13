@@ -47,7 +47,8 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      - run: pip install -e . pytest playwright
+      # sgp4: the synthetic site's MODIS/Sentinel-3 passes (wideswath.py)
+      - run: pip install -e . pytest playwright sgp4
       - run: python -m playwright install --with-deps chromium
       - name: Browser tests
         env:

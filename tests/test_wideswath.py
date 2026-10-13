@@ -222,3 +222,28 @@ def test_new_missions_are_registered():
         for s in m.sources:
             if s.key.startswith("lance_") and not s.is_reference:
                 assert m.timeouts_h[s.key] < 7 * 24
+
+
+def test_sentinel3_tile_passes_carry_the_products_frame(sats):
+    """A pass over the centre of the real RBT frame (S3B, relative orbit 304,
+    frame 1620, 2026-10-12 04:26:28) is labelled with that frame."""
+    from shapely.geometry import shape
+
+    item = next(
+        v
+        for v in load_fixture("cdse_s3_products.json")["value"]
+        if "_SL_1_RBT_" in v["Name"]
+    )
+    c = shape(item["GeoFootprint"]).centroid
+    grid = pd.DataFrame({"tile": ["x"], "lon": [c.x], "lat": [c.y]})
+    p = wideswath.sin_tile_passes(
+        grid,
+        {"S3B": sats["S3B"]},
+        "sentinel-3",
+        pd.Timestamp("2026-10-12T03:00Z"),
+        pd.Timestamp("2026-10-12T06:00Z"),
+    )
+    hit = p[(p["time"] > "2026-10-12T04:26Z") & (p["time"] < "2026-10-12T04:30Z")]
+    assert len(hit) == 1
+    assert int(hit["track"].iloc[0]) == 304
+    assert int(hit["anx_s"].iloc[0]) // 180 * 180 == 1620

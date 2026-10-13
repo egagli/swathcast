@@ -29,15 +29,17 @@ function queryAreas(aoi) {
 
 // ------------------------------------------------------------ catalogue searches
 // Each returns products: {when, platform, id, href, download?}.
-async function cdse(area, since, collection) {
+async function cdse(area, since, collection, names = null) {
   const t = since.toISOString().replace("Z", "").slice(0, 23);
-  const names = collection === "SENTINEL-1"
+  names ||= collection === "SENTINEL-1"
     ? "(contains(Name,'_GRDH_1S') or contains(Name,'_GRDM_1S') or contains(Name,'_SLC__1S')) and not contains(Name,'_WV_') and not endswith(Name,'_COG.SAFE')"
     : "(contains(Name,'_MSIL1C_') or contains(Name,'_MSIL2A_'))";
   const filter = `Collection/Name eq '${collection}' and OData.CSC.Intersects(area=geography'SRID=4326;${area.wkt}') and ContentDate/Start gt ${t}Z and ${names}`;
-  const d = await getJSON(`${ODATA}?${new URLSearchParams({ $filter: filter, $top: "500", $orderby: "ContentDate/Start desc" })}`);
+  // Sentinel-3 sees a place 1-3 times a day: up to CDSE's 1,000 a query
+  const top = collection === "SENTINEL-3" ? "1000" : "500";
+  const d = await getJSON(`${ODATA}?${new URLSearchParams({ $filter: filter, $top: top, $orderby: "ContentDate/Start desc" })}`);
   return (d.value || []).map((p) => ({
-    when: new Date(p.ContentDate.Start), platform: p.Name.slice(0, 3), id: p.Name.replace(/\.SAFE$/, ""), mode: s1Mode(p.Name),
+    when: new Date(p.ContentDate.Start), platform: p.Name.slice(0, 3), id: p.Name.replace(/\.(SAFE|SEN3)$/, ""), mode: s1Mode(p.Name),
     href: `${ODATA}(${p.Id})?$expand=Attributes`, linkText: "catalogue record", geometry: p.GeoFootprint || null,
   }));
 }
@@ -80,16 +82,18 @@ async function stac(url, collection, area, since, keep = () => true) {
   });
 }
 
-async function cmr(params, area, since, platformOf) {
+async function cmr(params, area, since, platformOf, pageSize = 500) {
   const geo = area.point ? ["point", area.point.join(",")] : ["bounding_box", area.bbox.join(",")];
-  const q = new URLSearchParams([...params, geo, ["temporal[]", `${iso(since)},`], ["page_size", "500"], ["sort_key", "-start_date"]]);
+  const q = new URLSearchParams([...params, geo, ["temporal[]", `${iso(since)},`], ["page_size", String(pageSize)], ["sort_key", "-start_date"]]);
   const d = await getJSON(`${CMR}?${q}`);
   return (d.items || []).map(({ meta, umm }) => {
     const file = (umm.RelatedUrls || []).find((u) => u.Type === "GET DATA" && /\.h5$/.test(u.URL));
     // NISAR names carry cycle, track and direction: NISAR_L1_PR_RSLC_032_005_A_025_...
     const ni = /^NISAR_L\d_\w\w_\w+?_\d{3}_(\d{3})_([AD])_/.exec(umm.GranuleUR);
+    // LANCE and LAADS URs are opaque numbers ("LANCEMODIS:3067030029"): the product's name is its producer id
+    const producer = umm.GranuleUR.includes(":") && (((umm.DataGranule || {}).Identifiers || []).find((x) => x.IdentifierType === "ProducerGranuleId") || {}).Identifier;
     return {
-      when: new Date(umm.TemporalExtent.RangeDateTime.BeginningDateTime), platform: platformOf(umm), id: umm.GranuleUR,
+      when: new Date(umm.TemporalExtent.RangeDateTime.BeginningDateTime), platform: platformOf(umm), id: producer || umm.GranuleUR,
       track: ni ? Number(ni[1]) : null, direction: ni ? (ni[2] === "A" ? "ascending" : "descending") : null, geometry: ummPolygon(umm),
       href: `https://cmr.earthdata.nasa.gov/search/concepts/${meta["concept-id"]}.json`, linkText: "CMR record", download: file ? file.URL : null,
       browseUrls: (umm.RelatedUrls || []).filter((u) => u.Type === "GET RELATED VISUALIZATION" && /^https:/.test(u.URL)).map((u) => u.URL),
@@ -110,7 +114,44 @@ const s1FromName = (umm) => (/_(S1[A-D])_/.exec(umm.GranuleUR) || [])[1] || null
 const SEARCHES = {
   cdse_s1: (a, t) => cdse(a, t, "SENTINEL-1"),
   cdse_s2: (a, t) => cdse(a, t, "SENTINEL-2"),
+  cdse_s3_efr: (a, t) => cdse(a, t, "SENTINEL-3", "contains(Name,'_OL_1_EFR_')"),
+  cdse_s3_rbt: (a, t) => cdse(a, t, "SENTINEL-3", "contains(Name,'_SL_1_RBT_')"),
 };
+// MODIS and VIIRS: one CMR collection per platform (sources/modis.py); a
+// place is seen 2-4 times a day per platform, so up to CMR's 2,000 a query
+const cmrAll = (ids) => (a, t) => cmr(Object.values(ids).map((c) => ["collection_concept_id", c]), a, t, ummPlatform, 2000);
+const WIDE_COLLECTIONS = {
+  lance_modis_l1b: { Terra: "C1426414410-LANCEMODIS", Aqua: "C1426616847-LANCEMODIS" },
+  laads_modis_l1b: { Terra: "C1378227407-LAADS", Aqua: "C1379758607-LAADS" },
+  laads_modis_l1b_c7: { Terra: "C3861664481-LAADS", Aqua: "C3861713185-LAADS" },
+  lance_modis_snow: { Terra: "C2007659515-LANCEMODIS", Aqua: "C2007631329-LANCEMODIS" },
+  nsidc_modis_snow: { Terra: "C3024162910-NSIDC_CPRD", Aqua: "C3090964320-NSIDC_CPRD" },
+  lance_viirs_l1b: { SNPP: "C2185497928-LANCEMODIS", N20: "C2208778455-LANCEMODIS", N21: "C3383723948-LANCEMODIS" },
+  laads_viirs_l1b: { SNPP: "C2105087643-LAADS", N20: "C2103811746-LAADS", N21: "C3478403600-LAADS" },
+  lance_viirs_snow: { SNPP: "C2780575359-LANCEMODIS", N20: "C2781269342-LANCEMODIS", N21: "C4232151476-LANCEMODIS" },
+  nsidc_viirs_snow: { SNPP: "C3173404788-NSIDC_CPRD", N20: "C3173450415-NSIDC_CPRD", N21: "C3824913163-NSIDC_CPRD" },
+};
+
+// EUMETSAT's Data Store (OpenSearch, open to browsers): OLCI EFR over the area.
+const EUMETSAT = "https://api.eumetsat.int/data/search-products/1.0.0/os";
+async function eumetsat(area, since) {
+  const [w, s, e, n] = area.bbox || [area.point[0], area.point[1], area.point[0], area.point[1]];
+  // pages of 100: a page of 500 can time out at their gateway, whose error has no CORS header
+  const feats = [];
+  for (let si = 0; si < 2000; si += 100) {
+    const q = new URLSearchParams({ format: "json", pi: "EO:EUM:DAT:0409", bbox: [w, s, e, n].join(","), dtstart: iso(since), si: String(si), c: "100" });
+    const d = await getJSON(`${EUMETSAT}?${q}`);
+    feats.push(...(d.features || []));
+    if (!(d.features || []).length || feats.length >= Number(d.totalResults || 0)) break;
+  }
+  return feats.map((f) => {
+    const p = f.properties || {}, id = String(p.identifier || f.id).replace(/\.SEN3$/, "");
+    return {
+      when: new Date(String(p.date || "").split("/")[0]), platform: id.slice(0, 3), id, geometry: f.geometry || null,
+      href: `https://data.eumetsat.int/product/EO:EUM:DAT:0409/${encodeURIComponent(p.identifier || f.id)}`, linkText: "EUMETSAT Data Store",
+    };
+  });
+}
 const byName = (re) => (p) => re.test(p.id);
 
 // key -> {search (shared, optional), keep, run}. Keys are the poller's source keys.
@@ -135,6 +176,16 @@ export const SOURCES = {
   asf_nisar_l0b: { run: (a, t) => cmr([["collection_concept_id", "C2853089814-ASF"]], a, t, () => "NISAR") },
   asf_nisar_rslc: { run: (a, t) => cmr([["collection_concept_id", "C2853145197-ASF"]], a, t, () => "NISAR") },
   asf_nisar_gcov: { run: (a, t) => cmr([["collection_concept_id", "C2854338529-ASF"]], a, t, () => "NISAR") },
+  ...Object.fromEntries(Object.entries(WIDE_COLLECTIONS).map(([k, ids]) => [k, { run: cmrAll(ids) }])),
+  cdse_s3_efr: { search: "cdse_s3_efr", keep: byName(/_NR_/) },
+  cdse_s3_efr_ntc: { search: "cdse_s3_efr", keep: byName(/_NT_/) },
+  cdse_s3_rbt: { search: "cdse_s3_rbt", keep: byName(/_NR_/) },
+  cdse_s3_rbt_ntc: { search: "cdse_s3_rbt", keep: byName(/_NT_/) },
+  cdse_s3_lfr: { run: (a, t) => cdse(a, t, "SENTINEL-3", "contains(Name,'_OL_2_LFR_')") },
+  cdse_s3_lst: { run: (a, t) => cdse(a, t, "SENTINEL-3", "contains(Name,'_SL_2_LST_')") },
+  pc_s3_lfr: { run: (a, t) => stac(PC, "sentinel-3-olci-lfr-l2-netcdf", a, t) },
+  pc_s3_lst: { run: (a, t) => stac(PC, "sentinel-3-slstr-lst-l2-netcdf", a, t) },
+  eumetsat_s3_efr: { run: eumetsat },
 };
 // A source searched by the page itself (map.js: USGS Landsat Level-1, from
 // this site's own files): run(area, since) -> products; a run that throws an

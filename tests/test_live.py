@@ -36,3 +36,28 @@ def test_opera_stream_reads(recent):
     src.lookup([a.granule_id for a in recent if a.product_type == "SLC"])
     assert src.stats["stream_items"] >= 0
     assert src.get_cursor() is not None
+
+
+# ---------------------------------------------------------------- MODIS, VIIRS, Sentinel-3
+@pytest.mark.parametrize("mission", ["modis", "viirs", "s3"])
+def test_wide_swath_reference_lists_and_its_granules_are_found(mission):
+    """The reference listing of the last 3 h, then the same granules looked
+    up at the reference again (every listed granule is found)."""
+    from swathcast.missions import MISSIONS
+
+    m = MISSIONS[mission]
+    now = utcnow()
+    listed = m.catalog().list_new((now - timedelta(hours=3), now))
+    assert listed, f"{mission}: nothing listed in the last 3 h"
+    ref = next(s for s in m.sources if s.is_reference)
+    ids = [a.granule_id for a in listed if a.product_type == ref.reference_product][:40]
+    found = ref().lookup(ids)
+    assert set(found) == set(ids)
+
+
+def test_standard_modis_granules_of_yesterday_are_at_laads():
+    from swathcast.sources import modis
+
+    day = (utcnow() - timedelta(days=2)).strftime("A%Y%j")
+    ids = [f"MOD021KM.{day}.{h:02d}00" for h in range(0, 6)]
+    assert set(modis.MODIS_SOURCES[2]().lookup(ids)) == set(ids)  # collection 7

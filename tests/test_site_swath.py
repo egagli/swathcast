@@ -72,3 +72,78 @@ out.bad = h.utmCorners(3857, [1, 0, 0, 0, -1, 0], [1, 1]);
     assert max(lats) == pytest.approx(bbox[3], abs=1e-3)
     assert out["south"] == pytest.approx([3, 0], abs=1e-9)
     assert out["bad"] is None
+
+
+SATELLITE_JS = (
+    "https://cdnjs.cloudflare.com/ajax/libs/satellite.js/6.0.2/satellite.min.js"
+)
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")
+def test_wide_swath_passes_match_python(tmp_path):
+    """The map times a MODIS/VIIRS/Sentinel-3 pass at the AOI itself
+    (swathgeom.closestApproach, satellite.js); the schedule times it at the
+    tile centre (wideswath.tile_passes, sgp4). Same elements, same answer."""
+    import urllib.request
+
+    import pandas as pd
+
+    from conftest import load_fixture
+    from swathcast import wideswath
+    from swathcast.ephemeris import satrec
+
+    try:
+        lib = urllib.request.urlopen(SATELLITE_JS, timeout=20).read().decode()
+    except OSError:
+        pytest.skip("satellite.js CDN not reachable")
+    (tmp_path / "satellite.cjs").write_text(lib)
+    omm = load_fixture("celestrak_omm.json")
+    pts = [(-121.76, 46.85), (10.0, 78.0), (147.0, -42.0), (-60.0, -75.0)]
+    t0 = pd.Timestamp("2026-10-13T00:00Z").timestamp()
+    cases = []
+    for plat in ("Terra", "N21", "S3A"):
+        p = wideswath.tile_passes(
+            satrec(omm[plat]),
+            plat,
+            [x for x, _ in pts],
+            [y for _, y in pts],
+            t0,
+            t0 + 86400,
+        )
+        cases += [
+            {
+                "plat": plat,
+                "lon": pts[r.i][0],
+                "lat": pts[r.i][1],
+                "t": r.time,
+                "x": r.xtrack_km,
+            }
+            for r in p.itertuples()
+        ]
+    assert len(cases) > 20
+    script = tmp_path / "w.mjs"
+    script.write_text(
+        f"""
+import {{ createRequire }} from "module";
+globalThis.satellite = createRequire(import.meta.url)({json.dumps(str(tmp_path / "satellite.cjs"))});
+const g = await import({json.dumps((SITE / "swathgeom.js").as_uri())});
+const omm = {json.dumps({k: omm[k] for k in ("Terra", "N21", "S3A")})};
+const cases = {json.dumps(cases)};
+const out = cases.map((c) => {{
+  const sat = satellite.json2satrec(omm[c.plat]);
+  const r = g.closestApproach(sat, c.lon, c.lat, c.t * 1000 - 900e3, c.t * 1000 + 900e3);
+  return r && [r.t / 1000 - c.t, r.xtrack - c.x];
+}});
+console.log(JSON.stringify({{ out, vza: g.viewZenith(1171, 705), edge: g.WIDE_SWATH_KM }}));
+"""
+    )
+    res = json.loads(
+        subprocess.run(
+            ["node", str(script)], capture_output=True, text=True, check=True
+        ).stdout
+    )
+    assert all(r is not None for r in res["out"])
+    assert max(abs(r[0]) for r in res["out"]) < 1.0  # seconds
+    assert max(abs(r[1]) for r in res["out"]) < 3.0  # km
+    assert res["vza"] == pytest.approx(wideswath.view_zenith_deg(1171, 705), abs=1e-6)
+    assert {k: tuple(v) for k, v in res["edge"].items()} == wideswath.SWATH_KM
