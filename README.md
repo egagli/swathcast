@@ -131,7 +131,7 @@ If you use swathcast, please cite it with the metadata in [CITATION.cff](CITATIO
 ## Acknowledgments
 
 swathcast was inspired by [`next_pass`](https://github.com/OPERA-Cal-Val/next_pass) from the OPERA
-project.
+project. The code was largely written by claude code.
 
 ## License
 
