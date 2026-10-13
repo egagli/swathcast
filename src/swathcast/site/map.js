@@ -79,7 +79,7 @@ let basemap = new URLSearchParams(location.hash.slice(1)).get("bm");
 if (!BASEMAPS[basemap]) { try { basemap = localStorage.getItem("swathcast.basemap"); } catch { /* storage unavailable */ } }
 const view = new MapView("map", {
   globe: globeOn, basemap: BASEMAPS[basemap] ? basemap : DEFAULT_BASEMAP,
-  attribution: 'plans: <a href="https://sentinels.copernicus.eu/">ESA</a>, <a href="https://landsat.usgs.gov/">USGS</a>, <a href="https://science.nasa.gov/mission/nisar/">NASA</a> · bursts: <a href="https://asf.alaska.edu/">ASF</a> · orbits: <a href="https://celestrak.org/">CelesTrak</a>',
+  attribution: 'plans: <a href="https://sentinels.copernicus.eu/" target="_blank" rel="noopener">ESA</a>, <a href="https://landsat.usgs.gov/" target="_blank" rel="noopener">USGS</a>, <a href="https://science.nasa.gov/mission/nisar/" target="_blank" rel="noopener">NASA</a> · bursts: <a href="https://asf.alaska.edu/" target="_blank" rel="noopener">ASF</a> · orbits: <a href="https://celestrak.org/" target="_blank" rel="noopener">CelesTrak</a>',
 });
 const map = view.map;
 view.onBasemap.push((k) => {
