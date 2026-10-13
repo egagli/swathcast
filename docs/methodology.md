@@ -319,7 +319,13 @@ Without plans, the orbit says both *whether* and *when* (`wideswath.py`, CelesTr
    2,400 km of it) is timed again at the AOI itself in the browser (`site/swathgeom.js`
    `closestApproach`, satellite.js with the poller's `tle.json`) and kept only if its swath reaches the
    AOI. Run on the same elements as the Python, the browser's times match to under 1 s and its
-   cross-track distances to under 3 km (`tests/test_site_swath.py`).
+   cross-track distances to under 3 km (`tests/test_site_swath.py`). MODIS and VIIRS fly on
+   satellites that are not yaw-steered, so a scan line is perpendicular to the orbit's *inertial*
+   direction, 2.9° (median; up to ~4° at the equator) off the perpendicular to the ground track: at
+   the swath edge a place is imaged up to ~10 s before or after the closest approach. So the AOI's
+   time is when a scan line passes through it (`scanTime`). On the corners of 200 LANCE granules
+   (2026-10-13), each imaged at its granule's start or end: median 0.8 s (MODIS), 1.0 s (VIIRS) from
+   it, against 8–11 s for the closest approach. (A tile's own time stays its closest approach.)
 4. **Sentinel-3 frames.** Sentinel-3 products are cut in 3-minute frames on a fixed grid: relative
    orbit (1–385; a 27-day exact repeat) and the frame's start in seconds after the ascending node (0,
    180, … 5940), named in every product (`…_0179_145_081_3420_…`: duration, cycle, relative orbit,
@@ -338,7 +344,12 @@ Without plans, the orbit says both *whether* and *when* (`wideswath.py`, CelesTr
    centre) at the pass; the map's *Light* filter starts with night off, as Landsat's night side does.
 
 The live satellites draw the same strips (MODIS ±1,175 km, VIIRS ±1,531 km, Sentinel-3 SLSTR), always
-filled: these sensors image on every orbit.
+filled: these sensors image on every orbit. Their placement was checked on 502 real products of 13 Oct
+(the map's own `swathgeom.js` with satellite.js and `tle.json`): the satellite's nadir lay inside every
+real footprint, 7–21 km (median) from the real swath's centre line; Sentinel-3 strips overlapped the
+real frames by a median IoU of 0.996 (boundaries ~3–4 km apart, OLCI and SLSTR alike). MODIS/VIIRS
+strips are drawn across the inertial direction of travel (above): their corners then lie a median
+17–35 km from the real granule corners, against 61–77 km across the ground track.
 
 ## Landsat and NISAR timing
 
@@ -381,8 +392,8 @@ direction of travel over the rotating Earth (what a zero-Doppler radar looks alo
 | NISAR | 446–688 left | ~240 km swath; frame centres 561–579 km left (see above) |
 | Sentinel-2 MSI | 145 either side | 290 km swath |
 | Landsat OLI | 92.5 either side | 185 km swath |
-| MODIS | 1,175 either side | measured on LANCE granules: ±1,171–1,178 km |
-| VIIRS | 1,531 either side | measured: ±1,518–1,548 km |
+| MODIS | 1,175 either side, across the orbit's inertial direction | measured on LANCE granules: ±1,171–1,178 km; no yaw steering |
+| VIIRS | 1,531 either side, across the orbit's inertial direction | measured: ±1,518–1,548 km; no yaw steering |
 | Sentinel-3 SLSTR | 500 left to 996 right | measured on CDSE frames; OLCI: 336 left to 975 right |
 
 The strip is filled where the plan has the satellite imaging: inside a Sentinel-1/2 datatake, within

@@ -161,7 +161,7 @@ SEATTLE_TILE = [
 
 
 def wide_swath_site(data, now):
-    """MODIS (Terra) and Sentinel-3 (S3A) on one tile over Seattle: their
+    """MODIS (Terra) and Sentinel-3 (S3A, S3B) on one tile over Seattle: their
     passes from the fixture's orbital elements (wideswath.py, as the schedule
     job), and the same elements as tle.json, which the page times passes at
     the AOI with. Skipped without sgp4 (the page then has no such files)."""
@@ -175,12 +175,13 @@ def wide_swath_site(data, now):
     from conftest import load_fixture
 
     omm = load_fixture("celestrak_omm.json")
+    # 8 days ahead and both Sentinel-3s: daytime passes whatever the hour
     t0, t1 = (
         pd.Timestamp(now) - pd.Timedelta(days=2),
-        pd.Timestamp(now) + pd.Timedelta(days=3),
+        pd.Timestamp(now) + pd.Timedelta(days=8),
     )
     centre = pd.DataFrame({"tile": ["h09v04"], "lon": [-122.0], "lat": [47.0]})
-    sats = {p: satrec(omm[p]) for p in ("Terra", "S3A")}
+    sats = {p: satrec(omm[p]) for p in ("Terra", "S3A", "S3B")}
     pq.write_table(
         pa.table(
             {

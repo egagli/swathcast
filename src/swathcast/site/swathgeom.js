@@ -27,8 +27,14 @@ export const GEOMETRY = {
   nisar: { look: "left-looking radar", modes: { L: [-688, -446] }, default: "L" },
   "sentinel-2": { look: "looks straight down", modes: { MSI: [-145, 145] }, default: "MSI" },
   landsat: { look: "looks straight down", modes: { OLI: [-92.5, 92.5] }, default: "OLI" },
-  modis: { look: "scans across the track", modes: { MODIS: [-1175, 1175] }, default: "MODIS" },
-  viirs: { look: "scans across the track", modes: { VIIRS: [-1531, 1531] }, default: "VIIRS" },
+  // scan: "inertial": whiskbroom scanners on satellites that are not yaw-steered, so
+  // each scan line is perpendicular to the orbit's inertial direction, not to the
+  // ground track over the rotating Earth (2.9 deg apart, median; up to ~4 deg at
+  // the equator, ~70 km along-track at MODIS's swath edge). Checked on 200
+  // LANCE granules' corners (2026-10-13): median 61-77 km off with the ground
+  // heading, 17-35 km with the inertial one (see docs/methodology.md).
+  modis: { look: "scans across the track", modes: { MODIS: [-1175, 1175] }, default: "MODIS", scan: "inertial" },
+  viirs: { look: "scans across the track", modes: { VIIRS: [-1531, 1531] }, default: "VIIRS", scan: "inertial" },
   "sentinel-3": { look: "looks down, tilted away from the sun", modes: { SLSTR: [-500, 996], OLCI: [-336, 975] }, default: "SLSTR" },
 };
 export const geometryOf = (sensor) => GEOMETRY[sensor && sensor.startsWith("landsat") ? "landsat" : sensor];
@@ -91,11 +97,31 @@ export function destination(lon, lat, brg, distKm) {
   const l2 = l1 + Math.atan2(Math.sin(b) * Math.sin(d) * Math.cos(p1), Math.cos(d) - Math.sin(p1) * Math.sin(p2));
   return [((l2 / D2R + 540) % 360) - 180, p2 / D2R];
 }
+// The orbit's direction of travel in an Earth frame frozen at t (the inertial
+// velocity's heading): what a scanner without yaw steering scans across.
+export function inertialHeadingAt(satrec, t) {
+  const gmst = satellite.gstime(new Date(t));
+  const ll = (dt) => {
+    const pv = satellite.propagate(satrec, new Date(t + dt));
+    if (!pv || !pv.position || typeof pv.position === "boolean") return null;
+    const geo = satellite.eciToGeodetic(pv.position, gmst);
+    return [satellite.degreesLong(geo.longitude), satellite.degreesLat(geo.latitude)];
+  };
+  const a = ll(-500), b = ll(500);
+  return a && b ? bearing(a[0], a[1], b[0], b[1]) : null;
+}
+// The heading an instrument's line of sight is perpendicular to: the ground
+// track over the rotating Earth (radars steer to zero Doppler; Sentinel-2,
+// Landsat and Sentinel-3 are yaw-steered), or the inertial one (MODIS, VIIRS).
+export function scanHeadingAt(satrec, t, sensor) {
+  const g = geometryOf(sensor);
+  return g && g.scan === "inertial" ? inertialHeadingAt(satrec, t) : headingAt(satrec, t);
+}
 // The two ends of the instrument's line of sight across the track at t:
 // [near, far] (or [left, right] for nadir-looking ones), with the sub-point.
-export function crossTrack(satrec, t, range) {
+export function crossTrack(satrec, t, range, sensor = null) {
   const p = position(satrec, new Date(t));
-  const h = headingAt(satrec, t);
+  const h = scanHeadingAt(satrec, t, sensor);
   if (!p || h == null) return null;
   const pt = (d) => (d >= 0 ? destination(p.lon, p.lat, h + 90, d) : destination(p.lon, p.lat, h - 90, -d));
   return { sub: p, heading: h, a: pt(range[0]), b: pt(range[1]) };
@@ -147,5 +173,25 @@ export function closestApproach(satrec, lon, lat, t0, t1, stepS = 10) {
   const right = Math.sin((toPoint - h) * D2R) > 0;
   const q = position(satrec, new Date(t + 1000));
   return { t, xtrack: (right ? 1 : -1) * hav(lon, lat, p.lon, p.lat), ascending: q ? q.lat > p.lat : null };
+}
+
+// When a scanner without yaw steering (MODIS, VIIRS) images (lon, lat): the
+// instant its scan line passes through the point, from the closest approach
+// t0 (ms). The line is skewed from the ground track's perpendicular, so at the
+// swath edge this is up to ~10 s from t0. Secant steps on the point's
+// along-track offset from the scan line.
+export function scanTime(satrec, lon, lat, t0) {
+  const off = (t) => {
+    const p = position(satrec, new Date(t)), h = inertialHeadingAt(satrec, t);
+    if (!p || h == null) return null;
+    return hav(p.lon, p.lat, lon, lat) * Math.cos((bearing(p.lon, p.lat, lon, lat) - h) * D2R);
+  };
+  let a = t0, b = t0 + 2000, fa = off(a), fb = off(b);
+  for (let i = 0; i < 6 && fa != null && fb != null && fb !== fa; i++) {
+    const c = b - (fb * (b - a)) / (fb - fa);
+    [a, fa, b, fb] = [b, fb, c, off(c)];
+    if (Math.abs(b - a) < 20) break;
+  }
+  return fb == null || !Number.isFinite(b) || Math.abs(b - t0) > 60e3 ? t0 : b;
 }
 

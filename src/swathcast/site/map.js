@@ -26,7 +26,7 @@ import { GlobeOverlay, PolarCaps } from "./overlay.js";
 import { fitUtmToData, resample, utmBox, utmEpsg } from "./drape.js";
 import { fetchBrowse, fetchHistory, landsatL1, medianRevisit, timelineSVG, usgsItem, widenToImage, HISTORY_DAYS } from "./history.js";
 import { Tour, flash, handOver, markTourSeen, pendingStep, sleep, tourSeen, waitFor } from "./tour.js";
-import { ALTITUDE_KM, S3_OLCI_KM, WIDE_SWATH_KM, closestApproach, destination, headingAt, position, viewZenith } from "./swathgeom.js";
+import { ALTITUDE_KM, S3_OLCI_KM, WIDE_SWATH_KM, closestApproach, destination, position, scanHeadingAt, scanTime, sensorOf, viewZenith } from "./swathgeom.js";
 import { RECENT_DAYS, SOURCES as SEARCHABLE, NOT_SEARCHABLE, PORTAL, registerSource, searchSources, groupAcquisitions } from "./recent.js";
 
 // Zoom levels are MapLibre's. minZoom: below it the footprints in view are too
@@ -439,7 +439,8 @@ function refineAtAOI(p, satrec) {
   const xs = pts.map(([x, y]) => (x === lon && y === lat ? r.xtrack : (closestApproach(satrec, x, y, r.t - 300e3, r.t + 300e3, 5) || r).xtrack));
   const covered = xs.some((x) => x >= lo && x <= hi) || (Math.min(...xs) < lo && Math.max(...xs) > hi);
   if (!covered) return null;
-  const when = new Date(r.t), light = lightAt(when, lon, lat);
+  // MODIS/VIIRS scan lines are skewed: the AOI is imaged when one passes through it
+  const when = new Date(p.mission === "s3" ? r.t : scanTime(satrec, lon, lat, r.t)), light = lightAt(when, lon, lat);
   const q = { ...p, when, whenEnd: when, xtrack: r.xtrack, vza: vzaOf(p.platform, r.xtrack), light, timedAtAOI: true };
   if (p.mission === "s3") {
     // the frame imaging the AOI: its time after the orbit's node
@@ -456,7 +457,7 @@ function refineAtAOI(p, satrec) {
 function swathStrip(platform, satrec, t) {
   const [lo, hi] = WIDE_SWATH_KM[platform], ring = [], back = [];
   for (let dt = -180; dt <= 180; dt += 15) {
-    const at = t + dt * 1000, p = position(satrec, new Date(at)), h = headingAt(satrec, at);
+    const at = t + dt * 1000, p = position(satrec, new Date(at)), h = scanHeadingAt(satrec, at, sensorOf(platform));
     if (!p || h == null) continue;
     ring.push(destination(p.lon, p.lat, h + 90, hi));
     back.unshift(destination(p.lon, p.lat, h - 90, -lo));

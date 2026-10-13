@@ -147,3 +147,78 @@ console.log(JSON.stringify({{ out, vza: g.viewZenith(1171, 705), edge: g.WIDE_SW
     assert max(abs(r[1]) for r in res["out"]) < 3.0  # km
     assert res["vza"] == pytest.approx(wideswath.view_zenith_deg(1171, 705), abs=1e-6)
     assert {k: tuple(v) for k, v in res["edge"].items()} == wideswath.SWATH_KM
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")
+def test_modis_viirs_scan_lines_meet_the_real_granule_corners(tmp_path):
+    """MODIS and VIIRS satellites are not yaw-steered: a scan line is
+    perpendicular to the orbit's inertial direction, ~3 deg off the ground
+    track's perpendicular. On a recorded LANCE granule of each, the live
+    strip's corners (swathgeom.crossTrack with the sensor) land nearer the
+    real corner pixels than the ground-track perpendicular does, and each
+    corner's imaging time (scanTime) is the granule's start or end."""
+    import urllib.request
+
+    from conftest import load_fixture
+
+    try:
+        lib = urllib.request.urlopen(SATELLITE_JS, timeout=20).read().decode()
+    except OSError:
+        pytest.skip("satellite.js CDN not reachable")
+    (tmp_path / "satellite.cjs").write_text(lib)
+    omm = load_fixture("celestrak_omm.json")
+    fx = load_fixture("cmr_wideswath_umm.json")
+    cases = []
+    for key, plat, inst in (
+        ("modis_nrt", "Terra", "MODIS"),
+        ("viirs_nrt", "N20", "VIIRS"),
+    ):
+        u = fx[key]["umm"]
+        pts = u["SpatialExtent"]["HorizontalSpatialDomain"]["Geometry"]["GPolygons"][0][
+            "Boundary"
+        ]["Points"][:-1]
+        r = u["TemporalExtent"]["RangeDateTime"]
+        cases.append(
+            {
+                "plat": plat,
+                "inst": inst,
+                "t0": r["BeginningDateTime"],
+                "t1": r["EndingDateTime"],
+                "corners": [[p["Longitude"], p["Latitude"]] for p in pts],
+            }
+        )
+    script = tmp_path / "scan.mjs"
+    script.write_text(
+        f"""
+import {{ createRequire }} from "module";
+globalThis.satellite = createRequire(import.meta.url)({json.dumps(str(tmp_path / "satellite.cjs"))});
+const g = await import({json.dumps((SITE / "swathgeom.js").as_uri())});
+const omm = {json.dumps({k: omm[k] for k in ("Terra", "N20")})};
+const R = 6371.0088, D = Math.PI / 180;
+const hav = (a, b) => 2 * R * Math.asin(Math.sqrt(Math.sin((b[1] - a[1]) * D / 2) ** 2 + Math.cos(a[1] * D) * Math.cos(b[1] * D) * Math.sin((b[0] - a[0]) * D / 2) ** 2));
+const out = {json.dumps(cases)}.map((c) => {{
+  const sat = satellite.json2satrec(omm[c.plat]), sensor = g.sensorOf(c.plat), range = g.swathRange(sensor, c.inst);
+  const t0 = Date.parse(c.t0), t1 = Date.parse(c.t1);
+  const ends = (s) => [t0, t1].flatMap((t) => {{ const x = g.crossTrack(sat, t, range, s); return [x.a, x.b]; }});
+  const err = (s) => Math.max(...c.corners.map((p) => Math.min(...ends(s).map((q) => hav(p, q)))));
+  const dt = c.corners.map(([lon, lat]) => {{
+    const ca = g.closestApproach(sat, lon, lat, t0 - 600e3, t1 + 600e3, 5), t = g.scanTime(sat, lon, lat, ca.t);
+    return Math.min(Math.abs(t - t0), Math.abs(t - t1)) / 1000;
+  }});
+  return {{ plat: c.plat, sensor, inertial: err(sensor), ground: err(null), dt }};
+}});
+console.log(JSON.stringify(out));
+"""
+    )
+    res = json.loads(
+        subprocess.run(
+            ["node", str(script)], capture_output=True, text=True, check=True
+        ).stdout
+    )
+    for r in res:
+        assert r["sensor"] in ("modis", "viirs")
+        assert r["inertial"] < r["ground"], r  # the inertial scan line fits better
+        assert r["inertial"] < 70, r  # km, worst corner
+        assert max(r["dt"]) < 8, (
+            r
+        )  # s: a corner is imaged at the granule's start or end
