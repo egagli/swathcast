@@ -7,9 +7,7 @@ from the agencies' own acquisition plans, and how long each data source takes to
 products, measured every hour. It is built for planning near-real-time monitoring (wet snow and
 snowmelt, for example), field campaigns, and coordination between missions.
 
-**Live site: <https://egagli.github.io/swathcast/>**
-([Passes](https://egagli.github.io/swathcast/) ·
-[Delivery](https://egagli.github.io/swathcast/dashboard.html))
+**Live site: <https://egagli.github.io/maps/swathcast.html>**
 
 ![The swathcast Passes page: a globe of NISAR frames coloured by time to the next acquisition, and an area of interest in the Pacific Northwest with its planned passes, footprints and timeline](docs/images/swathcast.jpg)
 
