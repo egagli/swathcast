@@ -61,7 +61,7 @@ export function showFreshness({ scheduleAt, latencyAt, failing = [] }) {
   const banner = document.getElementById("banner");
   if (problems.length) {
     banner.innerHTML = `<strong>Data may be stale.</strong> ${problems.join("; ")}. ` +
-      `See <a href="https://github.com/egagli/swathcast/actions">Actions</a>.`;
+      `See <a href="https://github.com/egagli/swathcast/actions/workflows/poll.yml" target="_blank" rel="noopener">Actions</a>.`;
     banner.classList.add("show");
   }
 }
