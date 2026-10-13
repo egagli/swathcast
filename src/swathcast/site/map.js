@@ -381,7 +381,10 @@ const vzaOf = (platform, xtrack) => (xtrack == null || !ALTITUDE_KM[platform] ? 
 function loadWide(key) {
   if (!wideLoads[key]) {
     const p = (async () => {
-      const [grid, passes] = await Promise.all([parquet("sin_grid.parquet"), parquet(WIDE_FILES[key])]);
+      const [grid, passes] = await Promise.all([parquet("sin_grid.parquet"), parquet(WIDE_FILES[key])]).catch((err) => {
+        // the daily schedule job writes these; until its first run they are absent
+        throw new Error(/\(404\)/.test(err.message) ? "predicted passes not published yet (the daily schedule job writes them)" : err.message);
+      });
       const by = new Map(), ends = {};
       passes.forEach((r) => {
         const k = String(r.tile);

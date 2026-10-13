@@ -95,7 +95,8 @@ def update(
     """Refresh ``path`` (tle.json); satellites that fail keep their old elements.
 
     With ``max_age_h``, a file generated less than that long ago is left alone
-    (CelesTrak asks clients not to refetch unchanged elements often).
+    (CelesTrak asks clients not to refetch unchanged elements often), unless
+    it lacks a platform in ``NORAD`` (one just added).
     """
     import requests
 
@@ -105,7 +106,12 @@ def update(
         try:
             current = json.loads(path.read_text())
             age = now - datetime.fromisoformat(current["generated_at"])
-            if age.total_seconds() < max_age_h * 3600 and not current.get("failed"):
+            missing = set(NORAD) - set(current.get("satellites", {}))
+            if (
+                age.total_seconds() < max_age_h * 3600
+                and not current.get("failed")
+                and not missing
+            ):
                 LOGGER.info("tle.json is %s old; not refetching", age)
                 return current
         except (ValueError, KeyError):
