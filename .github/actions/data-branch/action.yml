@@ -1,0 +1,18 @@
+name: Check out the data branch
+description: Clone the orphan `data` branch into ./data, or start an empty one if it does not exist yet.
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        url="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+        if git ls-remote --exit-code --heads "$url" data >/dev/null 2>&1; then
+          git clone --depth 1 --branch data --single-branch "$url" data
+        else
+          echo "::notice::no data branch yet; starting an empty one"
+          mkdir -p data && git -C data init -q -b data && git -C data remote add origin "$url"
+        fi
+        git -C data config user.name "github-actions[bot]"
+        git -C data config user.email "41898282+github-actions[bot]@users.noreply.github.com"

@@ -1,0 +1,99 @@
+{
+ "features": [
+  {
+   "id": "LC09_L1TP_066018_20260929_20260929_02_T1",
+   "bbox": [
+    -148.51547479514738,
+    58.984428189347234,
+    -144.1950330296123,
+    61.182371385628514
+   ],
+   "properties": {
+    "datetime": "2026-09-29T20:55:45.693548Z",
+    "eo:cloud_cover": 39.52,
+    "view:sun_azimuth": 168.79863704,
+    "view:sun_elevation": 26.74622352,
+    "platform": "LANDSAT_9",
+    "instruments": [
+     "OLI",
+     "TIRS"
+    ],
+    "view:off_nadir": 0,
+    "landsat:cloud_cover_land": 69.37,
+    "landsat:wrs_type": "2",
+    "landsat:wrs_path": "066",
+    "landsat:wrs_row": "018",
+    "landsat:scene_id": "LC90660182026272LGN00",
+    "landsat:collection_category": "T1",
+    "landsat:collection_number": "02",
+    "landsat:correction": "L1TP",
+    "accuracy:geometric_x_bias": 0,
+    "accuracy:geometric_y_bias": 0,
+    "accuracy:geometric_x_stddev": 5.362,
+    "accuracy:geometric_y_stddev": 5.084,
+    "accuracy:geometric_rmse": 7.389,
+    "proj:epsg": 32606,
+    "proj:shape": [
+     8181,
+     8111
+    ],
+    "proj:transform": [
+     30,
+     0,
+     411885,
+     0,
+     -30,
+     6784215
+    ],
+    "created": "2026-09-29T22:03:09.583Z",
+    "updated": "2026-09-29T22:03:09.583Z"
+   },
+   "type": "Feature"
+  },
+  {
+   "id": "LC09_L2SR_084110_20260927_20260928_02_T2_SR",
+   "bbox": [
+    134.02870709034886,
+    -72.0808686985615,
+    141.13072317147166,
+    -69.75195825684744
+   ],
+   "properties": {
+    "datetime": "2026-09-27T23:23:40.814837Z",
+    "eo:cloud_cover": 0.18,
+    "view:sun_azimuth": 51.24138714,
+    "view:sun_elevation": 14.21837875,
+    "platform": "LANDSAT_9",
+    "instruments": [
+     "OLI",
+     "TIRS"
+    ],
+    "view:off_nadir": 0,
+    "landsat:cloud_cover_land": 0.18,
+    "landsat:wrs_type": "2",
+    "landsat:wrs_path": "084",
+    "landsat:wrs_row": "110",
+    "landsat:scene_id": "LC90841102026270LGN00",
+    "landsat:collection_category": "T2",
+    "landsat:collection_number": "02",
+    "landsat:correction": "L2SR",
+    "proj:epsg": 3031,
+    "proj:shape": [
+     8001,
+     8071
+    ],
+    "proj:transform": [
+     30,
+     0,
+     1288485,
+     0,
+     -30,
+     -1425585
+    ],
+    "created": "2026-09-28T12:06:01.546Z",
+    "updated": "2026-09-28T12:06:01.546Z"
+   },
+   "type": "Feature"
+  }
+ ]
+}

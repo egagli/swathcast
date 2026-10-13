@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+   <Document>
+      <name>Planned from 2026-09-29T17:28:51 to 2026-10-21T19:40:00</name>
+      <Style id="SM">
+         <LineStyle>
+            <color>FF000000</color>
+            <width>5</width>
+         </LineStyle>
+      </Style>
+      <Style id="IW">
+         <LineStyle>
+            <color>FF0000FF</color>
+            <width>5</width>
+         </LineStyle>
+      </Style>
+      <Style id="EW">
+         <LineStyle>
+            <color>FF00FF00</color>
+            <width>5</width>
+         </LineStyle>
+      </Style>
+      <Style id="WV">
+         <LineStyle>
+            <color>FFFFFFFF</color>
+            <width>5</width>
+         </LineStyle>
+      </Style>
+      <Style id="RFC">
+         <LineStyle>
+            <color>FF000000</color>
+            <width>5</width>
+         </LineStyle>
+      </Style>
+      <Folder>
+         <name>2026-09-29</name>
+         <Folder>
+            <name>S1C</name>
+            <Placemark>
+               <name>2026-09-29T17:57:14</name>
+               <TimeSpan>
+                  <begin>2026-09-29T17:57:14</begin>
+                  <end>2026-09-29T17:57:35</end>
+               </TimeSpan>
+               <styleUrl>SM</styleUrl>
+               <ExtendedData>
+                  <Data name="SatelliteId">
+                     <value>S1C</value>
+                  </Data>
+                  <Data name="DatatakeId">
+                     <value>133D8</value>
+                  </Data>
+                  <Data name="Mode">
+                     <value>SM</value>
+                  </Data>
+                  <Data name="Swath">
+                     <value>S2</value>
+                  </Data>
+                  <Data name="Polarisation">
+                     <value>DV</value>
+                  </Data>
+                  <Data name="ObservationTimeStart">
+                     <value>2026-09-29T17:57:14</value>
+                  </Data>
+                  <Data name="ObservationTimeStop">
+                     <value>2026-09-29T17:57:35</value>
+                  </Data>
+                  <Data name="ObservationDuration">
+                     <value>21</value>
+                  </Data>
+                  <Data name="OrbitAbsolute">
+                     <value>9665</value>
+                  </Data>
+                  <Data name="OrbitRelative">
+                     <value>117</value>
+                  </Data>
+               </ExtendedData>
+               <LinearRing>
+                  <tessellate>true</tessellate>
+                  <altitudeMode>clampToGround</altitudeMode>
+                  <coordinates>167.03421,-50.33603,0 166.39420,-51.56102,0 165.24681,-51.31387,0 165.91479,-50.09450,0 167.03421,-50.33603,0</coordinates>
+               </LinearRing>
+            </Placemark>
+            <Placemark>
+               <name>2026-09-29T18:12:13</name>
+               <TimeSpan>
+                  <begin>2026-09-29T18:12:13</begin>
+                  <end>2026-09-29T18:14:57</end>
+               </TimeSpan>
+               <styleUrl>EW</styleUrl>
+               <ExtendedData>
+                  <Data name="SatelliteId">
+                     <value>S1C</value>
+                  </Data>
+                  <Data name="DatatakeId">
+                     <value>133DA</value>
+                  </Data>
+                  <Data name="Mode">
+                     <value>EW</value>
+                  </Data>
+                  <Data name="Swath">
+                     <value>NA</value>
+                  </Data>
+                  <Data name="Polarisation">
+                     <value>SH</value>
+                  </Data>
+                  <Data name="ObservationTimeStart">
+                     <value>2026-09-29T18:12:13</value>
+                  </Data>
+                  <Data name="ObservationTimeStop">
+                     <value>2026-09-29T18:14:57</value>
+                  </Data>
+                  <Data name="ObservationDuration">
+                     <value>164</value>
+                  </Data>
+                  <Data name="OrbitAbsolute">
+                     <value>9665</value>
+                  </Data>
+                  <Data name="OrbitRelative">
+                     <value>117</value>
+                  </Data>
+               </ExtendedData>
+               <LinearRing>
+                  <tessellate>true</tessellate>
+                  <altitudeMode>clampToGround</altitudeMode>
+                  <coordinates>28.52703,-71.18327,0 16.47437,-62.30192,0 23.51144,-60.62894,0 37.24905,-68.88461,0 28.52703,-71.18327,0</coordinates>
+               </LinearRing>
+            </Placemark>
+            <Placemark>
+               <name>2026-09-29T18:32:24</name>
+               <TimeSpan>
+                  <begin>2026-09-29T18:32:24</begin>
+                  <end>2026-09-29T18:33:47</end>
+               </TimeSpan>
+               <styleUrl>IW</styleUrl>
+               <ExtendedData>
+                  <Data name="SatelliteId">
+                     <value>S1C</value>
+                  </Data>
+                  <Data name="DatatakeId">
+                     <value>133DC</value>
+                  </Data>
+                  <Data name="Mode">
+                     <value>IW</value>
+                  </Data>
+                  <Data name="Swath">
+                     <value>NA</value>
+                  </Data>
+                  <Data name="Polarisation">
+                     <value>DV</value>
+                  </Data>
+                  <Data name="ObservationTimeStart">
+                     <value>2026-09-29T18:32:24</value>
+                  </Data>
+                  <Data name="ObservationTimeStop">
+                     <value>2026-09-29T18:33:47</value>
+                  </Data>
+                  <Data name="ObservationDuration">
+                     <value>83</value>
+                  </Data>
+                  <Data name="OrbitAbsolute">
+                     <value>9665</value>
+                  </Data>
+                  <Data name="OrbitRelative">
+                     <value>117</value>
+                  </Data>
+               </ExtendedData>
+               <LinearRing>
+                  <tessellate>true</tessellate>
+                  <altitudeMode>clampToGround</altitudeMode>
+                  <coordinates>-4.74332,0.23335,0 -5.79078,5.23759,0 -3.56501,5.69787,0 -2.53002,0.70804,0 -4.74332,0.23335,0</coordinates>
+               </LinearRing>
+            </Placemark></Folder></Folder></Document></kml>

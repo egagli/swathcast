@@ -1,0 +1,994 @@
+{
+ "hits": 74688806,
+ "items": [
+  {
+   "meta": {
+    "collection-concept-id": "C2777436413-ASF",
+    "concept-id": "G4327178974-ASF",
+    "concept-type": "granule",
+    "format": "application/vnd.nasa.cmr.umm+json",
+    "native-id": "OPERA_L2_RTC-S1_T047-100780-IW3_20260924T231239Z_20260928T224833Z_S1C_30_v1.0",
+    "provider-id": "ASF",
+    "revision-date": "2026-09-28T23:43:28.953Z",
+    "revision-id": 1
+   },
+   "umm": {
+    "AdditionalAttributes": [
+     {
+      "Name": "ASCENDING_DESCENDING",
+      "Values": [
+       "ASCENDING"
+      ]
+     },
+     {
+      "Name": "BEAM_MODE",
+      "Values": [
+       "IW"
+      ]
+     },
+     {
+      "Name": "BISTATIC_DELAY_CORRECTION",
+      "Values": [
+       "TRUE"
+      ]
+     },
+     {
+      "Name": "GROUP_ID",
+      "Values": [
+       "S1C_IWDV_1086_1091_009595_047"
+      ]
+     },
+     {
+      "Name": "LOOK_DIRECTION",
+      "Values": [
+       "RIGHT"
+      ]
+     },
+     {
+      "Name": "NOISE_CORRECTION",
+      "Values": [
+       "TRUE"
+      ]
+     },
+     {
+      "Name": "OPERA_BURST_ID",
+      "Values": [
+       "T047_100780_IW3"
+      ]
+     },
+     {
+      "Name": "PATH_NUMBER",
+      "Values": [
+       "47"
+      ]
+     },
+     {
+      "Name": "POLARIZATION",
+      "Values": [
+       "VV",
+       "VH"
+      ]
+     },
+     {
+      "Name": "POST_PROCESSING_FILTER",
+      "Values": [
+       "FALSE"
+      ]
+     },
+     {
+      "Name": "PROCESSING_TYPE",
+      "Values": [
+       "RTC"
+      ]
+     },
+     {
+      "Name": "PRODUCT_VERSION",
+      "Values": [
+       "1.0"
+      ]
+     },
+     {
+      "Name": "RADIOMETRIC_TERRAIN_CORRECTION",
+      "Values": [
+       "TRUE"
+      ]
+     },
+     {
+      "Name": "STATIC_TROPO_CORRECTION",
+      "Values": [
+       "TRUE"
+      ]
+     },
+     {
+      "Name": "SUBSWATH_NAME",
+      "Values": [
+       "IW3"
+      ]
+     },
+     {
+      "Name": "WET_TROPO_CORRECTION",
+      "Values": [
+       "FALSE"
+      ]
+     }
+    ],
+    "CollectionReference": {
+     "ShortName": "OPERA_L2_RTC-S1_V1",
+     "Version": "1"
+    },
+    "DataGranule": {
+     "ArchiveAndDistributionInformation": [
+      {
+       "Checksum": {
+        "Algorithm": "MD5",
+        "Value": "22e0a9cc0b673e4700f604ce2a5ec00f"
+       },
+       "Format": "HDF5",
+       "Name": "OPERA_L2_RTC-S1_T047-100780-IW3_20260924T231239Z_20260928T224833Z_S1C_30_v1.0.h5",
+       "SizeInBytes": 103952
+      },
+      {
+       "Checksum": {
+        "Algorithm": "MD5",
+        "Value": "ff91b9ec9b763da20b1edd8fcbfee54d"
+       },
+       "Format": "GeoTIFF",
+       "Name": "OPERA_L2_RTC-S1_T047-100780-IW3_20260924T231239Z_20260928T224833Z_S1C_30_v1.0_VH.tif",
+       "SizeInBytes": 6250329
+      },
+      {
+       "Checksum": {
+        "Algorithm": "MD5",
+        "Value": "58c60a117ef3baac19a33dedb23cece3"
+       },
+       "Format": "GeoTIFF",
+       "Name": "OPERA_L2_RTC-S1_T047-100780-IW3_20260924T231239Z_20260928T224833Z_S1C_30_v1.0_VV.tif",
+       "SizeInBytes": 6208191
+      },
+      {
+       "Checksum": {
+        "Algorithm": "MD5",
+        "Value": "f79cec579fd08295d3126b488918930b"
+       },
+       "Format": "GeoTIFF",
+       "Name": "OPERA_L2_RTC-S1_T047-100780-IW3_20260924T231239Z_20260928T224833Z_S1C_30_v1.0_mask.tif",
+       "SizeInBytes": 57848
+      },
+      {
+       "Checksum": {
+        "Algorithm": "MD5",
+        "Value": "9b8b9455f30f3504d40178cca6f41006"
+       },
+       "Format": "XML",
+       "Name": "OPERA_L2_RTC-S1_T047-100780-IW3_20260924T231239Z_20260928T224833Z_S1C_30_v1.0.iso.xml",
+       "SizeInBytes": 160133
+      }
+     ],
+     "DayNightFlag": "Unspecified",
+     "Identifiers": [
+      {
+       "Identifier": "OPERA_L2_RTC-S1_T047-100780-IW3_20260924T231239Z_20260928T224833Z_S1C_30_v1.0",
+       "IdentifierType": "ProducerGranuleId"
+      },
+      {
+       "Identifier": "0.15.0",
+       "IdentifierName": "ISCE3Version",
+       "IdentifierType": "Other"
+      },
+      {
+       "Identifier": "0.2.5",
+       "IdentifierName": "S1ReaderVersion",
+       "IdentifierType": "Other"
+      },
+      {
+       "Identifier": "1.0.4",
+       "IdentifierName": "SASVersionId",
+       "IdentifierType": "Other"
+      }
+     ],
+     "ProductionDateTime": "2026-09-28T23:18:15Z"
+    },
+    "GranuleUR": "OPERA_L2_RTC-S1_T047-100780-IW3_20260924T231239Z_20260928T224833Z_S1C_30_v1.0",
+    "InputGranules": [
+     "S1C_IW_SLC__1SDV_20260924T231221_20260924T231248_009595_013188_157E"
+    ],
+    "MetadataSpecification": {
+     "Name": "UMM-G",
+     "URL": "https://cdn.earthdata.nasa.gov/umm/granule/v1.6.7",
+     "Version": "1.6.7"
+    },
+    "OrbitCalculatedSpatialDomains": [
+     {
+      "OrbitNumber": 9595
+     }
+    ],
+    "PGEVersionClass": {
+     "PGEName": "RTC_S1_PGE",
+     "PGEVersion": "2.1.4"
+    },
+    "Platforms": [
+     {
+      "Instruments": [
+       {
+        "Characteristics": [
+         {
+          "Name": "LookDirection",
+          "Value": "RIGHT"
+         }
+        ],
+        "OperationalModes": [
+         "IW"
+        ],
+        "ShortName": "C-SAR"
+       }
+      ],
+      "ShortName": "Sentinel-1C"
+     }
+    ],
+    "Projects": [
+     {
+      "ShortName": "SNWG/OPERA"
+     }
+    ],
+    "ProviderDates": [
+     {
+      "Date": "2026-09-28T23:43:26Z",
+      "Type": "Insert"
+     },
+     {
+      "Date": "2026-09-28T23:43:26Z",
+      "Type": "Update"
+     }
+    ],
+    "TemporalExtent": {
+     "RangeDateTime": {
+      "BeginningDateTime": "2026-09-24T23:12:39Z",
+      "EndingDateTime": "2026-09-24T23:12:42Z"
+     }
+    }
+   }
+  },
+  {
+   "meta": {
+    "collection-concept-id": "C2777436413-ASF",
+    "concept-id": "G4327178968-ASF",
+    "concept-type": "granule",
+    "format": "application/vnd.nasa.cmr.umm+json",
+    "native-id": "OPERA_L2_RTC-S1_T047-100779-IW1_20260924T231234Z_20260928T224833Z_S1C_30_v1.0",
+    "provider-id": "ASF",
+    "revision-date": "2026-09-28T23:43:28.326Z",
+    "revision-id": 1
+   },
+   "umm": {
+    "AdditionalAttributes": [
+     {
+      "Name": "ASCENDING_DESCENDING",
+      "Values": [
+       "ASCENDING"
+      ]
+     },
+     {
+      "Name": "BEAM_MODE",
+      "Values": [
+       "IW"
+      ]
+     },
+     {
+      "Name": "BISTATIC_DELAY_CORRECTION",
+      "Values": [
+       "TRUE"
+      ]
+     },
+     {
+      "Name": "GROUP_ID",
+      "Values": [
+       "S1C_IWDV_1086_1091_009595_047"
+      ]
+     },
+     {
+      "Name": "LOOK_DIRECTION",
+      "Values": [
+       "RIGHT"
+      ]
+     },
+     {
+      "Name": "NOISE_CORRECTION",
+      "Values": [
+       "TRUE"
+      ]
+     },
+     {
+      "Name": "OPERA_BURST_ID",
+      "Values": [
+       "T047_100779_IW1"
+      ]
+     },
+     {
+      "Name": "PATH_NUMBER",
+      "Values": [
+       "47"
+      ]
+     },
+     {
+      "Name": "POLARIZATION",
+      "Values": [
+       "VV",
+       "VH"
+      ]
+     },
+     {
+      "Name": "POST_PROCESSING_FILTER",
+      "Values": [
+       "FALSE"
+      ]
+     },
+     {
+      "Name": "PROCESSING_TYPE",
+      "Values": [
+       "RTC"
+      ]
+     },
+     {
+      "Name": "PRODUCT_VERSION",
+      "Values": [
+       "1.0"
+      ]
+     },
+     {
+      "Name": "RADIOMETRIC_TERRAIN_CORRECTION",
+      "Values": [
+       "TRUE"
+      ]
+     },
+     {
+      "Name": "STATIC_TROPO_CORRECTION",
+      "Values": [
+       "TRUE"
+      ]
+     },
+     {
+      "Name": "SUBSWATH_NAME",
+      "Values": [
+       "IW1"
+      ]
+     },
+     {
+      "Name": "WET_TROPO_CORRECTION",
+      "Values": [
+       "FALSE"
+      ]
+     }
+    ],
+    "CollectionReference": {
+     "ShortName": "OPERA_L2_RTC-S1_V1",
+     "Version": "1"
+    },
+    "DataGranule": {
+     "ArchiveAndDistributionInformation": [
+      {
+       "Checksum": {
+        "Algorithm": "MD5",
+        "Value": "4d1be3a997b012b9df8b22758a9e3466"
+       },
+       "Format": "HDF5",
+       "Name": "OPERA_L2_RTC-S1_T047-100779-IW1_20260924T231234Z_20260928T224833Z_S1C_30_v1.0.h5",
+       "SizeInBytes": 106192
+      },
+      {
+       "Checksum": {
+        "Algorithm": "MD5",
+        "Value": "f7ecc014f084bcc111e19e32016d1dba"
+       },
+       "Format": "GeoTIFF",
+       "Name": "OPERA_L2_RTC-S1_T047-100779-IW1_20260924T231234Z_20260928T224833Z_S1C_30_v1.0_VH.tif",
+       "SizeInBytes": 7288818
+      },
+      {
+       "Checksum": {
+        "Algorithm": "MD5",
+        "Value": "5df03c173a1dc79d68459ff30ede003b"
+       },
+       "Format": "GeoTIFF",
+       "Name": "OPERA_L2_RTC-S1_T047-100779-IW1_20260924T231234Z_20260928T224833Z_S1C_30_v1.0_VV.tif",
+       "SizeInBytes": 7266577
+      },
+      {
+       "Checksum": {
+        "Algorithm": "MD5",
+        "Value": "cce40fb7be47749eadf0b6f2929de39d"
+       },
+       "Format": "GeoTIFF",
+       "Name": "OPERA_L2_RTC-S1_T047-100779-IW1_20260924T231234Z_20260928T224833Z_S1C_30_v1.0_mask.tif",
+       "SizeInBytes": 90628
+      },
+      {
+       "Checksum": {
+        "Algorithm": "MD5",
+        "Value": "b6ed45231a44dc2af705224e995a8097"
+       },
+       "Format": "XML",
+       "Name": "OPERA_L2_RTC-S1_T047-100779-IW1_20260924T231234Z_20260928T224833Z_S1C_30_v1.0.iso.xml",
+       "SizeInBytes": 160131
+      }
+     ],
+     "DayNightFlag": "Unspecified",
+     "Identifiers": [
+      {
+       "Identifier": "OPERA_L2_RTC-S1_T047-100779-IW1_20260924T231234Z_20260928T224833Z_S1C_30_v1.0",
+       "IdentifierType": "ProducerGranuleId"
+      },
+      {
+       "Identifier": "0.15.0",
+       "IdentifierName": "ISCE3Version",
+       "IdentifierType": "Other"
+      },
+      {
+       "Identifier": "0.2.5",
+       "IdentifierName": "S1ReaderVersion",
+       "IdentifierType": "Other"
+      },
+      {
+       "Identifier": "1.0.4",
+       "IdentifierName": "SASVersionId",
+       "IdentifierType": "Other"
+      }
+     ],
+     "ProductionDateTime": "2026-09-28T22:48:37Z"
+    },
+    "GranuleUR": "OPERA_L2_RTC-S1_T047-100779-IW1_20260924T231234Z_20260928T224833Z_S1C_30_v1.0",
+    "InputGranules": [
+     "S1C_IW_SLC__1SDV_20260924T231221_20260924T231248_009595_013188_157E"
+    ],
+    "MetadataSpecification": {
+     "Name": "UMM-G",
+     "URL": "https://cdn.earthdata.nasa.gov/umm/granule/v1.6.7",
+     "Version": "1.6.7"
+    },
+    "OrbitCalculatedSpatialDomains": [
+     {
+      "OrbitNumber": 9595
+     }
+    ],
+    "PGEVersionClass": {
+     "PGEName": "RTC_S1_PGE",
+     "PGEVersion": "2.1.4"
+    },
+    "Platforms": [
+     {
+      "Instruments": [
+       {
+        "Characteristics": [
+         {
+          "Name": "LookDirection",
+          "Value": "RIGHT"
+         }
+        ],
+        "OperationalModes": [
+         "IW"
+        ],
+        "ShortName": "C-SAR"
+       }
+      ],
+      "ShortName": "Sentinel-1C"
+     }
+    ],
+    "Projects": [
+     {
+      "ShortName": "SNWG/OPERA"
+     }
+    ],
+    "ProviderDates": [
+     {
+      "Date": "2026-09-28T23:43:25Z",
+      "Type": "Insert"
+     },
+     {
+      "Date": "2026-09-28T23:43:25Z",
+      "Type": "Update"
+     }
+    ],
+    "TemporalExtent": {
+     "RangeDateTime": {
+      "BeginningDateTime": "2026-09-24T23:12:34Z",
+      "EndingDateTime": "2026-09-24T23:12:37Z"
+     }
+    }
+   }
+  },
+  {
+   "meta": {
+    "collection-concept-id": "C2777436413-ASF",
+    "concept-id": "G4327178959-ASF",
+    "concept-type": "granule",
+    "format": "application/vnd.nasa.cmr.umm+json",
+    "native-id": "OPERA_L2_RTC-S1_T047-100775-IW1_20260924T231223Z_20260928T224833Z_S1C_30_v1.0",
+    "provider-id": "ASF",
+    "revision-date": "2026-09-28T23:43:26.862Z",
+    "revision-id": 1
+   },
+   "umm": {
+    "AdditionalAttributes": [
+     {
+      "Name": "ASCENDING_DESCENDING",
+      "Values": [
+       "ASCENDING"
+      ]
+     },
+     {
+      "Name": "BEAM_MODE",
+      "Values": [
+       "IW"
+      ]
+     },
+     {
+      "Name": "BISTATIC_DELAY_CORRECTION",
+      "Values": [
+       "TRUE"
+      ]
+     },
+     {
+      "Name": "GROUP_ID",
+      "Values": [
+       "S1C_IWDV_1086_1091_009595_047"
+      ]
+     },
+     {
+      "Name": "LOOK_DIRECTION",
+      "Values": [
+       "RIGHT"
+      ]
+     },
+     {
+      "Name": "NOISE_CORRECTION",
+      "Values": [
+       "TRUE"
+      ]
+     },
+     {
+      "Name": "OPERA_BURST_ID",
+      "Values": [
+       "T047_100775_IW1"
+      ]
+     },
+     {
+      "Name": "PATH_NUMBER",
+      "Values": [
+       "47"
+      ]
+     },
+     {
+      "Name": "POLARIZATION",
+      "Values": [
+       "VV",
+       "VH"
+      ]
+     },
+     {
+      "Name": "POST_PROCESSING_FILTER",
+      "Values": [
+       "FALSE"
+      ]
+     },
+     {
+      "Name": "PROCESSING_TYPE",
+      "Values": [
+       "RTC"
+      ]
+     },
+     {
+      "Name": "PRODUCT_VERSION",
+      "Values": [
+       "1.0"
+      ]
+     },
+     {
+      "Name": "RADIOMETRIC_TERRAIN_CORRECTION",
+      "Values": [
+       "TRUE"
+      ]
+     },
+     {
+      "Name": "STATIC_TROPO_CORRECTION",
+      "Values": [
+       "TRUE"
+      ]
+     },
+     {
+      "Name": "SUBSWATH_NAME",
+      "Values": [
+       "IW1"
+      ]
+     },
+     {
+      "Name": "WET_TROPO_CORRECTION",
+      "Values": [
+       "FALSE"
+      ]
+     }
+    ],
+    "CollectionReference": {
+     "ShortName": "OPERA_L2_RTC-S1_V1",
+     "Version": "1"
+    },
+    "DataGranule": {
+     "ArchiveAndDistributionInformation": [
+      {
+       "Checksum": {
+        "Algorithm": "MD5",
+        "Value": "0febaec8dd6b9470d08dce57eaf41895"
+       },
+       "Format": "HDF5",
+       "Name": "OPERA_L2_RTC-S1_T047-100775-IW1_20260924T231223Z_20260928T224833Z_S1C_30_v1.0.h5",
+       "SizeInBytes": 106224
+      },
+      {
+       "Checksum": {
+        "Algorithm": "MD5",
+        "Value": "662b7bda881d0e058c1a964b3b6f44c2"
+       },
+       "Format": "GeoTIFF",
+       "Name": "OPERA_L2_RTC-S1_T047-100775-IW1_20260924T231223Z_20260928T224833Z_S1C_30_v1.0_VH.tif",
+       "SizeInBytes": 6896996
+      },
+      {
+       "Checksum": {
+        "Algorithm": "MD5",
+        "Value": "872dbc1ae1c35880ddbaffccf6c98c22"
+       },
+       "Format": "GeoTIFF",
+       "Name": "OPERA_L2_RTC-S1_T047-100775-IW1_20260924T231223Z_20260928T224833Z_S1C_30_v1.0_VV.tif",
+       "SizeInBytes": 6829176
+      },
+      {
+       "Checksum": {
+        "Algorithm": "MD5",
+        "Value": "fa992717c77283f9631ba963e81a26b2"
+       },
+       "Format": "GeoTIFF",
+       "Name": "OPERA_L2_RTC-S1_T047-100775-IW1_20260924T231223Z_20260928T224833Z_S1C_30_v1.0_mask.tif",
+       "SizeInBytes": 61645
+      },
+      {
+       "Checksum": {
+        "Algorithm": "MD5",
+        "Value": "35bfe38a999831be98f8870fbc0590f7"
+       },
+       "Format": "XML",
+       "Name": "OPERA_L2_RTC-S1_T047-100775-IW1_20260924T231223Z_20260928T224833Z_S1C_30_v1.0.iso.xml",
+       "SizeInBytes": 160133
+      }
+     ],
+     "DayNightFlag": "Unspecified",
+     "Identifiers": [
+      {
+       "Identifier": "OPERA_L2_RTC-S1_T047-100775-IW1_20260924T231223Z_20260928T224833Z_S1C_30_v1.0",
+       "IdentifierType": "ProducerGranuleId"
+      },
+      {
+       "Identifier": "0.15.0",
+       "IdentifierName": "ISCE3Version",
+       "IdentifierType": "Other"
+      },
+      {
+       "Identifier": "0.2.5",
+       "IdentifierName": "S1ReaderVersion",
+       "IdentifierType": "Other"
+      },
+      {
+       "Identifier": "1.0.4",
+       "IdentifierName": "SASVersionId",
+       "IdentifierType": "Other"
+      }
+     ],
+     "ProductionDateTime": "2026-09-28T22:48:38Z"
+    },
+    "GranuleUR": "OPERA_L2_RTC-S1_T047-100775-IW1_20260924T231223Z_20260928T224833Z_S1C_30_v1.0",
+    "InputGranules": [
+     "S1C_IW_SLC__1SDV_20260924T231221_20260924T231248_009595_013188_157E"
+    ],
+    "MetadataSpecification": {
+     "Name": "UMM-G",
+     "URL": "https://cdn.earthdata.nasa.gov/umm/granule/v1.6.7",
+     "Version": "1.6.7"
+    },
+    "OrbitCalculatedSpatialDomains": [
+     {
+      "OrbitNumber": 9595
+     }
+    ],
+    "PGEVersionClass": {
+     "PGEName": "RTC_S1_PGE",
+     "PGEVersion": "2.1.4"
+    },
+    "Platforms": [
+     {
+      "Instruments": [
+       {
+        "Characteristics": [
+         {
+          "Name": "LookDirection",
+          "Value": "RIGHT"
+         }
+        ],
+        "OperationalModes": [
+         "IW"
+        ],
+        "ShortName": "C-SAR"
+       }
+      ],
+      "ShortName": "Sentinel-1C"
+     }
+    ],
+    "Projects": [
+     {
+      "ShortName": "SNWG/OPERA"
+     }
+    ],
+    "ProviderDates": [
+     {
+      "Date": "2026-09-28T23:43:24Z",
+      "Type": "Insert"
+     },
+     {
+      "Date": "2026-09-28T23:43:24Z",
+      "Type": "Update"
+     }
+    ],
+    "TemporalExtent": {
+     "RangeDateTime": {
+      "BeginningDateTime": "2026-09-24T23:12:23Z",
+      "EndingDateTime": "2026-09-24T23:12:26Z"
+     }
+    }
+   }
+  },
+  {
+   "meta": {
+    "collection-concept-id": "C2777436413-ASF",
+    "concept-id": "G4327178958-ASF",
+    "concept-type": "granule",
+    "format": "application/vnd.nasa.cmr.umm+json",
+    "native-id": "OPERA_L2_RTC-S1_T047-100779-IW3_20260924T231236Z_20260928T224833Z_S1C_30_v1.0",
+    "provider-id": "ASF",
+    "revision-date": "2026-09-28T23:43:26.663Z",
+    "revision-id": 1
+   },
+   "umm": {
+    "AdditionalAttributes": [
+     {
+      "Name": "ASCENDING_DESCENDING",
+      "Values": [
+       "ASCENDING"
+      ]
+     },
+     {
+      "Name": "BEAM_MODE",
+      "Values": [
+       "IW"
+      ]
+     },
+     {
+      "Name": "BISTATIC_DELAY_CORRECTION",
+      "Values": [
+       "TRUE"
+      ]
+     },
+     {
+      "Name": "GROUP_ID",
+      "Values": [
+       "S1C_IWDV_1086_1091_009595_047"
+      ]
+     },
+     {
+      "Name": "LOOK_DIRECTION",
+      "Values": [
+       "RIGHT"
+      ]
+     },
+     {
+      "Name": "NOISE_CORRECTION",
+      "Values": [
+       "TRUE"
+      ]
+     },
+     {
+      "Name": "OPERA_BURST_ID",
+      "Values": [
+       "T047_100779_IW3"
+      ]
+     },
+     {
+      "Name": "PATH_NUMBER",
+      "Values": [
+       "47"
+      ]
+     },
+     {
+      "Name": "POLARIZATION",
+      "Values": [
+       "VV",
+       "VH"
+      ]
+     },
+     {
+      "Name": "POST_PROCESSING_FILTER",
+      "Values": [
+       "FALSE"
+      ]
+     },
+     {
+      "Name": "PROCESSING_TYPE",
+      "Values": [
+       "RTC"
+      ]
+     },
+     {
+      "Name": "PRODUCT_VERSION",
+      "Values": [
+       "1.0"
+      ]
+     },
+     {
+      "Name": "RADIOMETRIC_TERRAIN_CORRECTION",
+      "Values": [
+       "TRUE"
+      ]
+     },
+     {
+      "Name": "STATIC_TROPO_CORRECTION",
+      "Values": [
+       "TRUE"
+      ]
+     },
+     {
+      "Name": "SUBSWATH_NAME",
+      "Values": [
+       "IW3"
+      ]
+     },
+     {
+      "Name": "WET_TROPO_CORRECTION",
+      "Values": [
+       "FALSE"
+      ]
+     }
+    ],
+    "CollectionReference": {
+     "ShortName": "OPERA_L2_RTC-S1_V1",
+     "Version": "1"
+    },
+    "DataGranule": {
+     "ArchiveAndDistributionInformation": [
+      {
+       "Checksum": {
+        "Algorithm": "MD5",
+        "Value": "788dd573153f7d20fba50f79b3928861"
+       },
+       "Format": "HDF5",
+       "Name": "OPERA_L2_RTC-S1_T047-100779-IW3_20260924T231236Z_20260928T224833Z_S1C_30_v1.0.h5",
+       "SizeInBytes": 103952
+      },
+      {
+       "Checksum": {
+        "Algorithm": "MD5",
+        "Value": "3f56d4499c3a9376674adbd9bcd1ac27"
+       },
+       "Format": "GeoTIFF",
+       "Name": "OPERA_L2_RTC-S1_T047-100779-IW3_20260924T231236Z_20260928T224833Z_S1C_30_v1.0_VH.tif",
+       "SizeInBytes": 6284510
+      },
+      {
+       "Checksum": {
+        "Algorithm": "MD5",
+        "Value": "72a203e6ab35a9c42ed3fcc7aa430b36"
+       },
+       "Format": "GeoTIFF",
+       "Name": "OPERA_L2_RTC-S1_T047-100779-IW3_20260924T231236Z_20260928T224833Z_S1C_30_v1.0_VV.tif",
+       "SizeInBytes": 6254670
+      },
+      {
+       "Checksum": {
+        "Algorithm": "MD5",
+        "Value": "791646f1e722f9d1ae4cacc19e7f0122"
+       },
+       "Format": "GeoTIFF",
+       "Name": "OPERA_L2_RTC-S1_T047-100779-IW3_20260924T231236Z_20260928T224833Z_S1C_30_v1.0_mask.tif",
+       "SizeInBytes": 54051
+      },
+      {
+       "Checksum": {
+        "Algorithm": "MD5",
+        "Value": "df696f847b05888fe33c4dfea89d0916"
+       },
+       "Format": "XML",
+       "Name": "OPERA_L2_RTC-S1_T047-100779-IW3_20260924T231236Z_20260928T224833Z_S1C_30_v1.0.iso.xml",
+       "SizeInBytes": 160124
+      }
+     ],
+     "DayNightFlag": "Unspecified",
+     "Identifiers": [
+      {
+       "Identifier": "OPERA_L2_RTC-S1_T047-100779-IW3_20260924T231236Z_20260928T224833Z_S1C_30_v1.0",
+       "IdentifierType": "ProducerGranuleId"
+      },
+      {
+       "Identifier": "0.15.0",
+       "IdentifierName": "ISCE3Version",
+       "IdentifierType": "Other"
+      },
+      {
+       "Identifier": "0.2.5",
+       "IdentifierName": "S1ReaderVersion",
+       "IdentifierType": "Other"
+      },
+      {
+       "Identifier": "1.0.4",
+       "IdentifierName": "SASVersionId",
+       "IdentifierType": "Other"
+      }
+     ],
+     "ProductionDateTime": "2026-09-28T23:13:38Z"
+    },
+    "GranuleUR": "OPERA_L2_RTC-S1_T047-100779-IW3_20260924T231236Z_20260928T224833Z_S1C_30_v1.0",
+    "InputGranules": [
+     "S1C_IW_SLC__1SDV_20260924T231221_20260924T231248_009595_013188_157E"
+    ],
+    "MetadataSpecification": {
+     "Name": "UMM-G",
+     "URL": "https://cdn.earthdata.nasa.gov/umm/granule/v1.6.7",
+     "Version": "1.6.7"
+    },
+    "OrbitCalculatedSpatialDomains": [
+     {
+      "OrbitNumber": 9595
+     }
+    ],
+    "PGEVersionClass": {
+     "PGEName": "RTC_S1_PGE",
+     "PGEVersion": "2.1.4"
+    },
+    "Platforms": [
+     {
+      "Instruments": [
+       {
+        "Characteristics": [
+         {
+          "Name": "LookDirection",
+          "Value": "RIGHT"
+         }
+        ],
+        "OperationalModes": [
+         "IW"
+        ],
+        "ShortName": "C-SAR"
+       }
+      ],
+      "ShortName": "Sentinel-1C"
+     }
+    ],
+    "Projects": [
+     {
+      "ShortName": "SNWG/OPERA"
+     }
+    ],
+    "ProviderDates": [
+     {
+      "Date": "2026-09-28T23:43:24Z",
+      "Type": "Insert"
+     },
+     {
+      "Date": "2026-09-28T23:43:24Z",
+      "Type": "Update"
+     }
+    ],
+    "TemporalExtent": {
+     "RangeDateTime": {
+      "BeginningDateTime": "2026-09-24T23:12:36Z",
+      "EndingDateTime": "2026-09-24T23:12:39Z"
+     }
+    }
+   }
+  }
+ ],
+ "took": 68
+}

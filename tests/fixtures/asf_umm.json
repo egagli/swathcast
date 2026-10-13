@@ -1,0 +1,1170 @@
+{
+ "hits": 4,
+ "items": [
+  {
+   "meta": {
+    "collection-concept-id": "C3470873558-ASF",
+    "concept-id": "G4327075908-ASF",
+    "concept-type": "granule",
+    "format": "application/echo10+xml",
+    "native-id": "S1C_IW_SLC__1SDV_20260925T072131_20260925T072202_009600_0131B2_E986-SLC",
+    "provider-id": "ASF",
+    "revision-date": "2026-09-28T21:41:13.856Z",
+    "revision-id": 1
+   },
+   "umm": {
+    "AdditionalAttributes": [
+     {
+      "Name": "ACQUISITION_DATE",
+      "Values": [
+       "2026-09-25T07:22:02.456373Z"
+      ]
+     },
+     {
+      "Name": "ASCENDING_DESCENDING",
+      "Values": [
+       "ASCENDING"
+      ]
+     },
+     {
+      "Name": "ASC_NODE_TIME",
+      "Values": [
+       "2026-09-25T05:55:33.582496Z"
+      ]
+     },
+     {
+      "Name": "ASF_PLATFORM",
+      "Values": [
+       "Sentinel-1C"
+      ]
+     },
+     {
+      "Name": "BEAM_MODE",
+      "Values": [
+       "IW"
+      ]
+     },
+     {
+      "Name": "BEAM_MODE_DESC",
+      "Values": [
+       "Interferometric Wide. 250 km swath, 5 m x 20 m spatial resolution and burst synchronization for interferometry. IW is considered to be the standard mode over land masses."
+      ]
+     },
+     {
+      "Name": "BEAM_MODE_TYPE",
+      "Values": [
+       "IW"
+      ]
+     },
+     {
+      "Name": "BYTES",
+      "Values": [
+       "4053082553"
+      ]
+     },
+     {
+      "Name": "CENTER_ESA_FRAME",
+      "Values": [
+       "6303"
+      ]
+     },
+     {
+      "Name": "CENTER_FRAME_ID",
+      "Values": [
+       "1034"
+      ]
+     },
+     {
+      "Name": "CENTER_LAT",
+      "Values": [
+       "-43.9624"
+      ]
+     },
+     {
+      "Name": "CENTER_LON",
+      "Values": [
+       "173.7808"
+      ]
+     },
+     {
+      "Name": "DOPPLER",
+      "Values": [
+       "0"
+      ]
+     },
+     {
+      "Name": "FARADAY_ROTATION",
+      "Values": [
+       "NA"
+      ]
+     },
+     {
+      "Name": "FAR_END_LAT",
+      "Values": [
+       "-42.698959"
+      ]
+     },
+     {
+      "Name": "FAR_END_LON",
+      "Values": [
+       "174.849121"
+      ]
+     },
+     {
+      "Name": "FAR_START_LAT",
+      "Values": [
+       "-44.481796"
+      ]
+     },
+     {
+      "Name": "FAR_START_LON",
+      "Values": [
+       "175.70636"
+      ]
+     },
+     {
+      "Name": "FRAME_NUMBER",
+      "Values": [
+       "1031"
+      ]
+     },
+     {
+      "Name": "GRANULE_TYPE",
+      "Values": [
+       "SENTINEL_1C_FRAME"
+      ]
+     },
+     {
+      "Name": "GROUP_ID",
+      "Values": [
+       "S1C_IWDV_1031_1038_009600_052"
+      ]
+     },
+     {
+      "Name": "LOOK_DIRECTION",
+      "Values": [
+       "R"
+      ]
+     },
+     {
+      "Name": "MD5SUM",
+      "Values": [
+       "155d7209a7d4a6dff99ffc416d788523"
+      ]
+     },
+     {
+      "Name": "MISSION_NAME",
+      "Values": [
+       "NA"
+      ]
+     },
+     {
+      "Name": "NEAR_END_LAT",
+      "Values": [
+       "-43.410782"
+      ]
+     },
+     {
+      "Name": "NEAR_END_LON",
+      "Values": [
+       "171.892334"
+      ]
+     },
+     {
+      "Name": "NEAR_START_LAT",
+      "Values": [
+       "-45.214943"
+      ]
+     },
+     {
+      "Name": "NEAR_START_LON",
+      "Values": [
+       "172.661926"
+      ]
+     },
+     {
+      "Name": "PATH_NUMBER",
+      "Values": [
+       "52"
+      ]
+     },
+     {
+      "Name": "POLARIZATION",
+      "Values": [
+       "VV+VH"
+      ]
+     },
+     {
+      "Name": "PROCESSING_DATE",
+      "Values": [
+       "2026-09-28T21:41:02.159246Z"
+      ]
+     },
+     {
+      "Name": "PROCESSING_DESCRIPTION",
+      "Values": [
+       "Sentinel-1C Single Look Complex product"
+      ]
+     },
+     {
+      "Name": "PROCESSING_LEVEL",
+      "Values": [
+       "L1"
+      ]
+     },
+     {
+      "Name": "PROCESSING_TYPE",
+      "Values": [
+       "SLC"
+      ]
+     },
+     {
+      "Name": "PROCESSING_TYPE_DISPLAY",
+      "Values": [
+       "L1 Single Look Complex (SLC)"
+      ]
+     },
+     {
+      "Name": "SV_POSITION_POST",
+      "Values": [
+       "-4925426.456403,1068924.987712,-4973945.943369,2026-09-25T07:21:53.000000"
+      ]
+     },
+     {
+      "Name": "SV_POSITION_PRE",
+      "Values": [
+       "-4878687.267150,1039717.431066,-5025971.610220,2026-09-25T07:21:43.000000"
+      ]
+     },
+     {
+      "Name": "SV_VELOCITY_POST",
+      "Values": [
+       "-4644.415358,2918.251275,5230.602594,2026-09-25T07:21:53.000000"
+      ]
+     },
+     {
+      "Name": "SV_VELOCITY_PRE",
+      "Values": [
+       "-4703.336099,2923.191270,5174.434144,2026-09-25T07:21:43.000000"
+      ]
+     }
+    ],
+    "CollectionReference": {
+     "ShortName": "SENTINEL-1C_SLC",
+     "Version": "1"
+    },
+    "DataGranule": {
+     "ArchiveAndDistributionInformation": [
+      {
+       "Name": "Not provided",
+       "Size": 3865.3207330703735,
+       "SizeUnit": "MB"
+      }
+     ],
+     "DayNightFlag": "Unspecified",
+     "Identifiers": [
+      {
+       "Identifier": "S1C_IW_SLC__1SDV_20260925T072131_20260925T072202_009600_0131B2_E986",
+       "IdentifierType": "ProducerGranuleId"
+      }
+     ],
+     "ProductionDateTime": "2026-09-25T07:21:31.808Z"
+    },
+    "GranuleUR": "S1C_IW_SLC__1SDV_20260925T072131_20260925T072202_009600_0131B2_E986-SLC",
+    "MetadataSpecification": {
+     "Name": "UMM-G",
+     "URL": "https://cdn.earthdata.nasa.gov/umm/granule/v1.6.7",
+     "Version": "1.6.7"
+    },
+    "OrbitCalculatedSpatialDomains": [
+     {
+      "OrbitNumber": 9600
+     }
+    ],
+    "PGEVersionClass": {
+     "PGEName": "Sentinel-1 IPF",
+     "PGEVersion": "004.03"
+    },
+    "Platforms": [
+     {
+      "Instruments": [
+       {
+        "ShortName": "C-SAR"
+       }
+      ],
+      "ShortName": "SENTINEL-1C"
+     }
+    ],
+    "ProviderDates": [
+     {
+      "Date": "2026-09-28T21:41:13.000Z",
+      "Type": "Insert"
+     },
+     {
+      "Date": "2026-09-28T21:41:13.000Z",
+      "Type": "Update"
+     }
+    ],
+    "TemporalExtent": {
+     "RangeDateTime": {
+      "BeginningDateTime": "2026-09-25T07:21:31.808Z",
+      "EndingDateTime": "2026-09-25T07:22:02.456Z"
+     }
+    }
+   }
+  },
+  {
+   "meta": {
+    "collection-concept-id": "C3484561061-ASF",
+    "concept-id": "G4327079250-ASF",
+    "concept-type": "granule",
+    "format": "application/echo10+xml",
+    "native-id": "S1C_IW_SLC__1SDV_20260925T072131_20260925T072202_009600_0131B2_E986-METADATA_SLC",
+    "provider-id": "ASF",
+    "revision-date": "2026-09-28T21:48:12.932Z",
+    "revision-id": 1
+   },
+   "umm": {
+    "AdditionalAttributes": [
+     {
+      "Name": "ACQUISITION_DATE",
+      "Values": [
+       "2026-09-25T07:22:02.456373Z"
+      ]
+     },
+     {
+      "Name": "ASCENDING_DESCENDING",
+      "Values": [
+       "ASCENDING"
+      ]
+     },
+     {
+      "Name": "ASF_PLATFORM",
+      "Values": [
+       "Sentinel-1C"
+      ]
+     },
+     {
+      "Name": "BEAM_MODE",
+      "Values": [
+       "IW"
+      ]
+     },
+     {
+      "Name": "BEAM_MODE_DESC",
+      "Values": [
+       "Interferometric Wide. 250 km swath, 5 m x 20 m spatial resolution and burst synchronization for interferometry. IW is considered to be the standard mode over land masses."
+      ]
+     },
+     {
+      "Name": "BEAM_MODE_TYPE",
+      "Values": [
+       "IW"
+      ]
+     },
+     {
+      "Name": "BYTES",
+      "Values": [
+       "67902"
+      ]
+     },
+     {
+      "Name": "CENTER_ESA_FRAME",
+      "Values": [
+       "6303"
+      ]
+     },
+     {
+      "Name": "CENTER_FRAME_ID",
+      "Values": [
+       "1034"
+      ]
+     },
+     {
+      "Name": "CENTER_LAT",
+      "Values": [
+       "-43.9624"
+      ]
+     },
+     {
+      "Name": "CENTER_LON",
+      "Values": [
+       "173.7808"
+      ]
+     },
+     {
+      "Name": "DOPPLER",
+      "Values": [
+       "0"
+      ]
+     },
+     {
+      "Name": "FARADAY_ROTATION",
+      "Values": [
+       "NA"
+      ]
+     },
+     {
+      "Name": "FAR_END_LAT",
+      "Values": [
+       "-42.698959"
+      ]
+     },
+     {
+      "Name": "FAR_END_LON",
+      "Values": [
+       "174.849121"
+      ]
+     },
+     {
+      "Name": "FAR_START_LAT",
+      "Values": [
+       "-44.481796"
+      ]
+     },
+     {
+      "Name": "FAR_START_LON",
+      "Values": [
+       "175.70636"
+      ]
+     },
+     {
+      "Name": "FRAME_NUMBER",
+      "Values": [
+       "1031"
+      ]
+     },
+     {
+      "Name": "GRANULE_TYPE",
+      "Values": [
+       "SENTINEL_1C_FRAME"
+      ]
+     },
+     {
+      "Name": "GROUP_ID",
+      "Values": [
+       "S1C_IWDV_1031_1038_009600_052"
+      ]
+     },
+     {
+      "Name": "LOOK_DIRECTION",
+      "Values": [
+       "R"
+      ]
+     },
+     {
+      "Name": "MD5SUM",
+      "Values": [
+       "3941a79c6b3a59914f0c0b13d24ee131"
+      ]
+     },
+     {
+      "Name": "MISSION_NAME",
+      "Values": [
+       "NA"
+      ]
+     },
+     {
+      "Name": "NEAR_END_LAT",
+      "Values": [
+       "-43.410782"
+      ]
+     },
+     {
+      "Name": "NEAR_END_LON",
+      "Values": [
+       "171.892334"
+      ]
+     },
+     {
+      "Name": "NEAR_START_LAT",
+      "Values": [
+       "-45.214943"
+      ]
+     },
+     {
+      "Name": "NEAR_START_LON",
+      "Values": [
+       "172.661926"
+      ]
+     },
+     {
+      "Name": "PATH_NUMBER",
+      "Values": [
+       "52"
+      ]
+     },
+     {
+      "Name": "POLARIZATION",
+      "Values": [
+       "VV+VH"
+      ]
+     },
+     {
+      "Name": "PROCESSING_DATE",
+      "Values": [
+       "2026-09-28T21:47:54.219824Z"
+      ]
+     },
+     {
+      "Name": "PROCESSING_DESCRIPTION",
+      "Values": [
+       "Sentinel-1C ISO 19115-compliant XML metadata file"
+      ]
+     },
+     {
+      "Name": "PROCESSING_LEVEL",
+      "Values": [
+       "METADATA_SLC"
+      ]
+     },
+     {
+      "Name": "PROCESSING_TYPE",
+      "Values": [
+       "METADATA_SLC"
+      ]
+     },
+     {
+      "Name": "PROCESSING_TYPE_DISPLAY",
+      "Values": [
+       "XML Metadata (SLC)"
+      ]
+     }
+    ],
+    "CollectionReference": {
+     "ShortName": "SENTINEL-1C_META_SLC",
+     "Version": "1"
+    },
+    "DataGranule": {
+     "ArchiveAndDistributionInformation": [
+      {
+       "Name": "Not provided",
+       "Size": 0.06475639343261719,
+       "SizeUnit": "MB"
+      }
+     ],
+     "DayNightFlag": "Unspecified",
+     "Identifiers": [
+      {
+       "Identifier": "S1C_IW_SLC__1SDV_20260925T072131_20260925T072202_009600_0131B2_E986",
+       "IdentifierType": "ProducerGranuleId"
+      }
+     ],
+     "ProductionDateTime": "2026-09-25T07:21:31.808Z"
+    },
+    "GranuleUR": "S1C_IW_SLC__1SDV_20260925T072131_20260925T072202_009600_0131B2_E986-METADATA_SLC",
+    "MetadataSpecification": {
+     "Name": "UMM-G",
+     "URL": "https://cdn.earthdata.nasa.gov/umm/granule/v1.6.7",
+     "Version": "1.6.7"
+    },
+    "OrbitCalculatedSpatialDomains": [
+     {
+      "OrbitNumber": 9600
+     }
+    ],
+    "PGEVersionClass": {
+     "PGEName": "Sentinel-1 IPF",
+     "PGEVersion": "004.03"
+    },
+    "Platforms": [
+     {
+      "Instruments": [
+       {
+        "ShortName": "C-SAR"
+       }
+      ],
+      "ShortName": "SENTINEL-1C"
+     }
+    ],
+    "ProviderDates": [
+     {
+      "Date": "2026-09-28T21:48:12.000Z",
+      "Type": "Insert"
+     },
+     {
+      "Date": "2026-09-28T21:48:12.000Z",
+      "Type": "Update"
+     }
+    ],
+    "TemporalExtent": {
+     "RangeDateTime": {
+      "BeginningDateTime": "2026-09-25T07:21:31.808Z",
+      "EndingDateTime": "2026-09-25T07:22:02.456Z"
+     }
+    }
+   }
+  },
+  {
+   "meta": {
+    "collection-concept-id": "C3486566209-ASF",
+    "concept-id": "G4327194778-ASF",
+    "concept-type": "granule",
+    "format": "application/echo10+xml",
+    "native-id": "S1C_IW_GRDH_1SDV_20260925T193709_20260925T193733_009608_0131FB_55E1-GRD_HD",
+    "provider-id": "ASF",
+    "revision-date": "2026-09-29T00:10:53.528Z",
+    "revision-id": 3
+   },
+   "umm": {
+    "AdditionalAttributes": [
+     {
+      "Name": "ACQUISITION_DATE",
+      "Values": [
+       "2026-09-25T19:37:33.967459Z"
+      ]
+     },
+     {
+      "Name": "ASCENDING_DESCENDING",
+      "Values": [
+       "DESCENDING"
+      ]
+     },
+     {
+      "Name": "ASF_PLATFORM",
+      "Values": [
+       "Sentinel-1C"
+      ]
+     },
+     {
+      "Name": "BEAM_MODE",
+      "Values": [
+       "IW"
+      ]
+     },
+     {
+      "Name": "BEAM_MODE_DESC",
+      "Values": [
+       "Interferometric Wide. 250 km swath, 5 m x 20 m spatial resolution and burst synchronization for interferometry. IW is considered to be the standard mode over land masses."
+      ]
+     },
+     {
+      "Name": "BEAM_MODE_TYPE",
+      "Values": [
+       "IW"
+      ]
+     },
+     {
+      "Name": "BYTES",
+      "Values": [
+       "896899898"
+      ]
+     },
+     {
+      "Name": "CENTER_ESA_FRAME",
+      "Values": [
+       "2309"
+      ]
+     },
+     {
+      "Name": "CENTER_FRAME_ID",
+      "Values": [
+       "382"
+      ]
+     },
+     {
+      "Name": "CENTER_LAT",
+      "Values": [
+       "63.8410"
+      ]
+     },
+     {
+      "Name": "CENTER_LON",
+      "Values": [
+       "162.2767"
+      ]
+     },
+     {
+      "Name": "DOPPLER",
+      "Values": [
+       "0"
+      ]
+     },
+     {
+      "Name": "FARADAY_ROTATION",
+      "Values": [
+       "NA"
+      ]
+     },
+     {
+      "Name": "FAR_END_LAT",
+      "Values": [
+       "63.300594"
+      ]
+     },
+     {
+      "Name": "FAR_END_LON",
+      "Values": [
+       "159.468369"
+      ]
+     },
+     {
+      "Name": "FAR_START_LAT",
+      "Values": [
+       "64.778175"
+      ]
+     },
+     {
+      "Name": "FAR_START_LON",
+      "Values": [
+       "160.004837"
+      ]
+     },
+     {
+      "Name": "FRAME_NUMBER",
+      "Values": [
+       "379"
+      ]
+     },
+     {
+      "Name": "GRANULE_TYPE",
+      "Values": [
+       "SENTINEL_1C_FRAME"
+      ]
+     },
+     {
+      "Name": "GROUP_ID",
+      "Values": [
+       "S1C_IWDV_0379_0384_009608_060"
+      ]
+     },
+     {
+      "Name": "LOOK_DIRECTION",
+      "Values": [
+       "R"
+      ]
+     },
+     {
+      "Name": "MD5SUM",
+      "Values": [
+       "9fc96308710cf7c0341b4fc44b678016"
+      ]
+     },
+     {
+      "Name": "MISSION_NAME",
+      "Values": [
+       "NA"
+      ]
+     },
+     {
+      "Name": "NEAR_END_LAT",
+      "Values": [
+       "62.865307"
+      ]
+     },
+     {
+      "Name": "NEAR_END_LON",
+      "Values": [
+       "164.390366"
+      ]
+     },
+     {
+      "Name": "NEAR_START_LAT",
+      "Values": [
+       "64.33139"
+      ]
+     },
+     {
+      "Name": "NEAR_START_LON",
+      "Values": [
+       "165.185471"
+      ]
+     },
+     {
+      "Name": "PATH_NUMBER",
+      "Values": [
+       "60"
+      ]
+     },
+     {
+      "Name": "POLARIZATION",
+      "Values": [
+       "VV+VH"
+      ]
+     },
+     {
+      "Name": "PROCESSING_DATE",
+      "Values": [
+       "2026-09-28T23:59:29.754208Z"
+      ]
+     },
+     {
+      "Name": "PROCESSING_DESCRIPTION",
+      "Values": [
+       "Sentinel-1C Ground Range High-resolution Dual-polarization detected product"
+      ]
+     },
+     {
+      "Name": "PROCESSING_LEVEL",
+      "Values": [
+       "L1"
+      ]
+     },
+     {
+      "Name": "PROCESSING_TYPE",
+      "Values": [
+       "GRD_HD"
+      ]
+     },
+     {
+      "Name": "PROCESSING_TYPE_DISPLAY",
+      "Values": [
+       "L1 Detected High-Res Dual-Pol (GRD-HD)"
+      ]
+     },
+     {
+      "Name": "THUMBNAIL_URL",
+      "Values": [
+       "https://datapool.asf.alaska.edu/THUMBNAIL/SC/S1C_IW_GRDH_1SDV_20260925T193709_20260925T193733_009608_0131FB_55E1_thumb.jpg"
+      ]
+     }
+    ],
+    "CollectionReference": {
+     "ShortName": "SENTINEL-1C_DP_GRD_HIGH",
+     "Version": "1"
+    },
+    "DataGranule": {
+     "ArchiveAndDistributionInformation": [
+      {
+       "Name": "Not provided",
+       "Size": 855.3503971099854,
+       "SizeUnit": "MB"
+      }
+     ],
+     "DayNightFlag": "Unspecified",
+     "Identifiers": [
+      {
+       "Identifier": "S1C_IW_GRDH_1SDV_20260925T193709_20260925T193733_009608_0131FB_55E1",
+       "IdentifierType": "ProducerGranuleId"
+      }
+     ],
+     "ProductionDateTime": "2026-09-25T19:37:09.139Z"
+    },
+    "GranuleUR": "S1C_IW_GRDH_1SDV_20260925T193709_20260925T193733_009608_0131FB_55E1-GRD_HD",
+    "MetadataSpecification": {
+     "Name": "UMM-G",
+     "URL": "https://cdn.earthdata.nasa.gov/umm/granule/v1.6.7",
+     "Version": "1.6.7"
+    },
+    "OrbitCalculatedSpatialDomains": [
+     {
+      "OrbitNumber": 9608
+     }
+    ],
+    "PGEVersionClass": {
+     "PGEName": "Sentinel-1 IPF",
+     "PGEVersion": "004.03"
+    },
+    "Platforms": [
+     {
+      "Instruments": [
+       {
+        "ShortName": "C-SAR"
+       }
+      ],
+      "ShortName": "SENTINEL-1C"
+     }
+    ],
+    "ProviderDates": [
+     {
+      "Date": "2026-09-29T00:10:53.000Z",
+      "Type": "Insert"
+     },
+     {
+      "Date": "2026-09-29T00:10:53.000Z",
+      "Type": "Update"
+     }
+    ],
+    "TemporalExtent": {
+     "RangeDateTime": {
+      "BeginningDateTime": "2026-09-25T19:37:09.139Z",
+      "EndingDateTime": "2026-09-25T19:37:33.967Z"
+     }
+    }
+   }
+  },
+  {
+   "meta": {
+    "collection-concept-id": "C3486580531-ASF",
+    "concept-id": "G4327199025-ASF",
+    "concept-type": "granule",
+    "format": "application/echo10+xml",
+    "native-id": "S1C_IW_GRDH_1SDV_20260925T193709_20260925T193733_009608_0131FB_55E1-METADATA_GRD_HD",
+    "provider-id": "ASF",
+    "revision-date": "2026-09-29T00:04:22.651Z",
+    "revision-id": 1
+   },
+   "umm": {
+    "AdditionalAttributes": [
+     {
+      "Name": "ACQUISITION_DATE",
+      "Values": [
+       "2026-09-25T19:37:33.967459Z"
+      ]
+     },
+     {
+      "Name": "ASCENDING_DESCENDING",
+      "Values": [
+       "DESCENDING"
+      ]
+     },
+     {
+      "Name": "ASF_PLATFORM",
+      "Values": [
+       "Sentinel-1C"
+      ]
+     },
+     {
+      "Name": "BEAM_MODE",
+      "Values": [
+       "IW"
+      ]
+     },
+     {
+      "Name": "BEAM_MODE_DESC",
+      "Values": [
+       "Interferometric Wide. 250 km swath, 5 m x 20 m spatial resolution and burst synchronization for interferometry. IW is considered to be the standard mode over land masses."
+      ]
+     },
+     {
+      "Name": "BEAM_MODE_TYPE",
+      "Values": [
+       "IW"
+      ]
+     },
+     {
+      "Name": "BYTES",
+      "Values": [
+       "58854"
+      ]
+     },
+     {
+      "Name": "CENTER_ESA_FRAME",
+      "Values": [
+       "2309"
+      ]
+     },
+     {
+      "Name": "CENTER_FRAME_ID",
+      "Values": [
+       "382"
+      ]
+     },
+     {
+      "Name": "CENTER_LAT",
+      "Values": [
+       "63.8410"
+      ]
+     },
+     {
+      "Name": "CENTER_LON",
+      "Values": [
+       "162.2767"
+      ]
+     },
+     {
+      "Name": "DOPPLER",
+      "Values": [
+       "0"
+      ]
+     },
+     {
+      "Name": "FARADAY_ROTATION",
+      "Values": [
+       "NA"
+      ]
+     },
+     {
+      "Name": "FAR_END_LAT",
+      "Values": [
+       "63.300594"
+      ]
+     },
+     {
+      "Name": "FAR_END_LON",
+      "Values": [
+       "159.468369"
+      ]
+     },
+     {
+      "Name": "FAR_START_LAT",
+      "Values": [
+       "64.778175"
+      ]
+     },
+     {
+      "Name": "FAR_START_LON",
+      "Values": [
+       "160.004837"
+      ]
+     },
+     {
+      "Name": "FRAME_NUMBER",
+      "Values": [
+       "379"
+      ]
+     },
+     {
+      "Name": "GRANULE_TYPE",
+      "Values": [
+       "SENTINEL_1C_FRAME"
+      ]
+     },
+     {
+      "Name": "GROUP_ID",
+      "Values": [
+       "S1C_IWDV_0379_0384_009608_060"
+      ]
+     },
+     {
+      "Name": "LOOK_DIRECTION",
+      "Values": [
+       "R"
+      ]
+     },
+     {
+      "Name": "MD5SUM",
+      "Values": [
+       "98117a7e71a4ee6b5066269b98fba821"
+      ]
+     },
+     {
+      "Name": "MISSION_NAME",
+      "Values": [
+       "NA"
+      ]
+     },
+     {
+      "Name": "NEAR_END_LAT",
+      "Values": [
+       "62.865307"
+      ]
+     },
+     {
+      "Name": "NEAR_END_LON",
+      "Values": [
+       "164.390366"
+      ]
+     },
+     {
+      "Name": "NEAR_START_LAT",
+      "Values": [
+       "64.33139"
+      ]
+     },
+     {
+      "Name": "NEAR_START_LON",
+      "Values": [
+       "165.185471"
+      ]
+     },
+     {
+      "Name": "PATH_NUMBER",
+      "Values": [
+       "60"
+      ]
+     },
+     {
+      "Name": "POLARIZATION",
+      "Values": [
+       "VV+VH"
+      ]
+     },
+     {
+      "Name": "PROCESSING_DATE",
+      "Values": [
+       "2026-09-29T00:04:17.634688Z"
+      ]
+     },
+     {
+      "Name": "PROCESSING_DESCRIPTION",
+      "Values": [
+       "Sentinel-1C ISO 19115-compliant XML metadata file"
+      ]
+     },
+     {
+      "Name": "PROCESSING_LEVEL",
+      "Values": [
+       "METADATA_GRD_HD"
+      ]
+     },
+     {
+      "Name": "PROCESSING_TYPE",
+      "Values": [
+       "METADATA_GRD_HD"
+      ]
+     },
+     {
+      "Name": "PROCESSING_TYPE_DISPLAY",
+      "Values": [
+       "XML Metadata (GRD-HD)"
+      ]
+     }
+    ],
+    "CollectionReference": {
+     "ShortName": "SENTINEL-1C_DP_META_GRD_HIGH",
+     "Version": "1"
+    },
+    "DataGranule": {
+     "ArchiveAndDistributionInformation": [
+      {
+       "Name": "Not provided",
+       "Size": 0.05612754821777344,
+       "SizeUnit": "MB"
+      }
+     ],
+     "DayNightFlag": "Unspecified",
+     "Identifiers": [
+      {
+       "Identifier": "S1C_IW_GRDH_1SDV_20260925T193709_20260925T193733_009608_0131FB_55E1",
+       "IdentifierType": "ProducerGranuleId"
+      }
+     ],
+     "ProductionDateTime": "2026-09-25T19:37:09.139Z"
+    },
+    "GranuleUR": "S1C_IW_GRDH_1SDV_20260925T193709_20260925T193733_009608_0131FB_55E1-METADATA_GRD_HD",
+    "MetadataSpecification": {
+     "Name": "UMM-G",
+     "URL": "https://cdn.earthdata.nasa.gov/umm/granule/v1.6.7",
+     "Version": "1.6.7"
+    },
+    "OrbitCalculatedSpatialDomains": [
+     {
+      "OrbitNumber": 9608
+     }
+    ],
+    "PGEVersionClass": {
+     "PGEName": "Sentinel-1 IPF",
+     "PGEVersion": "004.03"
+    },
+    "Platforms": [
+     {
+      "Instruments": [
+       {
+        "ShortName": "C-SAR"
+       }
+      ],
+      "ShortName": "SENTINEL-1C"
+     }
+    ],
+    "ProviderDates": [
+     {
+      "Date": "2026-09-29T00:04:22.000Z",
+      "Type": "Insert"
+     },
+     {
+      "Date": "2026-09-29T00:04:22.000Z",
+      "Type": "Update"
+     }
+    ],
+    "TemporalExtent": {
+     "RangeDateTime": {
+      "BeginningDateTime": "2026-09-25T19:37:09.139Z",
+      "EndingDateTime": "2026-09-25T19:37:33.967Z"
+     }
+    }
+   }
+  }
+ ],
+ "took": 98
+}

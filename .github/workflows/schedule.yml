@@ -1,0 +1,45 @@
+name: schedule
+
+# Daily: regenerate the upcoming-pass schedule from the ESA/USGS/NASA plans.
+on:
+  schedule:
+    - cron: "41 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: data-branch
+  cancel-in-progress: false
+
+jobs:
+  schedule:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/pixi
+        with:
+          environment: default
+      # ESA's Sentinel-2 tiling grid KML (~109 MB) never changes; fetch it once. (Plan
+      # files published since the cache was saved are downloaded on each run.)
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/swathcast
+          key: s2-tiling-grid-20151209-v1
+      - name: Build schedule (30 days; plans, grids and orbit timing)
+        run: pixi run swathcast schedule --days 30 --output "$RUNNER_TEMP/upcoming_passes.parquet"
+      # Check out the data branch only after the slow step, so it is current.
+      - uses: ./.github/actions/data-branch
+      - name: Stage schedule
+        run: |
+          mkdir -p data/schedule
+          cp "$RUNNER_TEMP/upcoming_passes.parquet" "$RUNNER_TEMP/upcoming_passes.meta.json" data/schedule/
+          for f in wrs2_grid.parquet landsat_scenes.parquet s2_grid.parquet s2_tile_passes.parquet; do
+            if [ -f "$RUNNER_TEMP/$f" ]; then cp "$RUNNER_TEMP/$f" data/schedule/; fi
+          done
+          cat data/schedule/upcoming_passes.meta.json
+      - uses: ./.github/actions/push-data
+        with:
+          message: "data: schedule ${{ github.run_id }}"

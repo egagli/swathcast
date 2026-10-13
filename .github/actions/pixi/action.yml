@@ -1,0 +1,28 @@
+name: Install pixi environment
+description: Install a pinned pixi (via the official installer) and one locked environment, with caching.
+inputs:
+  environment:
+    description: pixi environment to install
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Cache pixi environment
+      uses: actions/cache@v6
+      with:
+        path: |
+          .pixi
+          ~/.cache/rattler
+        key: pixi-${{ runner.os }}-${{ inputs.environment }}-${{ hashFiles('pixi.lock') }}
+    - name: Install pixi
+      shell: bash
+      env:
+        PIXI_VERSION: v0.81.0
+        PIXI_NO_PATH_UPDATE: "1"
+      run: |
+        curl --fail --silent --show-error --location https://pixi.sh/install.sh --output "$RUNNER_TEMP/install-pixi.sh"
+        bash "$RUNNER_TEMP/install-pixi.sh"
+        echo "$HOME/.pixi/bin" >> "$GITHUB_PATH"
+    - name: Install environment
+      shell: bash
+      run: pixi install --locked -e ${{ inputs.environment }}

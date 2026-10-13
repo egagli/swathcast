@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>swathcast · Delivery</title>
+<meta name="description" content="swathcast delivery: measured Sentinel-1, Sentinel-2, Landsat, HLS and NISAR delivery latency at CDSE, ASF, Planetary Computer and OPERA: Kaplan-Meier availability curves, quantiles, trends and recent granules.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23101a2c'/%3E%3Cpath d='M6 22C11 14 18 10 26 9' fill='none' stroke='%238b84f6' stroke-width='6' stroke-linecap='round'/%3E%3Ccircle cx='26' cy='9' r='3' fill='white'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 16px 40px; }
+.card { background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--radius); margin: 16px 0; padding: 16px 18px; box-shadow: 0 1px 2px rgba(16,26,44,.05); }
+.card h2 { margin-bottom: 4px; }
+.card .sub { color: var(--ink-2); font-size: 12.5px; margin: 0 0 10px; }
+.controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; font-size: 13px; }
+.controls select, .controls input { padding: 4px 6px; }
+.chart { position: relative; width: 100%; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart .axis text { fill: var(--muted); font-size: 11px; }
+.chart .grid line { stroke: var(--grid); }
+.chart .axis line, .chart .axis path { stroke: var(--hairline); }
+.chart .label { fill: var(--ink-2); font-size: 11.5px; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12.5px; color: var(--ink-2); margin: 6px 0; }
+.legend label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.legend .swatch { width: 16px; height: 3px; border-radius: 2px; display: inline-block; }
+.tip {
+  position: absolute; pointer-events: none; display: none; background: var(--surface); color: var(--ink);
+  border: 1px solid var(--hairline); border-radius: 6px; padding: 6px 8px; font-size: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15); white-space: nowrap; z-index: 5; font-variant-numeric: tabular-nums;
+}
+.tip .row { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
+.tip .k { display: inline-flex; gap: 6px; align-items: center; color: var(--ink-2); }
+.scroll-y { max-height: 460px; overflow: auto; }
+dl.defs dt { font-weight: 600; margin-top: 8px; }
+dl.defs dd { margin: 2px 0 0 0; color: var(--ink-2); }
+.tables-grid { display: grid; grid-template-columns: 1fr; gap: 0; }
+.modes { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.modes { background: var(--surface-2); border-radius: 999px; padding: 3px; display: inline-flex; }
+.modes button { border: 0; border-radius: 999px; background: transparent; padding: 5px 14px; color: var(--ink-2); }
+.modes button.active { background: var(--accent); color: var(--accent-ink); }
+body:not([data-mission="s1"]) .s1-only { display: none; }
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="index.html" title="swathcast"><svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="none" stroke="currentColor" stroke-opacity=".45" stroke-width="1.6"/><path d="M5.5 21.5C11 13.5 18 9.5 26.5 8.5" fill="none" stroke="#8b84f6" stroke-width="5.5" stroke-linecap="round" stroke-opacity=".85"/><path d="M5.5 21.5C11 13.5 18 9.5 26.5 8.5" fill="none" stroke="#fff" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="1.5 2.5"/><circle cx="26.5" cy="8.5" r="2.6" fill="#fff"/></svg><span class="wordmark">swathcast</span></a>
+  <span class="tagline">upcoming satellite acquisitions and time until data delivery</span>
+  <nav><a href="index.html">Passes</a><a href="dashboard.html" aria-current="page">Delivery</a></nav>
+  <span class="fresh" id="fresh">loading…</span>
+</header>
+<div class="banner" id="banner" role="alert"></div>
+<div class="wrap">
+  <div class="card" id="summary-card">
+    <div class="modes" id="missions" role="tablist"></div>
+    <h2 id="question">How long until a Sentinel-1 acquisition is downloadable?</h2>
+    <p class="sub" id="lede">Loading measurements…</p>
+    <p class="note" id="mission-note" hidden></p>
+    <div class="scroll-x"><table class="data" id="summary-table"></table></div>
+    <p class="note">Latency = hours from sensing start until <em>this repo's hourly poller</em> first found the granule at the source (±1 h). Not-yet-seen granules are right-censored, not dropped; quantiles come from a Kaplan–Meier curve. "—" means the curve has not reached that quantile yet. <span id="window-note"></span></p>
+  </div>
+
+  <div class="card">
+    <h2>Cumulative availability</h2>
+    <p class="sub">Fraction of acquisitions downloadable by <em>t</em> hours after sensing (Kaplan–Meier; log time axis). Hover for values.</p>
+    <div class="controls">
+      <label>Platform <select id="km-platform"></select></label>
+    </div>
+    <div class="legend" id="km-legend"></div>
+    <div class="chart" id="km-chart"></div>
+  </div>
+
+  <div class="card">
+    <h2>Trend: monthly median latency</h2>
+    <p class="sub">Median of each sensing month's Kaplan–Meier curve, per source. Months with fewer than <span class="min-events">20</span> sightings are omitted.</p>
+    <div class="legend" id="trend-legend"></div>
+    <div class="chart" id="trend-chart"></div>
+  </div>
+
+  <div class="card">
+    <h2>By platform and month</h2>
+    <p class="sub">Every stratum with its sample size; the view behind the charts.</p>
+    <div class="controls"><label>Source <select id="strata-source"><option value="">all</option></select></label></div>
+    <div class="scroll-x scroll-y"><table class="data" id="strata-table"></table></div>
+  </div>
+
+  <div class="card s1-only">
+    <h2>Latest granules (last 24 h)</h2>
+    <p class="sub">Granules sighted anywhere in the last 24 hours, and where they have arrived. Cells are hours after sensing; "…" = not yet seen.</p>
+    <div class="controls">
+      <label>Product <select id="latest-type"><option value="GRD">GRD-based</option><option value="SLC">SLC-based</option></select></label>
+      <label>Platform <select id="latest-platform"><option value="">all</option></select></label>
+      <label>Search <input id="latest-q" placeholder="granule id, track…" size="18"></label>
+      <span class="nm" id="latest-count"></span>
+    </div>
+    <div class="scroll-x scroll-y"><table class="data" id="latest-table"></table></div>
+  </div>
+
+  <div class="card">
+    <h2>Provider timestamps vs first seen</h2>
+    <p class="sub">Each provider's own timestamp is recorded as a cross-check only. Positive = our poller saw it after the provider's timestamp. See <a href="https://github.com/egagli/swathcast/blob/main/docs/sources.md">docs/sources.md</a>.</p>
+    <div class="scroll-x"><table class="data" id="provider-table"></table></div>
+  </div>
+
+  <div class="card s1-only">
+    <h2>OPERA: first burst vs last burst</h2>
+    <p class="sub">OPERA products are per burst. The headline number is the first burst of an acquisition; this is when the last new burst arrived (counted once no new burst has appeared for 24 h).</p>
+    <div class="scroll-x"><table class="data" id="burst-table"></table></div>
+  </div>
+
+  <div class="card">
+    <h2>Poller health</h2>
+    <p class="sub">Each source fails independently. A source failing for more than 24 h fails the hourly job.</p>
+    <div class="scroll-x"><table class="data" id="health-table"></table></div>
+    <p class="note" id="audit-note"></p>
+  </div>
+
+  <div class="card">
+    <h2>Definitions and caveats</h2>
+    <dl class="defs">
+      <dt>Tracking universe</dt>
+      <dd>Every IW GRDH and IW SLC product ESA's Copernicus Data Space Ecosystem publishes (the <code>_COG</code> duplicates excluded). Other sources are checked for those exact granules by identifier; nothing is sampled.</dd>
+      <dt>Available</dt>
+      <dd>The first hourly poll that finds the granule at that source. One definition for every source, accurate to about ±1 h. A source faster than CDSE cannot be distinguished from CDSE.</dd>
+      <dt>Censoring and timeouts</dt>
+      <dd>A granule not yet seen is right-censored at its last check. After the timeout (14 days by default) it counts as not delivered, and "% not delivered" is 1 − F(timeout); it is shown only once some granules have been followed that long.</dd>
+      <dt>Partial-coverage sources</dt>
+      <dd>Planetary Computer and OPERA do not cover every acquisition. For them, only granules in orbit cells (track × 1-minute along-orbit bin) where the source has delivered at least once are counted.</dd>
+      <dt>Excluded rows</dt>
+      <dd>Granules first listed long after CDSE published them (the first run, or after an outage) and sightings that followed a poller gap of more than 3 h are excluded from the statistics; the counts are in the summary table's tooltip.</dd>
+      <dt>Not measured</dt>
+      <dd>Fewer than <span class="min-events">20</span> sightings. No number is ever taken from documentation.</dd>
+    </dl>
+  </div>
+</div>
+<script type="module" src="dashboard.js"></script>
+</body>
+</html>

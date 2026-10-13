@@ -1,0 +1,329 @@
+{
+ "RSLC": {
+  "umm": {
+   "GranuleUR": "NISAR_L1_PR_RSLC_031_134_D_059_2005_DHDH_A_20260927T115943_20260927T120019_P05023_N_F_J_001",
+   "TemporalExtent": {
+    "RangeDateTime": {
+     "BeginningDateTime": "2026-09-27T11:59:43.000000Z",
+     "EndingDateTime": "2026-09-27T12:00:19.999342Z"
+    }
+   },
+   "ProviderDates": [
+    {
+     "Type": "Insert",
+     "Date": "2026-09-29T11:21:04.553158Z"
+    },
+    {
+     "Type": "Update",
+     "Date": "2026-09-29T11:21:04.553158Z"
+    }
+   ],
+   "SpatialExtent": {
+    "GranuleLocalities": [
+     "Land",
+     "Europe"
+    ],
+    "HorizontalSpatialDomain": {
+     "Geometry": {
+      "GPolygons": [
+       {
+        "Boundary": {
+         "Points": [
+          {
+           "Latitude": 59.66899,
+           "Longitude": 112.98466
+          },
+          {
+           "Latitude": 57.61298,
+           "Longitude": 111.19893
+          },
+          {
+           "Latitude": 56.55058,
+           "Longitude": 115.23504
+          },
+          {
+           "Latitude": 58.54034,
+           "Longitude": 117.22936
+          },
+          {
+           "Latitude": 59.66899,
+           "Longitude": 112.98466
+          }
+         ]
+        }
+       }
+      ]
+     }
+    }
+   },
+   "InputGranules": [
+    "NISAR_L0_PR_RRSD_031_134_D_148S_20260927T115720_20260927T120818_P05023_F_J_001.h5"
+   ]
+  }
+ },
+ "L0B": {
+  "umm": {
+   "GranuleUR": "NISAR_L0_PR_RRSD_031_134_D_148S_20260927T115720_20260927T120818_P05023_F_J_001",
+   "TemporalExtent": {
+    "RangeDateTime": {
+     "BeginningDateTime": "2026-09-27T11:57:20.173771Z",
+     "EndingDateTime": "2026-09-27T12:08:18.030489Z"
+    }
+   },
+   "ProviderDates": [
+    {
+     "Type": "Insert",
+     "Date": "2026-09-27T21:47:56.303001Z"
+    },
+    {
+     "Type": "Update",
+     "Date": "2026-09-27T21:47:56.303001Z"
+    }
+   ],
+   "SpatialExtent": {
+    "GranuleLocalities": [
+     "Land",
+     "Asia",
+     "Europe"
+    ],
+    "HorizontalSpatialDomain": {
+     "Geometry": {
+      "GPolygons": [
+       {
+        "Boundary": {
+         "Points": [
+          {
+           "Latitude": 67.14854,
+           "Longitude": 122.46749
+          },
+          {
+           "Latitude": 63.71768,
+           "Longitude": 117.47302
+          },
+          {
+           "Latitude": 60.15642,
+           "Longitude": 113.54954
+          },
+          {
+           "Latitude": 56.50556,
+           "Longitude": 110.37806
+          },
+          {
+           "Latitude": 52.79075,
+           "Longitude": 107.74779
+          },
+          {
+           "Latitude": 49.0288,
+           "Longitude": 105.51656
+          },
+          {
+           "Latitude": 45.23105,
+           "Longitude": 103.58602
+          },
+          {
+           "Latitude": 41.40546,
+           "Longitude": 101.88645
+          },
+          {
+           "Latitude": 37.55782,
+           "Longitude": 100.36729
+          },
+          {
+           "Latitude": 29.81283,
+           "Longitude": 97.7292
+          },
+          {
+           "Latitude": 29.12174,
+           "Longitude": 100.38161
+          },
+          {
+           "Latitude": 36.80064,
+           "Longitude": 103.2477
+          },
+          {
+           "Latitude": 44.38432,
+           "Longitude": 106.78758
+          },
+          {
+           "Latitude": 48.12452,
+           "Longitude": 108.92251
+          },
+          {
+           "Latitude": 51.81724,
+           "Longitude": 111.39279
+          },
+          {
+           "Latitude": 55.44781,
+           "Longitude": 114.30012
+          },
+          {
+           "Latitude": 58.99494,
+           "Longitude": 117.78687
+          },
+          {
+           "Latitude": 62.42718,
+           "Longitude": 122.05503
+          },
+          {
+           "Latitude": 65.69668,
+           "Longitude": 127.39174
+          },
+          {
+           "Latitude": 67.14854,
+           "Longitude": 122.46749
+          }
+         ]
+        }
+       }
+      ]
+     }
+    }
+   },
+   "InputGranules": [
+    "NISAR_L0_RRST_VC24_20260927T125155_20260927T125233_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150216_20260927T150221_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T125233_20260927T125238_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150221_20260927T150226_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T125238_20260927T125243_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150226_20260927T150231_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T125243_20260927T125248_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150231_20260927T150236_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T125248_20260927T125253_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150236_20260927T150241_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T125253_20260927T125258_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150241_20260927T150246_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T125258_20260927T125303_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150246_20260927T150251_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T125303_20260927T125308_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150251_20260927T150256_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T125308_20260927T125313_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150256_20260927T150301_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T125313_20260927T125318_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150301_20260927T150306_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T125318_20260927T125323_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150306_20260927T150311_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T125323_20260927T125328_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150311_20260927T150316_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T125328_20260927T125333_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150316_20260927T150321_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T125333_20260927T125338_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150321_20260927T150326_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T125338_20260927T125343_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150326_20260927T150331_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T125343_20260927T125348_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150331_20260927T150336_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T125348_20260927T125353_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150336_20260927T150341_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T125353_20260927T125358_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150341_20260927T150346_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T125358_20260927T125403_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150346_20260927T150351_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T125403_20260927T125408_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150351_20260927T150356_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T125408_20260927T125413_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150356_20260927T150401_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T125413_20260927T125418_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150401_20260927T150406_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T125418_20260927T125423_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150406_20260927T150411_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T125423_20260927T125427_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150411_20260927T150416_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T125427_20260927T125432_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150416_20260927T150421_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T125432_20260927T125437_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150421_20260927T150426_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T125437_20260927T125438_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T150002_20260927T150007_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150426_20260927T150431_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T150007_20260927T150012_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150431_20260927T150436_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T150012_20260927T150017_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150436_20260927T150441_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T150017_20260927T150022_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150441_20260927T150446_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T150022_20260927T150027_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150446_20260927T150451_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T150027_20260927T150032_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150451_20260927T150456_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T150032_20260927T150037_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150456_20260927T150501_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T150037_20260927T150042_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150501_20260927T150505_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T150042_20260927T150047_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150505_20260927T150510_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T150047_20260927T150052_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150510_20260927T150515_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T150052_20260927T150057_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150515_20260927T150520_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T150057_20260927T150102_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150520_20260927T150525_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T150102_20260927T150106_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150525_20260927T150530_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC24_20260927T150106_20260927T150111_P05023_J_001.bin",
+    "NISAR_L0_RRST_VC28_20260927T150530_20260927T150535_P05023_J_001.bin"
+   ]
+  }
+ },
+ "GCOV": {
+  "umm": {
+   "GranuleUR": "NISAR_L2_PR_GCOV_031_134_D_059_2005_DHDH_A_20260927T115943_20260927T120019_P05023_N_F_J_001",
+   "TemporalExtent": {
+    "RangeDateTime": {
+     "BeginningDateTime": "2026-09-27T11:59:43.000000Z",
+     "EndingDateTime": "2026-09-27T12:00:19.999342Z"
+    }
+   },
+   "ProviderDates": [
+    {
+     "Type": "Insert",
+     "Date": "2026-09-29T11:37:12.492377Z"
+    },
+    {
+     "Type": "Update",
+     "Date": "2026-09-29T11:37:12.492377Z"
+    }
+   ],
+   "SpatialExtent": {
+    "GranuleLocalities": [
+     "Land",
+     "Europe"
+    ],
+    "HorizontalSpatialDomain": {
+     "Geometry": {
+      "GPolygons": [
+       {
+        "Boundary": {
+         "Points": [
+          {
+           "Latitude": 59.66899,
+           "Longitude": 112.98466
+          },
+          {
+           "Latitude": 57.61298,
+           "Longitude": 111.19893
+          },
+          {
+           "Latitude": 56.55058,
+           "Longitude": 115.23504
+          },
+          {
+           "Latitude": 58.54034,
+           "Longitude": 117.22936
+          },
+          {
+           "Latitude": 59.66899,
+           "Longitude": 112.98466
+          }
+         ]
+        }
+       }
+      ]
+     }
+    }
+   },
+   "InputGranules": [
+    "NISAR_L1_PR_RSLC_031_134_D_059_2005_DHDH_A_20260927T115943_20260927T120019_P05023_N_F_J_001.h5"
+   ]
+  }
+ }
+}

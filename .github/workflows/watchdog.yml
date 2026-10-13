@@ -1,0 +1,58 @@
+name: watchdog
+
+# Weekly: open (or update) an issue if the data branch is stale or a source is
+# failing, close it when things recover, and re-enable the scheduled
+# workflows in case GitHub disabled them for inactivity.
+on:
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  actions: write
+
+jobs:
+  watchdog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/pixi
+        with:
+          environment: poll
+      - uses: ./.github/actions/data-branch
+      - name: Re-enable scheduled workflows (60-day inactivity mitigation)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for wf in poll.yml schedule.yml pages.yml watchdog.yml; do
+            gh workflow enable "$wf" --repo "$GITHUB_REPOSITORY" || echo "::warning::could not enable $wf"
+          done
+      - name: Check freshness
+        id: check
+        run: |
+          set +e
+          pixi run -e poll swathcast watchdog --data-dir data --issue-body "$RUNNER_TEMP/issue.md"
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+      - name: Open or update the stale-data issue
+        if: steps.check.outputs.code != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create stale-data --color d93f0b --description "Opened by the watchdog workflow" --repo "$GITHUB_REPOSITORY" 2>/dev/null || true
+          existing=$(gh issue list --repo "$GITHUB_REPOSITORY" --label stale-data --state open --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" --body-file "$RUNNER_TEMP/issue.md"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "Watchdog: latency/schedule data is stale" --label stale-data --body-file "$RUNNER_TEMP/issue.md"
+          fi
+          exit 1
+      - name: Close the stale-data issue on recovery
+        if: steps.check.outputs.code == '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for n in $(gh issue list --repo "$GITHUB_REPOSITORY" --label stale-data --state open --json number --jq '.[].number'); do
+            gh issue close "$n" --repo "$GITHUB_REPOSITORY" --reason completed --comment "Watchdog: data is fresh again."
+          done

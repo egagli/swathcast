@@ -1,0 +1,54 @@
+name: pages
+
+# Assemble the static site from main (code) + the data branch (data) and deploy.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/swathcast/**"
+      - ".github/workflows/pages.yml"
+  workflow_run:
+    workflows: [poll, schedule]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/pixi
+        with:
+          environment: poll
+      - uses: ./.github/actions/data-branch
+      - name: Assemble site
+        run: |
+          mkdir -p _site/data
+          cp src/swathcast/site/* _site/
+          args=()
+          if [ -f data/schedule/upcoming_passes.parquet ]; then args=(--schedule data/schedule/upcoming_passes.parquet); fi
+          pixi run -e poll swathcast summarize --data-dir data --out _site/data "${args[@]}"
+          ls -la _site _site/data
+      - name: Check the site's data contract
+        run: pixi run -e poll swathcast check-site _site
+      # Pages must be enabled once in Settings -> Pages (source: GitHub Actions);
+      # the workflow token cannot create the site itself.
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v5

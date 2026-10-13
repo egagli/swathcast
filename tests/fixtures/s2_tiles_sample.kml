@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
+<Document>
+	<name>S2A_OPER_GIP_TILPAR_20150622T000000_21000101T000000_ZZ_0007</name>
+	<open>1</open>
+	<Style id="zn">
+		<IconStyle>
+			<color>00ffffff</color>
+			<Icon>
+				<href>root://icons/palette-4.png</href>
+				<x>128</x>
+				<w>32</w>
+				<h>32</h>
+			</Icon>
+		</IconStyle>
+		<LabelStyle>
+			<scale>0</scale>
+		</LabelStyle>
+		<BalloonStyle>
+			<text>$[description]</text>
+		</BalloonStyle>
+		<LineStyle>
+			<color>ff0000ff</color>
+		</LineStyle>
+		<PolyStyle>
+			<color>ff0000ff</color>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<StyleMap id="MapRollOver">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#zn</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#zh</styleUrl>
+		</Pair>
+	</StyleMap>
+	<Style id="zh">
+		<IconStyle>
+			<color>00ffffff</color>
+			<Icon>
+				<href>root://icons/palette-4.png</href>
+				<x>128</x>
+				<w>32</w>
+				<h>32</h>
+			</Icon>
+		</IconStyle>
+		<LineStyle>
+			<color>ff40ff00</color>
+			<width>2</width>
+		</LineStyle>
+		<PolyStyle>
+			<color>ff40ff00</color>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Folder>
+		<name>Features</name>
+		<Snippet maxLines="2">Legend: Single Symbol</Snippet>
+		<Placemark>
+			<name>01CCV</name>
+			<Snippet maxLines="0"></Snippet>
+			<description><![CDATA[TILE PROPERTIES<br><table border=0 cellpadding=0 cellspacing=0  width=250 style="FONT-SIZE: 11px; FONT-FAMILY: Verdana, Arial, Helvetica, sans-serif;"><tr><td bgcolor="#E3E1CA" align="right"><font COLOR="#000000"><b>TILE_ID</b></font></td><td bgcolor="#E4E6CA"> <font COLOR="#008000">01CCV</font></td></tr><tr><td bgcolor="#E3E1CA" align="right"><font COLOR="#000000"><b>EPSG</b></font></td><td bgcolor="#E4E6CA"> <font COLOR="#008000">32701</font></td></tr><tr><td bgcolor="#E3E1CA" align="right"><font COLOR="#000000"><b>MGRS_REF</b></font></td><td bgcolor="#E4E6CA"> <font COLOR="#008000">-72.01265627 177.18928449 -72.077536527 -179.91249232 -72.972797991 179.93922476 -72.9043013 176.89507973</font></td></tr><tr><td bgcolor="#E3E1CA" align="right"><font COLOR="#000000"><b>UTM_WKT</b></font></td><td bgcolor="#E4E6CA"> <font COLOR="#008000">MULTIPOLYGON(((300000 2000020,300000 1890220,409800 1890220,409800 2000020,300000 2000020)))</font></td></tr><tr><td bgcolor="#E3E1CA" align="right"><font COLOR="#000000"><b>LL_WKT</b></font></td><td bgcolor="#E4E6CA"> <font COLOR="#008000">MULTIPOLYGON(((177.189340361676 -72.0124778858137,176.864623786205 -72.9914734627827,-179.775147078577 -73.064632943735,-179.627444421211 -72.081397340079,177.189340361676 -72.0124778858137)))</font></td></tr></table>]]></description>
+			<styleUrl>#MapRollOver</styleUrl>
+			<MultiGeometry>
+				<Polygon>
+					<outerBoundaryIs>
+						<LinearRing>
+							<coordinates>
+								180,-73.0597374076,0 176.8646237862,-72.9914734628,0 177.1893403617,-72.0124778858,0 180,-72.0733311788,0 180,-73.0597374076,0 
+							</coordinates>
+						</LinearRing>
+					</outerBoundaryIs>
+				</Polygon>
+				<Point>
+					<coordinates>178.4323118931,-72.5361076467,0</coordinates>
+				</Point>
+				<Polygon>
+					<outerBoundaryIs>
+						<LinearRing>
+							<coordinates>
+								-180,-72.0733311788,0 -179.6274444212,-72.0813973401,0 -179.7751470786,-73.06463294370001,0 -180,-73.0597374076,0 -180,-72.0733311788,0 
+							</coordinates>
+						</LinearRing>
+					</outerBoundaryIs>
+				</Polygon>
+			</MultiGeometry>
+		</Placemark>
+<Placemark>
+			<name>10TET</name>
+			<Snippet maxLines="0"></Snippet>
+			<description><![CDATA[TILE PROPERTIES<br><table border=0 cellpadding=0 cellspacing=0  width=250 style="FONT-SIZE: 11px; FONT-FAMILY: Verdana, Arial, Helvetica, sans-serif;"><tr><td bgcolor="#E3E1CA" align="right"><font COLOR="#000000"><b>TILE_ID</b></font></td><td bgcolor="#E4E6CA"> <font COLOR="#008000">10TET</font></td></tr><tr><td bgcolor="#E3E1CA" align="right"><font COLOR="#000000"><b>EPSG</b></font></td><td bgcolor="#E4E6CA"> <font COLOR="#008000">32610</font></td></tr><tr><td bgcolor="#E3E1CA" align="right"><font COLOR="#000000"><b>MGRS_REF</b></font></td><td bgcolor="#E4E6CA"> <font COLOR="#008000">47.853341946 -123 47.845561252 -121.66340903 46.945988324 -121.68596912 46.953529202 -123</font></td></tr><tr><td bgcolor="#E3E1CA" align="right"><font COLOR="#000000"><b>UTM_WKT</b></font></td><td bgcolor="#E4E6CA"> <font COLOR="#008000">MULTIPOLYGON(((499980 5300040,499980 5190240,609780 5190240,609780 5300040,499980 5300040)))</font></td></tr><tr><td bgcolor="#E3E1CA" align="right"><font COLOR="#000000"><b>LL_WKT</b></font></td><td bgcolor="#E4E6CA"> <font COLOR="#008000">MULTIPOLYGON(((-123.000267357657 47.8537018420053,-123.000262412551 46.8656998728757,-121.559850175597 46.8566398814282,-121.53272262324 47.8443250460311,-123.000267357657 47.8537018420053)))</font></td></tr></table>]]></description>
+			<styleUrl>#MapRollOver</styleUrl>
+			<MultiGeometry>
+				<Polygon>
+					<outerBoundaryIs>
+						<LinearRing>
+							<coordinates>
+								-123.0002673577,47.853701842,0 -121.5327226232,47.844325046,0 -121.5598501756,46.85663988139999,0 -123.0002624126,46.8656998729,0 -123.0002673577,47.853701842,0 
+							</coordinates>
+						</LinearRing>
+					</outerBoundaryIs>
+				</Polygon>
+				<Point>
+					<coordinates>-122.2664949904,47.3551708617,0</coordinates>
+				</Point>
+			</MultiGeometry>
+		</Placemark>
+<Placemark>
+			<name>33UVP</name>
+			<Snippet maxLines="0"></Snippet>
+			<description><![CDATA[TILE PROPERTIES<br><table border=0 cellpadding=0 cellspacing=0  width=250 style="FONT-SIZE: 11px; FONT-FAMILY: Verdana, Arial, Helvetica, sans-serif;"><tr><td bgcolor="#E3E1CA" align="right"><font COLOR="#000000"><b>TILE_ID</b></font></td><td bgcolor="#E4E6CA"> <font COLOR="#008000">33UVP</font></td></tr><tr><td bgcolor="#E3E1CA" align="right"><font COLOR="#000000"><b>EPSG</b></font></td><td bgcolor="#E4E6CA"> <font COLOR="#008000">32633</font></td></tr><tr><td bgcolor="#E3E1CA" align="right"><font COLOR="#000000"><b>MGRS_REF</b></font></td><td bgcolor="#E4E6CA"> <font COLOR="#008000">48.744984111 13.639720754 48.753013004 15 47.853341946 15 47.845561252 13.663409025</font></td></tr><tr><td bgcolor="#E3E1CA" align="right"><font COLOR="#000000"><b>UTM_WKT</b></font></td><td bgcolor="#E4E6CA"> <font COLOR="#008000">MULTIPOLYGON(((399960 5400000,399960 5290200,509760 5290200,509760 5400000,399960 5400000)))</font></td></tr><tr><td bgcolor="#E3E1CA" align="right"><font COLOR="#000000"><b>LL_WKT</b></font></td><td bgcolor="#E4E6CA"> <font COLOR="#008000">MULTIPOLYGON(((13.639176802255 48.7449776879772,13.6651350680919 47.7574035312523,15.1302488098433 47.7650926639825,15.13278260997 48.75293650928,13.639176802255 48.7449776879772)))</font></td></tr></table>]]></description>
+			<styleUrl>#MapRollOver</styleUrl>
+			<MultiGeometry>
+				<Polygon>
+					<outerBoundaryIs>
+						<LinearRing>
+							<coordinates>
+								13.6391768023,48.744977688,0 15.13278261,48.7529365093,0 15.1302488098,47.765092664,0 13.6651350681,47.7574035313,0 13.6391768023,48.744977688,0 
+							</coordinates>
+						</LinearRing>
+					</outerBoundaryIs>
+				</Polygon>
+				<Point>
+					<coordinates>14.3859797061,48.2551700203,0</coordinates>
+				</Point>
+			</MultiGeometry>
+		</Placemark>
+</Folder>
+</Document>
+</kml>

@@ -1,0 +1,32 @@
+swathcast (github.com/egagli/swathcast)
+Copyright 2026 Eric Gagliano
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This product includes software adapted from next_pass
+(https://github.com/OPERA-Cal-Val/next_pass), Copyright the next_pass authors
+(Emre Havazli, Ines Fenni, Cole Speed, and the OPERA Disaster Response Team),
+licensed under the Apache License, Version 2.0. Adapted portions:
+
+  - src/swathcast/site/map.js: the AOI drawing / sensor and date filtering
+    UX, the antimeridian box split and the WKB decoder, adapted from
+    src/next_pass/viewer_assets/index.html at commit
+    9cf2d3ad5b3631a554db866c216fd0a9795858fb. Modified: polygon and pasted
+    GeoJSON/WKT AOIs, a sortable results table, and the latency layer.
+  - src/swathcast/viewer.py: structure of the local HTTP viewer, adapted
+    from src/next_pass/viewer.py.
+
+Data and libraries loaded at run time (not vendored):
+
+  - Sentinel-2 tiling grid: ESA, S2A_OPER_GIP_TILPAR_MPC__20151209T095117_
+    V20150622T000000_21000101T000000_B00.kml (Copernicus Sentinel data
+    terms). Converted to a compact grid by src/swathcast/s2grid.py.
+  - @photostructure/tz-lookup 11.7.0 (CC0-1.0), loaded from jsDelivr by the
+    map to show local time at a footprint.
+  - sgp4 (Python, MIT) in the schedule job, for Sentinel-2 tile timing.
+  - MapLibre GL JS 5.24.0 (BSD-3-Clause) and satellite.js 6.0.2 (MIT), from
+    cdnjs; OpenStreetMap tiles (ODbL); orbital elements from CelesTrak
+    (celestrak.org), refreshed by the poll job.
+  - d3-geo 3.1.1 and topojson-client 3.1.0 (ISC), from jsDelivr, for the map's
+    polar inset; its coastlines are world-atlas 2.0.2 land-110m (ISC), from
+    Natural Earth (public domain).

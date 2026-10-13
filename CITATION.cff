@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "If you use swathcast, please cite it as below."
+title: "swathcast: upcoming satellite acquisitions and time until data delivery"
+abstract: >-
+  Upcoming acquisitions for Sentinel-1, Sentinel-2, Landsat 8/9 and NISAR, read from the agencies'
+  own acquisition plans and resolved to native footprints (bursts, tiles, scenes, frames), plus
+  data delivery latency at each distributor measured by an hourly poller and summarized with
+  Kaplan-Meier estimates.
+type: software
+authors:
+  - given-names: Eric
+    family-names: Gagliano
+    affiliation: University of Washington
+    orcid: "https://orcid.org/0000-0002-4362-6260"
+version: 0.1.0
+license: Apache-2.0
+repository-code: "https://github.com/egagli/swathcast"
+url: "https://egagli.github.io/swathcast/"
+keywords:
+  - Sentinel-1
+  - Sentinel-2
+  - Landsat
+  - NISAR
+  - acquisition plans
+  - data latency
+  - remote sensing

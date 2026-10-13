@@ -1,0 +1,94 @@
+name: Add a sensor or mission
+description: Propose a sensor for the Passes map, the Delivery dashboard, or both. Every source must be real and checkable.
+title: "Add sensor: <mission / instrument>"
+labels: ["new sensor"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        swathcast shows only real data: planned passes from an operator's published plan (or, for
+        an instrument that images continuously, its orbit), recent acquisitions from a catalogue,
+        and latency measured by the hourly poll. Nothing is extrapolated. Fill in what you know and
+        mark the rest **unknown**; see `docs/data-sources.md` for how existing missions are
+        described.
+  - type: input
+    id: mission
+    attributes:
+      label: Mission, platforms and instrument
+      description: e.g. "VIIRS on Suomi NPP, NOAA-20, NOAA-21"
+    validations:
+      required: true
+  - type: dropdown
+    id: use
+    attributes:
+      label: What should swathcast show?
+      multiple: true
+      options:
+        - Planned passes on the map
+        - Recent acquisitions in the footprint popup
+        - Delivery latency on the dashboard
+    validations:
+      required: true
+  - type: dropdown
+    id: imaging
+    attributes:
+      label: How does it acquire?
+      options:
+        - Continuously (always on; e.g. MODIS, VIIRS, OLCI); passes follow from the orbit alone
+        - On a published plan (e.g. Sentinel-1/2, NISAR); passes come from the plan
+        - On a fixed repeat calendar the operator publishes (e.g. Landsat WRS-2)
+        - Tasked or commercial; no public plan (history and latency only)
+        - Unknown
+    validations:
+      required: true
+  - type: textarea
+    id: planned
+    attributes:
+      label: Planned-pass source
+      description: >-
+        The URL of the operator's plan or calendar, its format, how far ahead it reaches and how
+        often it is updated. For continuous imagers: where the orbital elements come from (e.g.
+        CelesTrak), the swath width and the day/night rules, each with its source.
+      placeholder: "URL, format, horizon, update cadence, source for swath width"
+  - type: textarea
+    id: footprints
+    attributes:
+      label: Footprint unit
+      description: >-
+        What one footprint is: a scene or tile grid (e.g. MODIS sinusoidal tiles, WRS-2), a frame or
+        burst grid, or a swath along the track. Give the URL of the grid's definition.
+  - type: textarea
+    id: history
+    attributes:
+      label: History catalogue (recent acquisitions)
+      description: >-
+        A catalogue the browser can query without a login (CORS-open), e.g. NASA CMR, a STAC API.
+        Give the collection ID and the query that finds one footprint's products.
+      placeholder: "endpoint, collection ID, example query"
+  - type: textarea
+    id: latency
+    attributes:
+      label: Latency sources
+      description: >-
+        Where products appear and how fast, one line each: the reference catalogue (defines the
+        list of acquisitions), every mirror or derived product worth tracking, any publication
+        timestamp they carry, and whether a login is needed. If a login is needed, say which
+        repository secret would hold it.
+      placeholder: |
+        reference: CMR <collection> (NRT), timestamp field <...>, no login
+        mirror: ...
+  - type: textarea
+    id: why
+    attributes:
+      label: Why it matters
+      description: Who would use it and for what (e.g. daily snow cover, cloud-free gap filling).
+  - type: textarea
+    id: checks
+    attributes:
+      label: Checks before merging
+      value: |
+        - [ ] Planned times compared with real acquisitions (median and worst error)
+        - [ ] Footprints compared with real product footprints (IoU)
+        - [ ] Popup history query tested in a browser (CORS)
+        - [ ] Latency sources checked live; the timestamp field's meaning verified
+        - [ ] `docs/data-sources.md`, `docs/sources.md` and `docs/methodology.md` updated

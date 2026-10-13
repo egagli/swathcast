@@ -1,0 +1,46 @@
+{
+ "features": [
+  {
+   "id": "S1C_IW_GRDH_1SDV_20260925T193709_20260925T193733_009608_0131FB",
+   "links": [
+    {
+     "href": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-1-grd",
+     "rel": "collection",
+     "type": "application/json"
+    },
+    {
+     "href": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-1-grd",
+     "rel": "parent",
+     "type": "application/json"
+    },
+    {
+     "href": "https://planetarycomputer.microsoft.com/api/stac/v1/",
+     "rel": "root",
+     "type": "application/json"
+    },
+    {
+     "href": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-1-grd/items/S1C_IW_GRDH_1SDV_20260925T193709_20260925T193733_009608_0131FB",
+     "rel": "self",
+     "type": "application/geo+json"
+    }
+   ],
+   "properties": {
+    "s1:product_identifier": "S1C_IW_GRDH_1SDV_20260925T193709_20260925T193733_009608_0131FB_7ED4"
+   }
+  }
+ ],
+ "links": [
+  {
+   "href": "https://planetarycomputer.microsoft.com/api/stac/v1/",
+   "rel": "root",
+   "type": "application/json"
+  },
+  {
+   "href": "https://planetarycomputer.microsoft.com/api/stac/v1/search?collections=sentinel-1-grd",
+   "rel": "self",
+   "type": "application/json"
+  }
+ ],
+ "numberReturned": 1,
+ "type": "FeatureCollection"
+}

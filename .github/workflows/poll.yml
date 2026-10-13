@@ -1,0 +1,57 @@
+name: poll
+
+# Hourly latency poller. Reads the tracking table from the `data` branch,
+# looks up every open granule at every source, and pushes the table back.
+on:
+  schedule:
+    - cron: "23 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: data-branch
+  cancel-in-progress: false
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/pixi
+        with:
+          environment: poll
+      - uses: ./.github/actions/data-branch
+      - name: Poll sources
+        id: poll
+        env:
+          # NISAR S-band at ISRO's Bhoonidhi needs a login; without these
+          # repository secrets that mission is skipped.
+          BHOONIDHI_USER_ID: ${{ secrets.BHOONIDHI_USER_ID }}
+          BHOONIDHI_PASSWORD: ${{ secrets.BHOONIDHI_PASSWORD }}
+        run: |
+          set +e
+          pixi run -e poll swathcast poll --data-dir data
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+      - name: Exact extents of NISAR and OPERA browse images (never fails the job)
+        env:
+          # an Earthdata login: the extents are in files behind it; without
+          # these repository secrets the map places those previews approximately
+          EARTHDATA_USERNAME: ${{ secrets.EARTHDATA_USERNAME }}
+          EARTHDATA_PASSWORD: ${{ secrets.EARTHDATA_PASSWORD }}
+        run: pixi run -e poll swathcast extents --data-dir data || true
+      - name: Refresh orbital elements for the map (every 6 h, never fails the job)
+        run: pixi run -e poll swathcast tle --output data/tle.json --max-age-hours 6 || true
+      - name: Push data branch
+        if: always()
+        uses: ./.github/actions/push-data
+        with:
+          message: "data: poll ${{ github.run_id }}"
+      - name: Fail if the poller crashed, every source failed, or one has failed for over 24 h
+        if: steps.poll.outputs.code != '0'
+        run: |
+          echo "::error::poller exit code ${{ steps.poll.outputs.code }} (1 = the poller crashed, see the Poll sources step; 2 = all sources failed; 3 = a source failing > 24 h); data/health.json follows"
+          cat data/health.json
+          exit 1

@@ -1,0 +1,123 @@
+# Data sources, by mission
+
+Where every number on the site comes from. Three uses:
+
+- **Planned**: upcoming acquisitions (the map's colours, the "Upcoming" list in a footprint's popup).
+  Built once a day by the `schedule` job (`plans.py`, `schedule.py`), up to 30 days ahead where the
+  plan reaches that far: on 2026-10-01 Sentinel-1 to 21–22 Oct and Sentinel-2 to 12–19 Oct (ESA
+  publishes no further), Landsat and NISAR all 30 days. Nothing past a plan's end is extrapolated
+  ([methodology](methodology.md#horizon-and-gaps)).
+- **History**: a footprint's recent acquisitions (the popup's "Recent acquisitions", last 90 days).
+  Read live in the browser from the catalogue (`site/history.js`); only products that exist.
+- **Latency**: how long until a product is downloadable (the Delivery page, "likely downloadable").
+  Measured by the hourly `poll` job (`tracker.py`, `sources/`), never taken from documentation.
+
+Details and validation: [methodology](methodology.md) (timing, footprints, polarizations) and
+[sources](sources.md) (each API's quirks).
+
+## At a glance
+
+| Mission | Planned from | History from | Latency measured at |
+|---|---|---|---|
+| Sentinel-1 | ESA acquisition-plan KMLs; burst times from orbit timing | ASF (burst catalogue; Level-0 for EW/SM) | CDSE, ASF, Planetary Computer, OPERA (ASF) |
+| Sentinel-2 | ESA acquisition-plan KMLs; tile times from orbit (SGP4) | Earth Search (L1C) | CDSE, Earth Search, Planetary Computer, HLS S30 |
+| Landsat 8/9 | USGS acquisition calendar + WRS-2; scene times from orbit (SGP4) | USGS Level-1 (this site's `landsat_l1/<path>.parquet`, from the poller's listing of USGS STAC; night scenes too) + Earth Search (Collection 2 Level-2) | USGS STAC, Earth Search, Planetary Computer, HLS L30 |
+| NISAR L-band | NASA observation plan (KMZ); frame times from orbit (SGP4) | NASA CMR (ASF RSLC) | ASF via CMR (L0B, RSLC, GCOV) |
+| NISAR S-band | NASA observation plan (KMZ), S-band modes | not shown (Bhoonidhi needs a login) | ISRO Bhoonidhi (RSLC, GCOV) |
+
+## Sentinel-1
+
+| Data source | Used for | Endpoint | What is used |
+|---|---|---|---|
+| [ESA Sentinel-1 acquisition plans](https://sentinels.copernicus.eu/web/sentinel/copernicus/sentinel-1/acquisition-plans) | Planned | KMLs linked from [`sentinels.copernicus.eu/…/sentinel-1/acquisition-plans`](https://sentinels.copernicus.eu/web/sentinel/copernicus/sentinel-1/acquisition-plans) | datatakes: begin/end, mode, polarization, relative/absolute orbit, swath; newest file wins; ~3 weeks ahead |
+| ESA burst grid ([ASF burst map, `C2450786986-ASF`](https://cmr.earthdata.nasa.gov/search/concepts/C2450786986-ASF.html)) | Planned | [NASA CMR](https://cmr.earthdata.nasa.gov/search/site/docs/search/api.html) burst footprints (`fetchBursts`, `site/footprints.js`) | IW burst IDs and footprints; times from the plan + orbit timing |
+| [CelesTrak](https://celestrak.org) elements | Planned | [`celestrak.org/NORAD/elements/gp.php`](https://celestrak.org/NORAD/documentation/gp-data-formats.php) (GP data, OMM JSON) | pass direction of each datatake (SGP4) |
+| [ASF Search API](https://docs.asf.alaska.edu/api/basics/), SLC-BURST | History (IW bursts) | `api.daac.asf.alaska.edu/services/search/param?dataset=SLC-BURST&fullBurstID=…` | burst products (VV/VH of one pass grouped), satellite, direction |
+| [ASF Search API](https://docs.asf.alaska.edu/api/basics/), Level-0 | History (EW/SM swaths) | `…/param?platform=SENTINEL-1&beamMode=EW&processingLevel=RAW&relativeOrbit=…&intersectsWith=POINT(…)` (stripmap: `beamMode=S1,S2,…,S6`, as ASF names it by its beam) | Level-0 products of the track over the swath centre, one per orbit |
+| [Copernicus Data Space Ecosystem (CDSE)](https://dataspace.copernicus.eu) | Latency (reference) | [OData catalogue](https://documentation.dataspace.copernicus.eu/APIs/OData.html), `catalogue.dataspace.copernicus.eu/odata/v1/Products` | IW GRDH and SLC by publication time: the tracking universe |
+| [ASF DAAC](https://asf.alaska.edu) | Latency | [NASA CMR](https://cmr.earthdata.nasa.gov/search/site/docs/search/api.html) | GRD, SLC |
+| [Microsoft Planetary Computer](https://planetarycomputer.microsoft.com) | Latency | STAC `planetarycomputer.microsoft.com/api/stac/v1` | [`sentinel-1-grd`](https://planetarycomputer.microsoft.com/dataset/sentinel-1-grd), [`sentinel-1-rtc`](https://planetarycomputer.microsoft.com/dataset/sentinel-1-rtc) |
+| [OPERA](https://www.jpl.nasa.gov/go/opera/) (at ASF) | Latency | [NASA CMR](https://cmr.earthdata.nasa.gov/search/site/docs/search/api.html) | [RTC-S1](https://www.earthdata.nasa.gov/data/catalog/asf-opera-l2-rtc-s1-v1-1) (`OPERA_L2_RTC-S1_V1`), CSLC-S1 (`OPERA_L2_CSLC-S1_V1`), per burst |
+
+## Sentinel-2
+
+| Data source | Used for | Endpoint | What is used |
+|---|---|---|---|
+| [ESA Sentinel-2 acquisition plans](https://sentinels.copernicus.eu/web/sentinel/copernicus/sentinel-2/acquisition-plans) | Planned | KMLs linked from [`sentinels.copernicus.eu/…/sentinel-2/acquisition-plans`](https://sentinels.copernicus.eu/web/sentinel/copernicus/sentinel-2/acquisition-plans) | nominal datatakes (NOBS): begin/end, relative orbit; ~18 days ahead |
+| ESA MGRS tiling grid (KML) | Planned | [`S2A_OPER_GIP_TILPAR_MPC__…_B00.kml`](https://sentiwiki.copernicus.eu/web/s2-products) (URL in `s2grid.py`) | tile footprints; tile passes = datatakes intersecting a tile, with coverage fraction |
+| CelesTrak elements | Planned | as above | per-tile sensing times (SGP4) |
+| [Earth Search](https://element84.com/earth-search/), [`sentinel-2-l1c`](https://earth-search.aws.element84.com/v1/collections/sentinel-2-l1c) | History (tiles) | `earth-search.aws.element84.com/v1/search` (`grid:code = MGRS-<tile>`, one-digit zones without the zero) | tile sensing time, cloud cover; a reprocessed datatake counted once |
+| [CDSE](https://dataspace.copernicus.eu) | Latency (reference) | [OData](https://documentation.dataspace.copernicus.eu/APIs/OData.html), `SENTINEL-2` L1C and L2A | publication time; 1-in-8 MGRS tile sample |
+| [Earth Search](https://element84.com/earth-search/) | Latency | STAC [`sentinel-2-l1c`](https://earth-search.aws.element84.com/v1/collections/sentinel-2-l1c), [`sentinel-2-l2a`](https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a) | matched on `s2:product_uri` |
+| [Planetary Computer](https://planetarycomputer.microsoft.com) | Latency | STAC [`sentinel-2-l2a`](https://planetarycomputer.microsoft.com/dataset/sentinel-2-l2a) | first seen only |
+| [HLS S30](https://lpdaac.usgs.gov/products/hlss30v002/) (LP DAAC) | Latency | NASA CMR [`C2021957295-LPCLOUD`](https://cmr.earthdata.nasa.gov/search/concepts/C2021957295-LPCLOUD.html) | matched on `PRODUCT_URI` |
+
+## Landsat 8/9
+
+| Data source | Used for | Endpoint | What is used |
+|---|---|---|---|
+| [USGS acquisition calendar](https://landsat.usgs.gov/landsat_acq) | Planned | `landsat.usgs.gov/sites/default/files/landsat_acq/assets/json/` `cycles.json`, `cycle_path_row.json` | paths and rows acquired on each date |
+| USGS WRS-2 outlines | Planned | LandsatLook map service (`nimbus.cr.usgs.gov/arcgis/rest/services/LLook_Outlines/MapServer`) | scene footprints |
+| [USGS STAC](https://landsatlook.usgs.gov/stac-server), `landsat-c2l1` | Planned (outlines) | `landsatlook.usgs.gov/stac-server/search` (last 17 days, fields extension) | each path/row's latest Level-1 footprint replaces its WRS-2 cell (cells are ~2 km off and ~14 % small) |
+| CelesTrak elements | Planned | as above | scene centre times (SGP4) |
+| [Earth Search](https://element84.com/earth-search/), [`landsat-c2-l2`](https://earth-search.aws.element84.com/v1/collections/landsat-c2-l2) | History (scenes) | `earth-search.aws.element84.com/v1/search` (`landsat:wrs_path`, `landsat:wrs_row`) | Level-2 scenes, cloud cover (days behind Level-1; USGS's STAC does not allow browser requests and its CMR collection has no granules) |
+| [USGS STAC](https://landsatlook.usgs.gov/stac-server) | Latency (reference) | `landsat-c2l1`, `landsat-c2l2-sr` | listed by `created` (sorted) |
+| [Earth Search](https://element84.com/earth-search/), [Planetary Computer](https://planetarycomputer.microsoft.com/dataset/landsat-c2-l2) | Latency | STAC `landsat-c2-l2` | L2 mirrors |
+| [HLS L30](https://lpdaac.usgs.gov/products/hlsl30v002/) (LP DAAC) | Latency | NASA CMR [`C2021957657-LPCLOUD`](https://cmr.earthdata.nasa.gov/search/concepts/C2021957657-LPCLOUD.html) | matched on `LANDSAT_PRODUCT_ID` |
+
+## NISAR (L-band, JPL radar)
+
+| Data source | Used for | Endpoint | What is used |
+|---|---|---|---|
+| [NASA NISAR observation plan](https://science.nasa.gov/mission/nisar/data/) (KMZ) | Planned | linked from [`science.nasa.gov/mission/nisar/data/`](https://science.nasa.gov/mission/nisar/data/) (ROP358) | frames, dates, radar modes (per band); blank modes carried from the frame's last listed one |
+| CelesTrak elements | Planned | as above | frame times (SGP4, the frame ~567 km left of the track) |
+| [ISRO NISAR ROP](https://bhoonidhi.nrsc.gov.in/NISAR/ROP.html) (GeoServer) | Checked against, not used yet | `bhoonidhi.nrsc.gov.in/geoserver/NISAR_ROP/ows` (WFS, one layer per cycle; listed by `POST /NISAR/ROP {"action":"GetAllLayers"}`) | datatake segments with planned start/end times, RCID, application; see methodology |
+| NASA CMR, ASF L1 RSLC | Planned (outlines) | `cmr.earthdata.nasa.gov/search/granules.json` ([`C2853145197-ASF`](https://cmr.earthdata.nasa.gov/search/concepts/C2853145197-ASF.html), last 13 days) | each (track, frame, direction)'s latest RSLC footprint replaces the plan's frame (7-11 km off) |
+| NASA CMR, ASF L1 RSLC | History (frames) | `cmr.earthdata.nasa.gov/search/granules.umm_json` ([`C2853145197-ASF`](https://cmr.earthdata.nasa.gov/search/concepts/C2853145197-ASF.html), `TRACK_NUMBER`, `FRAME_NUMBER`) | sensing time, polarizations per frequency, full or partial frame |
+| [ASF](https://nisar-docs.asf.alaska.edu/access-overview/) via CMR | Latency (reference) | [`C2853089814-ASF`](https://cmr.earthdata.nasa.gov/search/concepts/C2853089814-ASF.html) (L0B), [`C2853145197-ASF`](https://cmr.earthdata.nasa.gov/search/concepts/C2853145197-ASF.html) (RSLC) | listed by `created_at` |
+| [ASF](https://nisar-docs.asf.alaska.edu/access-overview/) via CMR | Latency | [`C2854338529-ASF`](https://cmr.earthdata.nasa.gov/search/concepts/C2854338529-ASF.html) (GCOV) | matched on the RSLC name |
+
+## NISAR (S-band, ISRO radar)
+
+| Data source | Used for | Endpoint | What is used |
+|---|---|---|---|
+| NASA NISAR observation plan (KMZ) | Planned | as above | the `S:` part of each radar mode |
+| [Bhoonidhi](https://bhoonidhi.nrsc.gov.in) | History | — | not shown: its search needs a login, which a public page cannot hold |
+| [Bhoonidhi STAC API](https://bhoonidhi.nrsc.gov.in/bhoonidhi-api/) | Latency (reference) | `bhoonidhi-api.nrsc.gov.in/data/search` (`NISAR_SSAR_RSLC`; login: repository secrets) | RSLC items sensed in the last 10 days, asked one day at a time; `Track`, `Frame`, `Node`, `Polarization`; `updated` (India time) as the publication time |
+| [Bhoonidhi STAC API](https://bhoonidhi.nrsc.gov.in/bhoonidhi-api/) | Latency | `NISAR_SSAR_GCOV` | matched on the RSLC name (`NISAR_S1_…_RSLC_…` → `NISAR_S2_…_GCOV_…`, same tail) |
+| [ISRO NISAR ROP](https://bhoonidhi.nrsc.gov.in/NISAR/ROP.html) (GeoServer) | Checked against, not used yet | as for L-band | the same datatake segments (one plan for both radars) |
+
+---
+
+## Browse images ("Preview on map")
+
+| Mission | Source, in order | Placement |
+|---|---|---|
+| Sentinel-1 | Planetary Computer RTC preview (colour, or VV/VH/HH/HV alone); its GRD preview; OPERA RTC-S1 browse of the burst (CMR `OPERA_L2_RTC-S1_V1`, image at ASF, public with CORS); ASF's GRD browse | RTC: UTM grid, exact. GRD: lat/lon. OPERA: exact, from the burst's grid in its GeoTIFF header (fixed per burst; read by the poller with an Earthdata login, `browse_extents/opera/<track>.json`); a burst not read yet is fitted to its footprint, 1.5-3 km off. ASF browse: radar geometry, no CORS, not placed |
+| Sentinel-2 | Earth Search L2A thumbnail | UTM grid, exact |
+| Landsat | Planetary Computer rendered preview | UTM grid, exact |
+| NISAR | ASF's geocoded RSLC browse | lat/lon: exact, from the granule's `_LATLON.kml` (read by the poller with an Earthdata login, `browse_extents/nisar/<track>.json`; it moves up to ~5 km between repeats of a frame); otherwise from the CMR footprint, 0-5 km off |
+
+## Terms and attribution
+
+swathcast publishes metadata derived from these sources (product identifiers, sensing and first-seen
+times, footprints, plan entries), not the products themselves. Each provider's terms apply to what
+is derived from it.
+
+| Provider | What swathcast derives from it | Terms |
+|---|---|---|
+| ESA / Copernicus (plans, tiling grid, CDSE) | plans, footprints, publication times | [Copernicus Sentinel data legal notice](https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice): free use, including redistribution and modification, with the notice "Contains modified Copernicus Sentinel data [year]" |
+| NASA (CMR, ASF DAAC, OPERA, LP DAAC HLS, NISAR plan) | footprints, granule times, plan entries | [NASA Earth science data use guidance](https://www.earthdata.nasa.gov/engage/open-data-services-software-policies/data-use-guidance): open, no restrictions on use; citation requested |
+| USGS (acquisition calendar, STAC, WRS-2) | plans, scene footprints and times | U.S. Government work, public domain; credit "Landsat imagery courtesy of the U.S. Geological Survey" |
+| Element 84 Earth Search, Microsoft Planetary Computer | catalogue times, browse images | mirrors of the ESA and USGS data above, under the same terms ([Earth Search](https://element84.com/earth-search/), [Planetary Computer terms](https://planetarycomputer.microsoft.com/terms)) |
+| ISRO / NRSC Bhoonidhi (NISAR S-band) | item identifiers and publication times | NISAR data are open data under ISRO's [data policy](https://bhoonidhi.nrsc.gov.in/bhoonidhi_resources/help/UIM2024/4-UIM2024-Bhoonidhi_SpacePolicy_Implementation.pdf) |
+| CelesTrak | orbital elements (`tle.json`) | [celestrak.org](https://celestrak.org/webmaster.php), public GP data |
+| Esri, OpenStreetMap | basemap tiles, shown by the map only | [Esri terms](https://www.esri.com/en-us/legal/terms/full-master-agreement), [OpenStreetMap (ODbL)](https://www.openstreetmap.org/copyright) |
+
+---
+
+**Status & Next Steps** (last updated 2026-10-12): every row was checked against the live service on
+2026-09-29..10-01, the outline and browse rows on 2026-10-06, Bhoonidhi with authenticated searches
+from a GitHub runner on 2026-10-01. The ISRO ROP is compared with this site's NISAR plan in the
+[methodology](methodology.md#isros-nisar-rop) but not used for the map yet. Links and terms added
+2026-10-12.

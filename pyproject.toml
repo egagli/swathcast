@@ -1,0 +1,95 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "swathcast"
+version = "0.1.0"
+description = "Upcoming satellite acquisitions (Sentinel-1/2, Landsat 8/9, NISAR) from the agencies' own plans, and measured time until data delivery."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+authors = [{ name = "Eric Gagliano" }]
+dependencies = [
+  "numpy",
+  "pandas>=2.2",
+  "pyarrow>=15",
+  "requests>=2.31",
+]
+
+[project.optional-dependencies]
+# The schedule step reads the plans and grids with geopandas and times
+# footprints with SGP4; the hourly poller needs neither.
+schedule = ["geopandas>=1.0", "shapely>=2.0", "sgp4>=2.23"]
+
+[project.scripts]
+swathcast = "swathcast.cli:main"
+
+[project.urls]
+Homepage = "https://egagli.github.io/swathcast/"
+Source = "https://github.com/egagli/swathcast"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/swathcast"]
+
+[tool.ruff]
+line-length = 88
+src = ["src", "tests"]
+extend-exclude = ["tests/fixtures"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "BLE", "E722"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["--strict-markers", "--strict-config", "-ra", "-m", "not live"]
+markers = [
+  "live: smoke tests that hit the real provider APIs (run with -m live)",
+]
+
+# ---------------------------------------------------------------- pixi ----
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-arm64", "osx-64"]
+
+[tool.pixi.dependencies]
+python = "3.12.*"
+numpy = ">=1.26"
+pandas = ">=2.2"
+pyarrow = ">=15"
+requests = ">=2.31"
+
+[tool.pixi.pypi-dependencies]
+swathcast = { path = ".", editable = true }
+
+[tool.pixi.feature.schedule.dependencies]
+geopandas = ">=1.0"
+shapely = ">=2.0"
+# orbit timing for Sentinel-2 tiles, Landsat scenes, NISAR frames (ephemeris.py)
+sgp4 = ">=2.23"
+
+[tool.pixi.feature.dev.dependencies]
+pytest = ">=8"
+ruff = ">=0.6"
+
+[tool.pixi.environments]
+# default: everything (schedule + poll + tests + lint)
+default = { features = ["schedule", "dev"], solve-group = "main" }
+# poll: what the hourly job needs; no geopandas, so it installs fast
+poll = { features = [], solve-group = "main" }
+lint = { features = ["dev"], solve-group = "main" }
+
+[tool.pixi.tasks]
+test = "pytest"
+test-live = "pytest -m live"
+lint = "ruff check src tests"
+format = "ruff format src tests"
+format-check = "ruff format --check src tests"
+schedule = "swathcast schedule"
+poll = "swathcast poll"
+summarize = "swathcast summarize"
+viewer = "swathcast viewer"
+check-site = "swathcast check-site"
