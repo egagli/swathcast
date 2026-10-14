@@ -264,7 +264,7 @@ async function wideTile(c, since) {
 async function s3Tile(c, since) {
   const [lon, lat] = c.center;
   const filter = `Collection/Name eq 'SENTINEL-3' and OData.CSC.Intersects(area=geography'SRID=4326;POINT(${lon.toFixed(4)} ${lat.toFixed(4)})') and (contains(Name,'_OL_1_EFR_') or contains(Name,'_SL_1_RBT_')) and ContentDate/Start gt ${iso(since).replace("Z", ".000Z")}`;
-  const d = await getJSON(`${ODATA}?${new URLSearchParams({ $filter: filter, $top: "1000", $orderby: "ContentDate/Start desc" })}`);
+  const d = await getJSON(`${ODATA}?${new URLSearchParams({ $filter: filter, $top: "1000", $orderby: "ContentDate/Start desc", $expand: "Assets" })}`);
   const by = new Map();
   (d.value || []).forEach((p) => {
     const m = /_\d{4}_(\d{3})_(\d{3})_(\d{4})_/.exec(p.Name);
@@ -275,10 +275,26 @@ async function s3Tile(c, since) {
     if (when < g.when) Object.assign(g, { when, frame: Number(m[3]) });
     if (!g.instruments.includes(inst)) g.instruments.push(inst);
     if (!g.links.some((l) => l.text === inst)) g.links.push({ href: `${ODATA}(${p.Id})?$expand=Attributes`, text: inst, title: p.Name });
+    // the preview: the OLCI frame over the tile centre (true colour, by day)
+    const b = inst === "OLCI" && s3Browse(p, plat, c.geojson);
+    if (b && (!g.browse || when < new Date(g.browse.start))) g.browse = b;
   });
   const items = [...by.values()].map((x) => ({ ...x, instruments: x.instruments.sort(), light: x.instruments.includes("OLCI") ? "day" : null }));
   return { source: "CDSE, Sentinel-3 OLCI EFR and SLSTR RBT products over the tile centre", items,
-    note: "Sentinel-3 has no browse image that can be placed on the map (its quicklooks are in instrument geometry)." };
+    note: "Previews: CDSE's OLCI quicklook of the frame, placed from the orbit (by day only)." };
+}
+
+// A Sentinel-3 preview request from a CDSE OData product (with its Assets):
+// its quicklook, time span and footprint. Null without a quicklook.
+export function s3Browse(p, platform, clip = null) {
+  const ql = (p.Assets || []).find((a) => a.Type === "QUICKLOOK");
+  const g = p.GeoFootprint;
+  if (!ql || !g) return null;
+  return {
+    kind: "s3", platform, name: p.Name.replace(/\.SEN3$/, ""), start: p.ContentDate.Start, end: p.ContentDate.End, footprint: g, clip,
+    // the download host serves it with CORS (the catalogue's link redirects there)
+    url: ql.DownloadLink.replace("//catalogue.dataspace.copernicus.eu/", "//download.dataspace.copernicus.eu/"),
+  };
 }
 
 function ummBBox(u) {
@@ -444,7 +460,24 @@ export function gibsURL(layer, date, [w, s, e, n], size = 1024) {
   return `https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?${q}`;
 }
 
+// A footprint's points, all rings of a Polygon or MultiPolygon.
+const ringPoints = (g) => (g.type === "Polygon" ? g.coordinates : g.type === "MultiPolygon" ? g.coordinates.flat() : []).flat();
+
 const BROWSE = {
+  // Sentinel-3: CDSE's quicklook of the frame (OLCI EFR: true colour). It is
+  // in the instrument's geometry (scan lines x across-track columns, no
+  // lat/lon grid): map.js places it from the orbit (swathgeom.js
+  // swathImageModel), within the footprint
+  async s3(b) {
+    return {
+      thumb: b.url, full: b.url,
+      source: `CDSE quicklook of ${b.name}, placed from the orbit (to a few km)`,
+      georef: {
+        url: b.url, corners: null, key: "black", clip: b.clip,
+        where: { kind: "swath", platform: b.platform, t0: Date.parse(b.start), t1: Date.parse(b.end), ring: ringPoints(b.footprint) },
+      },
+    };
+  },
   // MODIS/VIIRS from NASA Worldview, placed exactly (lat/lon box): with
   // b.granules (the pass's granule starts; SNPP and NOAA-20), that pass
   // alone, else the platform's day mosaic (all its passes that day); shown

@@ -24,9 +24,9 @@ import { HORIZON_D, TICKS_D, colorForDays, gradientCSS, scaleT } from "./colors.
 import { LiveSatellites } from "./sats.js";
 import { GlobeOverlay, PolarCaps } from "./overlay.js";
 import { clipToShape, fitUtmToData, resample, utmBox, utmEpsg } from "./drape.js";
-import { fetchBrowse, fetchHistory, granuleTimes, landsatL1, medianRevisit, timelineSVG, usgsItem, widenToImage, HISTORY_DAYS } from "./history.js";
+import { fetchBrowse, fetchHistory, granuleTimes, s3Browse, landsatL1, medianRevisit, timelineSVG, usgsItem, widenToImage, HISTORY_DAYS } from "./history.js";
 import { Tour, flash, handOver, markTourSeen, pendingStep, sleep, tourSeen, waitFor } from "./tour.js";
-import { ALTITUDE_KM, S3_OLCI_KM, WIDE_SWATH_KM, closestApproach, destination, position, scanHeadingAt, scanTime, sensorOf, viewZenith } from "./swathgeom.js";
+import { ALTITUDE_KM, S3_OLCI_KM, WIDE_SWATH_KM, closestApproach, destination, position, scanHeadingAt, scanTime, sensorOf, swathImageModel, viewZenith } from "./swathgeom.js";
 import { RECENT_DAYS, SOURCES as SEARCHABLE, NOT_SEARCHABLE, PORTAL, registerSource, searchSources, groupAcquisitions } from "./recent.js";
 
 // Zoom levels are MapLibre's. minZoom: below it the footprints in view are too
@@ -1361,6 +1361,12 @@ const QUEUE_OPACITY = 0.95;
 // other; with no data in any, g.fallback is used instead. g.clip (a lon/lat
 // Polygon or MultiPolygon) leaves only the image inside it.
 async function drapedImage(g) {
+  if (g.where && g.where.kind === "swath" && !g.where.model) { // placed from the orbit
+    const w = g.where, sr = (await satrecsFor())[w.platform];
+    const model = sr && swathImageModel(sr, w.t0, w.t1, w.ring);
+    if (!model) throw new Error(sr ? "only daytime (descending) frames can be placed" : "no orbital elements for this satellite");
+    g = { ...g, where: { ...w, model } };
+  }
   const got = await Promise.allSettled((g.urls || [g.url]).map(async (url) => {
     const r = await fetch(url, { mode: "cors" });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -1376,6 +1382,7 @@ async function drapedImage(g) {
   const cv = Object.assign(document.createElement("canvas"), { width: Math.round(bmp.width * scale), height: Math.round(bmp.height * scale) });
   const ctx = cv.getContext("2d");
   bmps.forEach((b) => ctx.drawImage(b, 0, 0, cv.width, cv.height));
+  if (g.where && g.where.kind === "swath") trimEdgeColumns(cv, 45); // a quicklook's no-data margins
   if (g.clip && g.where) clipToShape(cv, g.where, g.clip);
   const d = ctx.getImageData(0, 0, cv.width, cv.height), px = d.data, key = g.key;
   // the pixels left opaque: the image's data, and its extent in pixels
@@ -1406,6 +1413,19 @@ async function drapedImage(g) {
   return { url: out.canvas.toDataURL("image/png"), corners: out.corners, canvas: out.canvas, fellBack: Boolean(g.fellBack) };
 }
 const bboxCorners = ([w, s, e, n]) => [[w, n], [e, n], [e, s], [w, s]];
+// Makes the columns at an image's left and right edges with no pixel
+// brighter than `dark` (R+G+B: a JPEG's no-data margin, not black after
+// compression) transparent. Returns [left, right], the columns removed.
+function trimEdgeColumns(cv, dark) {
+  const ctx = cv.getContext("2d"), d = ctx.getImageData(0, 0, cv.width, cv.height), px = d.data, w = cv.width, h = cv.height;
+  const empty = (x) => { for (let y = 0; y < h; y++) { const i = (y * w + x) * 4; if (px[i] + px[i + 1] + px[i + 2] > dark) return false; } return true; };
+  let l = 0, r = 0;
+  while (l < w && empty(l)) l++;
+  while (r < w - l && empty(w - 1 - r)) r++;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (x < l || x >= w - r) px[(y * w + x) * 4 + 3] = 0;
+  ctx.putImageData(d, 0, 0);
+  return [l, r];
+}
 
 function syncPreviewButtons() {
   document.querySelectorAll("button[data-browse]").forEach((btn) => {
@@ -1832,6 +1852,13 @@ function recentBrowse(a) {
   if (a.mission === "nisar") {
     const x = ["asf_nisar_rslc", "asf_nisar_gcov"].map(of).find((y) => y && y.browseUrls && y.browseUrls.length);
     return x ? { kind: "nisar", urls: x.browseUrls, bbox: isArea(x.geometry) ? turf.bbox(x.geometry) : null } : null;
+  }
+  // Sentinel-3 by day: CDSE's quicklook of the OLCI frame over the AOI
+  if (a.mission === "s3" && a.light !== "night") {
+    const efr = (a.products || []).filter((x) => /^cdse_s3_efr/.test(x.source) && x.odata);
+    const [lon, lat] = aoiCenter();
+    const x = efr.find((y) => isArea(y.geometry) && turf.booleanPointInPolygon([lon, lat], y.geometry)) || efr[0];
+    return x ? s3Browse(x.odata, x.platform) : null;
   }
   // MODIS/VIIRS by day: NASA Worldview's (GIBS) true colour of that platform
   // (its granules of this pass where it has them, else the day's mosaic),

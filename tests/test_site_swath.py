@@ -257,3 +257,66 @@ out.m = {urls: m.georef.urls, fallback: m.georef.fallback, layer: new URL(m.geor
     m = out["m"]
     assert m["urls"] is None and m["fallback"] is None and m["clip"]
     assert m["layer"] == "MODIS_Terra_CorrectedReflectance_TrueColor"
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")
+def test_sentinel3_quicklook_is_placed_from_the_orbit(tmp_path):
+    """A Sentinel-3 quicklook (rows: scan lines in time order; columns:
+    across the track, right edge of the swath first) placed from the orbit:
+    on the recorded S3B frames (relative orbit 304, ~80 N, descending), the
+    footprint's points map onto the image's edges; an ascending (night)
+    frame is not placed; s3Browse takes the quicklook from CDSE's download
+    host (the catalogue's link redirects there)."""
+    import urllib.request
+
+    from conftest import load_fixture
+
+    try:
+        lib = urllib.request.urlopen(SATELLITE_JS, timeout=20).read().decode()
+    except OSError:
+        pytest.skip("satellite.js CDN not reachable")
+    (tmp_path / "satellite.cjs").write_text(lib)
+    omm = load_fixture("celestrak_omm.json")["S3B"]
+    items = [
+        v
+        for v in load_fixture("cdse_s3_products.json")["value"]
+        if "_SL_1_RBT_" in v["Name"] or "_OL_1_EFR_" in v["Name"]
+    ]
+    script = tmp_path / "s3.mjs"
+    script.write_text(
+        f"""
+import {{ createRequire }} from "module";
+globalThis.satellite = createRequire(import.meta.url)({json.dumps(str(tmp_path / "satellite.cjs"))});
+const g = await import({json.dumps((SITE / "swathgeom.js").as_uri())});
+const h = await import({json.dumps((SITE / "history.js").as_uri())});
+const sat = satellite.json2satrec({json.dumps(omm)});
+const out = {json.dumps(items)}.map((p) => {{
+  const ring = p.GeoFootprint.coordinates[0];
+  const m = g.swathImageModel(sat, Date.parse(p.ContentDate.Start), Date.parse(p.ContentDate.End), ring);
+  const f = ring.map(([lon, lat]) => m.toFraction(lon, lat));
+  const night = g.swathImageModel(sat, Date.parse(p.ContentDate.Start) + 50 * 60e3, Date.parse(p.ContentDate.End) + 50 * 60e3, ring);
+  const b = h.s3Browse({{ ...p, Assets: [{{ Type: "QUICKLOOK", DownloadLink: "https://catalogue.dataspace.copernicus.eu/odata/v1/Assets(x)/$value" }}] }}, "S3B");
+  return {{ name: p.Name, f, night, url: b.url, kind: b.kind }};
+}});
+console.log(JSON.stringify(out));
+"""
+    )
+    res = json.loads(
+        subprocess.run(
+            ["node", str(script)], capture_output=True, text=True, check=True
+        ).stdout
+    )
+    assert len(res) == 3  # one RBT, two EFR (NR and NT)
+    for r in res:
+        u = [x[0] for x in r["f"]]
+        v = [x[1] for x in r["f"]]
+        # every footprint point on the image, and the four edges reached
+        assert min(u) > -0.02 and max(u) < 1.02 and min(v) > -0.02 and max(v) < 1.02, r[
+            "name"
+        ]
+        assert min(u) < 0.02 and max(u) > 0.98 and min(v) < 0.02 and max(v) > 0.98, r[
+            "name"
+        ]
+        assert r["night"] is None
+        assert r["kind"] == "s3"
+        assert r["url"].startswith("https://download.dataspace.copernicus.eu/")

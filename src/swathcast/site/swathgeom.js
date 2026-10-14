@@ -195,3 +195,51 @@ export function scanTime(satrec, lon, lat, t0) {
   return fb == null || !Number.isFinite(b) || Math.abs(b - t0) > 60e3 ? t0 : b;
 }
 
+
+// A Sentinel-3 quicklook (OLCI EFR, SLSTR RBT) placed from the orbit. Its
+// rows are the frame's scan lines in time order and its columns run across
+// the track from the right edge of the swath to the left: lon/lat -> the
+// image's [column, row] as fractions. The frame's first and last scan lines
+// and its swath edges are taken from the product's footprint, so a few
+// seconds' error in elements propagated weeks from their epoch is absorbed.
+// Only descending (daytime) frames: night quicklooks are thermal and their
+// orientation is not verified. Null if the frame is not descending.
+// ring: the footprint's [lon, lat] points (all rings of a MultiPolygon).
+export function swathImageModel(satrec, t0, t1, ring) {
+  // the track well beyond the frame: a shape clipping the image (a tile)
+  // may reach ~1,000 km past it
+  const step = 2000, ts = [], P = [];
+  for (let t = t0 - 300e3; t <= t1 + 300e3; t += step) {
+    const p = position(satrec, new Date(t));
+    if (p) { ts.push(t); P.push(unit(p.lon, p.lat)); }
+  }
+  if (ts.length < 10) return null;
+  const at = (q) => { // the scan line through q: [t (ms), x (km, + right of travel)]
+    let j = 1, best = -2;
+    for (let i = 1; i < P.length - 1; i++) { const d = dot(P[i], q); if (d > best) { best = d; j = i; } }
+    const a = [j - 1, j, j + 1].map((i) => Math.acos(Math.min(1, dot(P[i], q))));
+    const den = a[0] - 2 * a[1] + a[2], off = Math.abs(den) > 1e-12 ? (0.5 * (a[0] - a[2])) / den : 0;
+    const t = ts[j] + off * step;
+    const f = (t - ts[j - 1]) / (ts[j + 1] - ts[j - 1]);
+    const n = norm(P[j - 1].map((v, k) => v + f * (P[j + 1][k] - v))); // the nadir at t
+    const v = norm(P[j + 1].map((x, k) => x - P[j - 1][k])); // the direction of travel
+    const dist = Math.acos(Math.min(1, dot(n, q))) * R_KM;
+    const side = dot(cross(n, v), q); // > 0: left of travel
+    return [t, side > 0 ? -dist : dist];
+  };
+  const pts = ring.map(([lon, lat]) => at(unit(lon, lat)));
+  const tmin = Math.min(...pts.map((p) => p[0])), tmax = Math.max(...pts.map((p) => p[0]));
+  const xr = Math.max(...pts.map((p) => p[1])), xl = Math.min(...pts.map((p) => p[1]));
+  const mid = position(satrec, new Date((tmin + tmax) / 2)), later = position(satrec, new Date((tmin + tmax) / 2 + 10e3));
+  if (!mid || !later || later.lat >= mid.lat) return null;
+  // longitudes continuous across the antimeridian (a frame is < 40 deg wide)
+  const lons = ring.map((p) => p[0] + 360 * Math.round((ring[0][0] - p[0]) / 360)), lats = ring.map((p) => p[1]);
+  return {
+    bbox: [Math.min(...lons), Math.min(...lats), Math.max(...lons), Math.max(...lats)],
+    toFraction: (lon, lat) => { const [t, x] = at(unit(lon, lat)); return [(x - xr) / (xl - xr), (t - tmin) / (tmax - tmin)]; },
+  };
+}
+const unit = (lon, lat) => { const a = lon * D2R, b = lat * D2R; return [Math.cos(b) * Math.cos(a), Math.cos(b) * Math.sin(a), Math.sin(b)]; };
+const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const norm = (a) => { const n = Math.hypot(...a); return a.map((v) => v / n); };
