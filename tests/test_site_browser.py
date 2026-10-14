@@ -694,3 +694,41 @@ def test_a_preview_is_clipped_to_its_shape(browser, server):
     assert alpha[2] == 255 and alpha[3] == 0  # either side of the diagonal
     assert page.errors == []
     page.close()
+
+
+def test_nisar_s_preview_is_listed_not_placed(browser, server):
+    """An S-band row's preview: Bhoonidhi's GCOV thumbnail when it loads, else
+    the RSLC's the poller stored; never placed (Bhoonidhi sends no CORS)."""
+    page = open_page(browser, server)
+    seen = []
+
+    def bhoonidhi(route):
+        url = route.request.url
+        seen.append(url)
+        if "_GCOV_033_026_" in url:  # this GCOV is not out yet
+            return route.fulfill(status=404, body="")
+        return route.fulfill(status=200, content_type="image/png", body=PNG)
+
+    page.route("https://bhoonidhi.nrsc.gov.in/**", bhoonidhi)
+    base = "https://bhoonidhi.nrsc.gov.in/stac/PRODUCTJPGS/NISAR/SSAR/2026/OCT/13/"
+    rslc = "NISAR_S1_PR_RSLC_033_{}_A_010_2500_CRNA_A_20261013T234419_20261013T234452_P00500_M_P_I_001.jpg"
+    out = js(
+        page,
+        f"""(async () => {{
+          const h = await import('./history.js');
+          const a = await h.fetchBrowse({{kind: 'nisar_s', url: '{base}{rslc.format("011")}'}});
+          const b = await h.fetchBrowse({{kind: 'nisar_s', url: '{base}{rslc.format("026")}'}});
+          return [a, b];
+        }})()""",
+    )
+    gcov, fallback = out
+    assert gcov["thumb"] == base + rslc.format("011").replace(
+        "S1_PR_RSLC", "S2_PR_GCOV"
+    )
+    assert "Geocoded" in gcov["note"] and "CORS" in gcov["note"]
+    assert fallback["thumb"] == base + rslc.format("026")
+    assert "radar geometry" in fallback["note"]
+    assert not gcov.get("georef") and not fallback.get("georef")
+    assert any("_GCOV_033_026_" in u for u in seen)  # it tried the GCOV first
+    assert page.errors == []
+    page.close()

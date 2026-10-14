@@ -242,12 +242,13 @@ async function nisarFrame(c, since) {
   const s = (sband || []).filter((r) => r.frame === c.frame && r.when >= since).map((r) => ({
     when: r.when, platform: "NISAR", track: r.track, direction: r.direction, pol: r.pol ? `S ${r.pol}` : "S", partial: r.partial, id: r.id,
     links: [{ href: BHOONIDHI, text: "Bhoonidhi", title: `${r.id} (search there; needs a login)` }],
+    browse: r.browse ? { kind: "nisar_s", url: r.browse } : null,
   }));
   return {
     source: `NASA CMR, ASF NISAR L1 RSLC, track ${c.track} frame ${c.frame}${sband ? "; ISRO Bhoonidhi S-band RSLC (this site's hourly listing)" : ""}`,
     items: [...items, ...s],
     note: sband
-      ? "S-band from ISRO's Bhoonidhi, listed hourly by this site (its search needs a login): no previews."
+      ? "S-band from ISRO's Bhoonidhi, listed hourly by this site (its search needs a login); its previews are listed, not placed on the map (Bhoonidhi serves them without CORS)."
       : "L-band only: S-band products are at ISRO's Bhoonidhi, whose search needs a login.",
   };
 }
@@ -470,7 +471,8 @@ function nisarBrowse(rslc, gcov) {
 //               (USGS's own thumbnails need a login; Planetary Computer is
 //               days behind, so the newest scenes may have none yet)
 //   NISAR       ASF's browse of the GCOV (UTM, colour or one channel), else
-//               of the RSLC (lat/lon, colour)
+//               of the RSLC (lat/lon, colour); S-band: Bhoonidhi's thumbnail
+//               of the GCOV, else of the RSLC (no CORS: listed, not placed)
 // Exact extents published by the poller (extents.py, with an Earthdata
 // login): browse_extents/nisar_gcov/<track>.json {GCOV granule: [lon, lat] x 4
 // from the top-left, clockwise} and
@@ -681,7 +683,31 @@ const BROWSE = {
       georef: full && corners ? { url: full, corners, where: { kind: "latlon", bbox: b.bbox }, key: "both", dataExtent: true } : null,
     };
   },
+  // NISAR S-band: Bhoonidhi's thumbnail (public JPEG, one channel, grey, the
+  // product decimated 20x) of the GCOV, else of the RSLC whose link the poller
+  // keeps (b.url). The GCOV's sits on its UTM grid, the RSLC's in radar
+  // geometry; both are served without CORS, so listed, not placed.
+  async nisar_s(b) {
+    const gcov = b.url.replace(/\/NISAR_S1_(\w\w)_RSLC_([^/]*)$/, "/NISAR_S2_$1_GCOV_$2");
+    const geocoded = gcov !== b.url && (await loads(gcov)), url = geocoded ? gcov : b.url;
+    const name = url.split("/").pop().replace(/\.jpg$/, "");
+    return {
+      thumb: url, full: url, source: `Bhoonidhi's thumbnail of ${name} (ISRO, one channel)`,
+      note: `${geocoded ? "Geocoded (UTM)" : "In radar geometry (the GCOV's is not out yet)"}, but served without CORS, so it cannot be placed on the map.`,
+      links: [{ href: url, text: "the image at Bhoonidhi" }],
+    };
+  },
 };
+
+// Whether an image loads (an <img> needs no CORS, unlike fetch).
+function loads(url) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(true);
+    img.onerror = () => resolve(false);
+    img.src = url;
+  });
+}
 
 // One channel of a Planetary Computer Sentinel-1 item, grey: RTC is gamma0
 // (linear power), GRD amplitude (DN); the co-pol channel (VV, HH) is

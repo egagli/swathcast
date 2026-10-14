@@ -165,8 +165,16 @@ with `curl` and the package's own source classes. The recorded responses are in 
   (`YYYY-MM-DD HH:MM:SS`, India time, no zone). One item: sensed 12:44:19 UTC, `GenerationTime`
   17:04:17, `updated` 22:56:03 = 17:26:03 UTC; GCOV `updated` 13 min after the RSLC's. S-band
   products systematically since cycle 25 (2026-07-08), per
-  [ISRO](https://www.isro.gov.in/NISARS_Band_SAR_Data_Products_Release.html). From this repository's
-  development container the API host resets the TLS connection; from a GitHub runner it answers.
+  [ISRO](https://www.isro.gov.in/NISARS_Band_SAR_Data_Products_Release.html). Each item's assets (2026-10-14, no `roles`):
+  `thumbnail` (image/jpeg) and `metadata` (`.met`, JSON) at
+  `https://bhoonidhi.nrsc.gov.in/stac/PRODUCTJPGS/NISAR/SSAR/<yyyy>/<MON>/<dd>/<id>.jpg|.met`, both public
+  (no login, no query string) but without CORS (a preflight is 403); `QAPDF` with a broken href
+  (`://<id>_QA.pdf`). The thumbnail is one channel, grey, the product decimated 20×: an RSLC's in radar
+  geometry (median 1.8 MB, up to 12 MB), a GCOV's on its UTM grid (400 m pixels at 20 m spacing,
+  median ~0.35 MB), exactly the extent the `.met` gives (`EPSG`, `ProdUL…LR MapX/Y`; the item's
+  `ProdLatLon` in lat/lon), black outside the swath. From a cloud development container the hosts
+  reset about one connection in three (2026-10-14; earlier, every one); from a GitHub runner they
+  answer.
 
 - **CDSE Sentinel-2**: `Collection/Name eq 'SENTINEL-2'` plus a `productType` attribute filter
   (`S2MSI1C`, `S2MSI2A`) and a `PublicationDate` window. Published on 2026-09-28: L1C 14,994, L2A
