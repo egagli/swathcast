@@ -37,10 +37,12 @@ async function cdse(area, since, collection, names = null) {
   const filter = `Collection/Name eq '${collection}' and OData.CSC.Intersects(area=geography'SRID=4326;${area.wkt}') and ContentDate/Start gt ${t}Z and ${names}`;
   // Sentinel-3 sees a place 1-3 times a day: up to CDSE's 1,000 a query
   const top = collection === "SENTINEL-3" ? "1000" : "500";
-  const d = await getJSON(`${ODATA}?${new URLSearchParams({ $filter: filter, $top: top, $orderby: "ContentDate/Start desc" })}`);
+  const s3 = collection === "SENTINEL-3"; // with each product's quicklook (map.js previews)
+  const d = await getJSON(`${ODATA}?${new URLSearchParams({ $filter: filter, $top: top, $orderby: "ContentDate/Start desc", ...(s3 ? { $expand: "Assets" } : {}) })}`);
   return (d.value || []).map((p) => ({
     when: new Date(p.ContentDate.Start), platform: p.Name.slice(0, 3), id: p.Name.replace(/\.(SAFE|SEN3)$/, ""), mode: s1Mode(p.Name),
     href: `${ODATA}(${p.Id})?$expand=Attributes`, linkText: "catalogue record", geometry: p.GeoFootprint || null,
+    ...(s3 ? { odata: p } : {}),
   }));
 }
 

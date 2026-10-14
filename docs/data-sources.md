@@ -123,7 +123,7 @@ Details and validation: [methodology](methodology.md) (timing, footprints, polar
 | Sentinel-2 | Earth Search L2A thumbnail | UTM grid, exact |
 | Landsat | Planetary Computer rendered preview | UTM grid, exact |
 | MODIS, VIIRS | NASA Worldview (GIBS) corrected-reflectance true colour: SNPP and NOAA-20, the pass's own granules (6-minute granule layers); otherwise, or until those are published, the platform's day mosaic | lat/lon, exact (WMS over the tile or the AOI's surroundings), shown only within the tile (or the pass's granule footprints) |
-| Sentinel-3 | none: its quicklooks are in instrument geometry | not placed |
+| Sentinel-3 | CDSE's quicklook of the OLCI EFR frame (true colour; OData `Assets`, `QUICKLOOK`, served by `download.dataspace.copernicus.eu` with CORS), daytime (descending) frames only | instrument geometry (scan lines × across-track columns), placed from the orbit: SGP4 with the frame's first and last scan lines and swath edges from its footprint; to a few km ([methodology](methodology.md#sentinel-3-previews)) |
 | NISAR | ASF's geocoded RSLC browse | lat/lon: exact, from the granule's `_LATLON.kml` (read by the poller with an Earthdata login, `browse_extents/nisar/<track>.json`; it moves up to ~5 km between repeats of a frame); otherwise from the CMR footprint, 0-5 km off |
 
 ## Terms and attribution

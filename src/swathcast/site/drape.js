@@ -7,9 +7,10 @@
 // those four corners are then exact.
 //
 // An image's grid ("where"): {kind: "latlon", bbox: [w, s, e, n]} (the
-// image's own edges), or {kind: "utm", epsg, transform, shape} (the full
+// image's own edges), {kind: "utm", epsg, transform, shape} (the full
 // raster's affine transform and [rows, cols]; the image may be a smaller
-// rendering of it). The mapping functions are pure (tests run them under
+// rendering of it), or {kind: "swath", model} (a swath's scan lines and
+// columns, from the orbit: swathgeom.js swathImageModel). The mapping functions are pure (tests run them under
 // node); resample() needs a canvas.
 import { utmToLonLat } from "./history.js";
 
@@ -39,6 +40,10 @@ const utmZone = (epsg) => ({ zone: epsg % 100, south: Math.floor(epsg / 100) ===
 
 // The image's four corners (top-left, clockwise) as lon/lat.
 export function imageCorners(where) {
+  if (where.kind === "swath") { // a satellite swath's own geometry: its footprint's box
+    const [w, s, e, n] = where.model.bbox;
+    return [[w, n], [e, n], [e, s], [w, s]];
+  }
   if (where.kind === "latlon") {
     const [w, s, e, n] = where.bbox;
     return [[w, n], [e, n], [e, s], [w, s]];
@@ -51,6 +56,9 @@ export function imageCorners(where) {
 // lon/lat -> the image's pixel [u, v] (0..width, 0..height), for an image
 // of width x height pixels.
 export function lonLatToPixel(where, width, height) {
+  if (where.kind === "swath") {
+    return (lon, lat) => { const [u, v] = where.model.toFraction(lon, lat); return [u * width, v * height]; };
+  }
   if (where.kind === "latlon") {
     const [w, s, e, n] = where.bbox;
     return (lon, lat) => [((lon - w) / (e - w)) * width, ((n - lat) / (n - s)) * height];

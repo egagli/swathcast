@@ -351,6 +351,33 @@ real frames by a median IoU of 0.996 (boundaries ~3–4 km apart, OLCI and SLSTR
 strips are drawn across the inertial direction of travel (above): their corners then lie a median
 17–35 km from the real granule corners, against 61–77 km across the ground track.
 
+## Sentinel-3 previews
+
+CDSE serves a quicklook JPEG with every Sentinel-3 product, public and CORS-open, but in the
+instrument's own geometry: rows are scan lines in time order, columns run across the track, and there
+is no lat/lon grid (the product's footprint outline is all the catalogue gives). Worldview has no
+Sentinel-3 layer. So the map places the OLCI quicklook from the orbit (`site/swathgeom.js`
+`swathImageModel`): a place's row is the time the scan line through it was taken (its closest approach
+to the SGP4 ground track; Sentinel-3 is yaw-steered, so scan lines are perpendicular to it), and its
+column its cross-track distance, linear between the swath's right edge (column 0) and its left. The
+frame's first and last scan lines and its two swath edges are read from the footprint (they match the
+catalogue's start and stop times to within 0.4 s on 18 frames), so elements propagated weeks from
+their epoch still land the image on its footprint.
+
+- **Orientation.** Of the 8 ways to lay the image on its footprint, one matched NASA Worldview's Terra
+  true colour of the same morning best on each of 7 OLCI frames (correlation 0.28–0.79, against at
+  most 0.43 for any other): the first row is the frame's start, the first column the right of travel.
+- **Accuracy.** Against OpenStreetMap's land/water map (GIBS `OSM_Land_Water_Map`), the shift that
+  best aligned each third × third of a frame with the coastlines: OLCI, 33 patches on 24 daytime
+  frames (2026-10-10 to 13; patches with correlation > 0.6), median 0 km, 90th percentile 2 km (in
+  2 km steps); SLSTR, 25 patches, median 2 km, 90th percentile 8 km. Treating the columns as uniform
+  in view angle instead was worse. The quicklooks carry a dark no-data margin (~62 columns of 2,422 at
+  the right of travel, ~6 at the left): it is part of the swath's width (mapping only the data columns
+  to the swath moved coastlines a median 12 km) and is made transparent.
+- **Day only.** Every Sentinel-3 frame in daylight is descending. Night (ascending) SLSTR quicklooks are
+  thermal; their orientation could not be established (land/sea contrast at night favoured the image
+  turned 180° in only 10 of 18 frames), so they are not placed.
+
 ## Landsat and NISAR timing
 
 The Landsat and NISAR plans give dates, not times. A time estimated from the nodal
