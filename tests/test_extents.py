@@ -10,9 +10,22 @@ import pandas as pd
 from swathcast import extents as x
 
 NOW = datetime(2026, 10, 6, 18, tzinfo=UTC)
-RSLC = "NISAR_L1_PR_RSLC_031_106_A_026_4005_DHDH_A_20260925T130400_20260925T130436_P05023_N_F_J_001"
+GCOV = "NISAR_L2_PR_GCOV_031_106_A_026_4005_DHDH_A_20260925T130400_20260925T130436_P05023_N_F_J_001"
 OPERA = "OPERA_L2_RTC-S1_T137-292398-IW2_20261001T020133Z_20261001T044458Z_S1C_30_v1.0"
-KML = """<kml><Document><GroundOverlay><ns0:LatLonQuad><coordinates>-125.456,46.8964 -120.8427,46.8964 -120.8427,49.879 -125.456,49.879</coordinates></ns0:LatLonQuad></GroundOverlay></Document></kml>"""
+#: a GCOV's _NATIVE.kml (UTM grid, live 2026-10-14): corners from the
+#: bottom-left, counter-clockwise
+KML = """<kml><Document><GroundOverlay><ns0:LatLonQuad><coordinates>-81.00957297644737,-12.536319822837351 -77.93625335824206,-12.518855410856494 -77.96662459240734,-9.580320872532512 -81.00947790011288,-9.59359972346223</coordinates></ns0:LatLonQuad></GroundOverlay></Document></kml>"""
+#: the same corners from the top-left, clockwise, rounded as published
+QUAD = [
+    -81.009478,
+    -9.5936,
+    -77.966625,
+    -9.580321,
+    -77.936253,
+    -12.518855,
+    -81.009573,
+    -12.53632,
+]
 
 
 def geotiff(w=3439, h=1563, x0=477180.0, y1=5286150.0, epsg=32610):
@@ -49,12 +62,14 @@ def geotiff(w=3439, h=1563, x0=477180.0, y1=5286150.0, epsg=32610):
 
 
 def test_parsers():
-    assert x.kml_box(KML) == [-125.456, 46.8964, -120.8427, 49.879]
+    assert [round(v, 6) for v in x.kml_quad(KML)] == QUAD
+    box = "<LatLonBox><north>2</north><south>1</south><east>4</east><west>3</west></LatLonBox>"
+    assert x.kml_quad(box) == [3, 2, 4, 2, 4, 1, 3, 1]
     assert x.tiff_grid(geotiff()) == (32610, 477180.0, 5239260.0, 580350.0, 5286150.0)
-    assert x.nisar_kml_url(RSLC).endswith(
-        f"NISAR_L1_RSLC_PROVISIONAL_V1/{RSLC}/{RSLC}_LATLON.kml"
+    assert x.nisar_kml_url(GCOV).endswith(
+        f"NISAR_L2_GCOV_PROVISIONAL_V1/{GCOV}/{GCOV}_NATIVE.kml"
     )
-    assert x.nisar_kml_url("NISAR_L2_PR_GCOV_x") is None
+    assert x.nisar_kml_url("NISAR_L1_PR_RSLC_x") is None
     assert x.OPERA_NAME.match(OPERA)[1] == "T137-292398-IW2"
 
 
@@ -81,9 +96,9 @@ class FakeEDL:
     def get(self, url, params=None, headers=None, timeout=None):
         if url == x.CMR_CSV:
             self.listed.append(params["created_at[]"])
-            name = RSLC if "collection_concept_id" in params else OPERA
+            name = GCOV if "collection_concept_id" in params else OPERA
             return Resp(text=f"Granule UR,Producer Granule ID\n{name},{name}\n")
-        if url.endswith("_LATLON.kml"):
+        if url.endswith("_NATIVE.kml"):
             return Resp(text=KML)
         if url.endswith("_mask.tif"):
             assert headers == {"Range": "bytes=0-16383"}
@@ -112,9 +127,9 @@ def test_update_lists_fetches_and_backfills(tmp_path, monkeypatch):
     assert s.listed[0] == "2026-10-06T18:00:00Z,2026-10-06T19:00:00Z"
     # the site's shards
     out = tmp_path / "site"
-    assert x.publish_extents(tmp_path, out) == {"nisar": 1, "opera": 1}
-    assert json.loads((out / "browse_extents/nisar/106.json").read_text()) == {
-        RSLC: [-125.456, 46.8964, -120.8427, 49.879]
+    assert x.publish_extents(tmp_path, out) == {"nisar_gcov": 1, "opera": 1}
+    assert json.loads((out / "browse_extents/nisar_gcov/106.json").read_text()) == {
+        GCOV: QUAD
     }
     assert json.loads((out / "browse_extents/opera/137.json").read_text()) == {
         "T137-292398-IW2": [32610, 477180.0, 5239260.0, 580350.0, 5286150.0]
@@ -131,7 +146,7 @@ def test_failures_are_retried_then_given_up(tmp_path, monkeypatch):
     for h in range(18, 18 + x.NISAR_MAX_TRIES + 1):
         report = x.update(tmp_path, now=NOW.replace(hour=h), budget_s=60)
     t = pd.read_parquet(tmp_path / "extents" / x.NISAR_FILE)
-    assert t["tries"].tolist() == [x.NISAR_MAX_TRIES] and t["west"].isna().all()
+    assert t["tries"].tolist() == [x.NISAR_MAX_TRIES] and t["lon0"].isna().all()
     assert report["nisar_failed"] == 0  # given up: not tried again
 
 

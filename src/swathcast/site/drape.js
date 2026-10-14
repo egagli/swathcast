@@ -157,6 +157,29 @@ export function fitUtmToData(epsg, [X0, Y0, X1, Y1], [x0, y0, x1, y1], width, he
 }
 
 // The UTM zone (as an EPSG code) of a lon/lat point, and a ring's box in it.
+// The UTM grid of an image known by its four corners (lon/lat from the
+// top-left, clockwise): NISAR GCOVs are on the UTM zone of their centre (or
+// polar stereographic near the poles), north-up, so in the right zone the
+// corners form an axis-aligned rectangle. Tries the centre's zone, then its
+// neighbours; null when none fits (the image is then stretched between its
+// corners: approximate).
+export function gcovGrid(corners, tolM = 30) {
+  const lon = corners.reduce((t, p) => t + p[0], 0) / 4, lat = corners.reduce((t, p) => t + p[1], 0) / 4;
+  const base = utmEpsg(lon, lat);
+  for (const epsg of [base, base - 1, base + 1]) {
+    const { zone, south } = utmZone(epsg);
+    if (zone < 1 || zone > 60) continue;
+    const [tl, tr, br, bl] = corners.map(([x, y]) => lonLatToUtm(x, y, zone, south));
+    const w = tr[0] - tl[0], h = tl[1] - bl[1];
+    const off = Math.max(Math.abs(tl[1] - tr[1]), Math.abs(bl[1] - br[1]), Math.abs(tl[0] - bl[0]), Math.abs(tr[0] - br[0]));
+    if (w > 0 && h > 0 && off < tolM) {
+      const n = 1000; // any raster size: the image is a rendering of it
+      return { kind: "utm", epsg, transform: [w / n, 0, tl[0], 0, -h / n, tl[1]], shape: [n, n] };
+    }
+  }
+  return null;
+}
+
 export const utmEpsg = (lon, lat) => (lat < 0 ? 32700 : 32600) + Math.min(60, Math.floor((lon + 180) / 6) + 1);
 export function utmBox(epsg, ring) {
   const { zone, south } = utmZone(epsg);

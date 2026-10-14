@@ -67,7 +67,8 @@ snowmelt, for example), field campaigns, and coordination between missions.
 - **For each recent acquisition**, every source's catalogue is searched live from the browser, with
   links to the products already up and expected times for the rest. USGS's Landsat STAC does not
   answer browsers, so the poller publishes the last 90 days of Level-1 scenes per WRS-2 path for the
-  map to read; ISRO's Bhoonidhi needs a login, so for NISAR S-band only the expected time is shown.
+  map to read; ISRO's Bhoonidhi needs a login, so the poller publishes its NISAR S-band listing the same
+  way (the popup's history), and for the products only the expected time is shown.
 - **The [dashboard](https://egagli.github.io/swathcast/dashboard.html)** shows the measured
   distributions for Sentinel-1, Sentinel-2 (CDSE, Earth Search, Planetary Computer, HLS S30),
   Landsat 8/9 (USGS, Earth Search, Planetary Computer, HLS L30), NISAR (ASF L0B, RSLC and GCOV

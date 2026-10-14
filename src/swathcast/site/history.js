@@ -5,7 +5,9 @@
 //   Sentinel-2 tile    Earth Search sentinel-2-l1c by MGRS tile (tile sensing time, cloud)
 //   Landsat scene      Earth Search landsat-c2-l2 by WRS-2 path/row (USGS L2, days behind),
 //                      merged with USGS's Level-1 list (this site's landsat_l1 files)
-//   NISAR frame        NASA CMR, ASF L1 RSLC by track and frame (L-band; S-band needs a Bhoonidhi login)
+//   NISAR frame        NASA CMR, ASF L1 RSLC by track and frame (L-band), with each one's GCOV
+//                      (for its preview); S-band: this site's nisar_s files (the poller's
+//                      Bhoonidhi listing: its search needs a login)
 //   MODIS/VIIRS tile   NASA CMR, LAADS Level-1B granules over the tile centre (one per pass)
 //   Sentinel-3 tile    CDSE, OLCI EFR and SLSTR RBT products over the tile centre (one per orbit)
 // Each acquisition carries links to its product (a viewer a person can use:
@@ -13,8 +15,9 @@
 // find a browse image of it (see there).
 import { ASF, CMR, ES as EARTH_SEARCH, ODATA, PC as PC_STAC, getJSON, iso, plat as platName } from "./catalogues.js";
 import { sunElevation } from "./common.js";
+import { gcovGrid } from "./drape.js";
 
-const NISAR_RSLC = "C2853145197-ASF";
+const NISAR_RSLC = "C2853145197-ASF", NISAR_GCOV = "C2854338529-ASF";
 const vertex = (scene) => `https://search.asf.alaska.edu/#/?searchType=List%20Search&searchList=${encodeURIComponent(scene)}`;
 const stacBrowser = (collection, id) => `https://radiantearth.github.io/stac-browser/#/external/earth-search.aws.element84.com/v1/collections/${collection}/items/${encodeURIComponent(id)}`;
 const earthdata = (collection, granule) => `https://search.earthdata.nasa.gov/search/granules?p=${collection}&pg[0][id]=${encodeURIComponent(granule)}`;
@@ -176,12 +179,52 @@ function nisarChannels(channels) {
   return named || [...set].sort((a, b) => (POL_RANK[a] ?? 9) - (POL_RANK[b] ?? 9)).join("+");
 }
 
+// One acquisition's RSLC and GCOV share cycle, track, direction, frame and
+// start (to the minute): NISAR_L1_PR_RSLC_033_011_D_094_4005_DHDH_A_20261012T233338_...
+const nisarKey = (name) => { const m = /_(\d{3}_\d{3}_[AD]_\d{3})_\d{4}_\w{4}_[AB]_(\d{8}T\d{4})/.exec(name); return m ? `${m[1]}_${m[2]}` : null; };
+const visuals = (u) => (u.RelatedUrls || []).filter((x) => x.Type === "GET RELATED VISUALIZATION" && /^https:/.test(x.URL)).map((x) => x.URL);
+
+// NISAR S-band acquisitions of the last 90 days on one track, from this site's
+// per-track files (nisar_s/<track>.parquet, from the poller's Bhoonidhi
+// listing). null if the site has no such file.
+const sFiles = new Map();
+export function nisarS(track) {
+  const key = String(track).padStart(3, "0");
+  if (!sFiles.has(key)) {
+    const p = fetch(`./data/nisar_s/${key}.parquet`)
+      .then((r) => (r.ok ? r.arrayBuffer() : null))
+      .then(async (buf) => {
+        if (!buf) return null;
+        const [{ parquetReadObjects }, { compressors }] = await Promise.all([
+          import("https://cdn.jsdelivr.net/npm/hyparquet@1.16.0/+esm"),
+          import("https://cdn.jsdelivr.net/npm/hyparquet-compressors@1.1.1/+esm"),
+        ]);
+        const rows = await parquetReadObjects({ file: buf, compressors, utf8: false });
+        return rows.map((r) => ({
+          track: Number(r.track), frame: Number(r.frame), direction: String(r.direction || ""), when: new Date(typeof r.time === "bigint" ? Number(r.time) : r.time),
+          id: String(r.id), pol: r.pol ? String(r.pol) : null, partial: Boolean(r.partial), browse: r.browse ? String(r.browse) : null,
+        }));
+      })
+      .catch(() => null);
+    sFiles.set(key, p);
+  }
+  return sFiles.get(key);
+}
+const BHOONIDHI = "https://bhoonidhi.nrsc.gov.in/";
+
 async function nisarFrame(c, since) {
-  const q = new URLSearchParams([
-    ["collection_concept_id", NISAR_RSLC], ["attribute[]", `int,TRACK_NUMBER,${c.track}`], ["attribute[]", `int,FRAME_NUMBER,${c.frame}`],
+  const query = (coll) => new URLSearchParams([
+    ["collection_concept_id", coll], ["attribute[]", `int,TRACK_NUMBER,${c.track}`], ["attribute[]", `int,FRAME_NUMBER,${c.frame}`],
     ["temporal[]", `${iso(since)},`], ["sort_key", "-start_date"], ["page_size", "200"],
   ]);
-  const d = await getJSON(`${CMR}?${q}`);
+  const [d, gc, sband] = await Promise.all([
+    getJSON(`${CMR}?${query(NISAR_RSLC)}`),
+    getJSON(`${CMR}?${query(NISAR_GCOV)}`).catch(() => ({ items: [] })),
+    nisarS(c.track),
+  ]);
+  // each RSLC's GCOV (made for every RSLC, ~1 h later): its browse images are
+  // geocoded and come one per channel
+  const gcov = new Map((gc.items || []).map(({ umm: u }) => [nisarKey(u.GranuleUR), u]));
   const items = (d.items || []).map(({ umm: u }) => {
     const a = Object.fromEntries((u.AdditionalAttributes || []).map((x) => [x.Name, x.Values]));
     // frequency A (main band) and B (5 MHz side band): their channels together,
@@ -193,11 +236,20 @@ async function nisarFrame(c, since) {
       bandwidth: (a.RANGE_BANDWIDTH_CONCAT || [])[0] || null,
       partial: (a.FULL_FRAME || [""])[0] === "FALSE", id: u.GranuleUR,
       links: [{ href: earthdata(NISAR_RSLC, u.GranuleUR), text: "Earthdata Search", title: u.GranuleUR }],
-      browse: { kind: "nisar", urls: (u.RelatedUrls || []).filter((x) => x.Type === "GET RELATED VISUALIZATION" && /^https:/.test(x.URL)).map((x) => x.URL), bbox: ummBBox(u) },
+      browse: nisarBrowse(u, gcov.get(nisarKey(u.GranuleUR))),
     };
   });
-  return { source: `NASA CMR, ASF NISAR L1 RSLC, track ${c.track} frame ${c.frame}`, items,
-    note: "L-band only: S-band products are at ISRO's Bhoonidhi, whose search needs a login." };
+  const s = (sband || []).filter((r) => r.frame === c.frame && r.when >= since).map((r) => ({
+    when: r.when, platform: "NISAR", track: r.track, direction: r.direction, pol: r.pol ? `S ${r.pol}` : "S", partial: r.partial, id: r.id,
+    links: [{ href: BHOONIDHI, text: "Bhoonidhi", title: `${r.id} (search there; needs a login)` }],
+  }));
+  return {
+    source: `NASA CMR, ASF NISAR L1 RSLC, track ${c.track} frame ${c.frame}${sband ? "; ISRO Bhoonidhi S-band RSLC (this site's hourly listing)" : ""}`,
+    items: [...items, ...s],
+    note: sband
+      ? "S-band from ISRO's Bhoonidhi, listed hourly by this site (its search needs a login): no previews."
+      : "L-band only: S-band products are at ISRO's Bhoonidhi, whose search needs a login.",
+  };
 }
 
 // MODIS/VIIRS: the LAADS Level-1B granules (5-minute MODIS, 6-minute VIIRS,
@@ -393,6 +445,13 @@ export function timelineSVG(past, upcoming, color, { daysBack = HISTORY_DAYS, da
   </svg>`;
 }
 
+// A NISAR acquisition's browse request: its GCOV's images if the GCOV is out,
+// else its RSLC's.
+function nisarBrowse(rslc, gcov) {
+  const u = gcov && visuals(gcov).length ? gcov : rslc;
+  return { kind: "nisar", urls: visuals(u), bbox: ummBBox(u) };
+}
+
 // ---------------------------------------------------------------- browse images
 // A browse image of one past acquisition: {thumb, full, source, note, links, georef}
 // with georef = {url, corners: [[lon, lat] x4 from the top-left, clockwise],
@@ -410,9 +469,11 @@ export function timelineSVG(past, upcoming, color, { daysBack = HISTORY_DAYS, da
 //   Landsat     Planetary Computer's rendered preview of the same scene, UTM
 //               (USGS's own thumbnails need a login; Planetary Computer is
 //               days behind, so the newest scenes may have none yet)
-//   NISAR       ASF's geocoded (lat/lon) browse of the RSLC
+//   NISAR       ASF's browse of the GCOV (UTM, colour or one channel), else
+//               of the RSLC (lat/lon, colour)
 // Exact extents published by the poller (extents.py, with an Earthdata
-// login): browse_extents/nisar/<track>.json {RSLC granule: [w, s, e, n]} and
+// login): browse_extents/nisar_gcov/<track>.json {GCOV granule: [lon, lat] x 4
+// from the top-left, clockwise} and
 // browse_extents/opera/<track>.json {burst: [epsg, xmin, ymin, xmax, ymax]}.
 // {} when the site has none (not published, or nothing on that track yet).
 const extentFiles = new Map();
@@ -579,22 +640,41 @@ const BROWSE = {
       georef: corners ? { url: `${a.href}${sep}max_size=1024`, corners, where, key: null } : null,
     };
   },
+  // ASF's browse of the GCOV (each RSLC's, ~1 h later): geocoded on the
+  // GCOV's own grid (UTM, terrain-corrected), the colour composite and each
+  // channel (_NATIVE_A_HHHH.png: frequency A's HH); the grid's corners come
+  // from the poller (browse_extents/nisar_gcov). Before the poller has them,
+  // or before the GCOV exists, the lat/lon colour composite of the GCOV or
+  // RSLC, fitted to the CMR footprint (0-5 km off).
   async nisar(b) {
     const thumb = b.urls.find((u) => /_LATLON_thumbnail\.png$/.test(u)) || b.urls.find((u) => /thumbnail/i.test(u));
     const full = b.urls.find((u) => /_LATLON\.png$/.test(u)) || thumb;
     if (!thumb && !full) return { note: "No browse image listed for this product." };
-    // the exact extent (the KML's), when the poller has published it
-    const g = full && (/\/(NISAR_L1_[A-Z]{2}_RSLC_\d{3}_(\d{3})_[^/]+)\/[^/]+$/.exec(full) || []);
-    const exact = g && g[1] ? (await browseExtents("nisar", Number(g[2])))[g[1]] : null;
-    if (exact) {
+    const granule = (full || thumb).split("/").slice(-2)[0];
+    const gcov = /_GCOV_/.test(granule), m = /^NISAR_\w\w_\w\w_\w+?_\d{3}_(\d{3})_/.exec(granule);
+    const quad = gcov && m ? (await browseExtents("nisar_gcov", Number(m[1])))[granule] : null;
+    const native = b.urls.find((u) => /_NATIVE\.png$/.test(u));
+    if (quad && quad.length === 8 && native) {
+      const corners = [0, 2, 4, 6].map((i) => [quad[i], quad[i + 1]]);
+      const chans = b.urls.map((u) => [u, /_NATIVE_([AB])_([HVRL]{2})\2\.png$/.exec(u)]).filter(([, x]) => x)
+        .map(([u, x]) => ({ freq: x[1], pol: x[2], url: u }))
+        .sort((p, q) => p.freq.localeCompare(q.freq) || (POL_RANK[p.pol] ?? 9) - (POL_RANK[q.pol] ?? 9));
+      const hasA = chans.some((x) => x.freq === "A");
+      const bands = chans.map((x) => ({ label: `${x.pol}${hasA && x.freq === "B" ? " (B, 5 MHz)" : ""}`, thumb: x.url, url: x.url }));
+      const pols = [...new Set(chans.filter((x) => x.freq === (hasA ? "A" : "B")).map((x) => x.pol))];
+      if (pols.length > 1) bands.unshift({ label: pols.join("+"), thumb: thumb || native, url: native });
       return {
-        thumb: thumb || full, full, source: "ASF's geocoded browse of the RSLC",
-        georef: { url: full, corners: bboxCorners(exact), where: { kind: "latlon", bbox: exact }, key: "both" },
+        thumb: thumb || native, full: native, source: `ASF's browse of the GCOV ${granule} (geocoded, terrain-corrected)`,
+        bands: bands.length > 1 ? bands : null,
+        georef: { url: bands.length > 1 ? bands[0].url : native, corners, where: gcovGrid(corners), key: null },
       };
     }
     const corners = bboxCorners(b.bbox);
     return {
-      thumb: thumb || full, full: full || thumb, source: "ASF's geocoded browse of the RSLC",
+      thumb: thumb || full, full: full || thumb, source: `ASF's geocoded browse of the ${gcov ? "GCOV" : "RSLC"}`,
+      note: gcov
+        ? "The colour composite only, placed approximately (this site has not read the image's exact grid yet; the channels follow when it has)."
+        : "The RSLC's colour composite, placed approximately: the GCOV, with its channels, follows the RSLC by about an hour.",
       // white around the frame, black along its jagged swath edges: both made
       // transparent. The bbox is the frame's; the image has a margin around it
       // (dataExtent: map.js fits the image's data, not its edges, to it).

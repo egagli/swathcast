@@ -25,7 +25,7 @@ Details and validation: [methodology](methodology.md) (timing, footprints, polar
 | Sentinel-2 | ESA acquisition-plan KMLs; tile times from orbit (SGP4) | Earth Search (L1C) | CDSE, Earth Search, Planetary Computer, HLS S30 |
 | Landsat 8/9 | USGS acquisition calendar + WRS-2; scene times from orbit (SGP4) | USGS Level-1 (this site's `landsat_l1/<path>.parquet`, from the poller's listing of USGS STAC; night scenes too) + Earth Search (Collection 2 Level-2) | USGS STAC, Earth Search, Planetary Computer, HLS L30 |
 | NISAR L-band | NASA observation plan (KMZ); frame times from orbit (SGP4) | NASA CMR (ASF RSLC) | ASF via CMR (L0B, RSLC, GCOV) |
-| NISAR S-band | NASA observation plan (KMZ), S-band modes | not shown (Bhoonidhi needs a login) | ISRO Bhoonidhi (RSLC, GCOV) |
+| NISAR S-band | NASA observation plan (KMZ), S-band modes | Bhoonidhi RSLC (this site's `nisar_s/<track>.parquet`, from the poller's listing; Bhoonidhi needs a login) | ISRO Bhoonidhi (RSLC, GCOV) |
 | MODIS (Terra, Aqua) | no plan: orbit (SGP4) on the sinusoidal tiles | NASA CMR (LAADS Level-1B + LANCE NRT) | LANCE, LAADS, NSIDC |
 | VIIRS (Suomi NPP, NOAA-20, NOAA-21) | no plan: orbit (SGP4) on the sinusoidal tiles | NASA CMR (LAADS Level-1B + LANCE NRT) | LANCE, LAADS, NSIDC |
 | Sentinel-3 (OLCI, SLSTR) | no plan: orbit (SGP4) on the sinusoidal tiles, passes labelled with their frame | CDSE (OLCI EFR, SLSTR RBT) | CDSE, EUMETSAT, Planetary Computer |
@@ -79,6 +79,7 @@ Details and validation: [methodology](methodology.md) (timing, footprints, polar
 | [ISRO NISAR ROP](https://bhoonidhi.nrsc.gov.in/NISAR/ROP.html) (GeoServer) | Checked against, not used yet | `bhoonidhi.nrsc.gov.in/geoserver/NISAR_ROP/ows` (WFS, one layer per cycle; listed by `POST /NISAR/ROP {"action":"GetAllLayers"}`) | datatake segments with planned start/end times, RCID, application; see methodology |
 | NASA CMR, ASF L1 RSLC | Planned (outlines) | `cmr.earthdata.nasa.gov/search/granules.json` ([`C2853145197-ASF`](https://cmr.earthdata.nasa.gov/search/concepts/C2853145197-ASF.html), last 13 days) | each (track, frame, direction)'s latest RSLC footprint replaces the plan's frame (7-11 km off) |
 | NASA CMR, ASF L1 RSLC | History (frames) | `cmr.earthdata.nasa.gov/search/granules.umm_json` ([`C2853145197-ASF`](https://cmr.earthdata.nasa.gov/search/concepts/C2853145197-ASF.html), `TRACK_NUMBER`, `FRAME_NUMBER`) | sensing time, polarizations per frequency, full or partial frame |
+| NASA CMR, ASF L2 GCOV | History (previews) | as above, [`C2854338529-ASF`](https://cmr.earthdata.nasa.gov/search/concepts/C2854338529-ASF.html) | each RSLC's GCOV (same cycle, track, direction, frame and start minute), for its browse images |
 | [ASF](https://nisar-docs.asf.alaska.edu/access-overview/) via CMR | Latency (reference) | [`C2853089814-ASF`](https://cmr.earthdata.nasa.gov/search/concepts/C2853089814-ASF.html) (L0B), [`C2853145197-ASF`](https://cmr.earthdata.nasa.gov/search/concepts/C2853145197-ASF.html) (RSLC) | listed by `created_at` |
 | [ASF](https://nisar-docs.asf.alaska.edu/access-overview/) via CMR | Latency | [`C2854338529-ASF`](https://cmr.earthdata.nasa.gov/search/concepts/C2854338529-ASF.html) (GCOV) | matched on the RSLC name |
 
@@ -87,7 +88,7 @@ Details and validation: [methodology](methodology.md) (timing, footprints, polar
 | Data source | Used for | Endpoint | What is used |
 |---|---|---|---|
 | NASA NISAR observation plan (KMZ) | Planned | as above | the `S:` part of each radar mode |
-| [Bhoonidhi](https://bhoonidhi.nrsc.gov.in) | History | — | not shown: its search needs a login, which a public page cannot hold |
+| [Bhoonidhi STAC API](https://bhoonidhi.nrsc.gov.in/bhoonidhi-api/) | History | as below (login: repository secrets) | each run's listing plus a backfill of 92 days, 3 sensing days a run (`missions/nisar_s/history.parquet`), published per track as `nisar_s/<track>.parquet` (the site cannot hold a login): track, frame, direction, sensing time, polarization (`DH` → HH+HV, `DV` → VV+VH, `CP` → RH+RV), partial frame, and an item's browse link if it has one (none used yet) |
 | [Bhoonidhi STAC API](https://bhoonidhi.nrsc.gov.in/bhoonidhi-api/) | Latency (reference) | `bhoonidhi-api.nrsc.gov.in/data/search` (`NISAR_SSAR_RSLC`; login: repository secrets) | RSLC items sensed in the last 10 days, asked one day at a time; `Track`, `Frame`, `Node`, `Polarization`; `updated` (India time) as the publication time |
 | [Bhoonidhi STAC API](https://bhoonidhi.nrsc.gov.in/bhoonidhi-api/) | Latency | `NISAR_SSAR_GCOV` | matched on the RSLC name (`NISAR_S1_…_RSLC_…` → `NISAR_S2_…_GCOV_…`, same tail) |
 | [ISRO NISAR ROP](https://bhoonidhi.nrsc.gov.in/NISAR/ROP.html) (GeoServer) | Checked against, not used yet | as for L-band | the same datatake segments (one plan for both radars) |
@@ -124,7 +125,8 @@ Details and validation: [methodology](methodology.md) (timing, footprints, polar
 | Landsat | Planetary Computer rendered preview | UTM grid, exact |
 | MODIS, VIIRS | NASA Worldview (GIBS) corrected-reflectance true colour: SNPP and NOAA-20, the pass's own granules (6-minute granule layers); otherwise, or until those are published, the platform's day mosaic | lat/lon, exact (WMS over the tile or the AOI's surroundings), shown only within the tile (or the pass's granule footprints) |
 | Sentinel-3 | CDSE's quicklook of the OLCI EFR frame (true colour; OData `Assets`, `QUICKLOOK`, served by `download.dataspace.copernicus.eu` with CORS), daytime (descending) frames only | instrument geometry (scan lines × across-track columns), placed from the orbit: SGP4 with the frame's first and last scan lines and swath edges from its footprint; to a few km ([methodology](methodology.md#sentinel-3-previews)) |
-| NISAR | ASF's geocoded RSLC browse | lat/lon: exact, from the granule's `_LATLON.kml` (read by the poller with an Earthdata login, `browse_extents/nisar/<track>.json`; it moves up to ~5 km between repeats of a frame); otherwise from the CMR footprint, 0-5 km off |
+| NISAR (L-band) | ASF's browse of the acquisition's GCOV (made for every RSLC, ~1 h after it): the colour composite (`_NATIVE.png`) or one channel (`_NATIVE_A_HHHH.png`, `_NATIVE_A_HVHV.png`, `_NATIVE_B_VVVV.png`, ...), geocoded and terrain-corrected; until the GCOV is out, the RSLC's lat/lon colour composite (`_LATLON.png`) | GCOV: its own grid (UTM; polar stereographic near the poles), exact: the four corners from the granule's `_NATIVE.kml` (the same for every channel; read by the poller with an Earthdata login, `browse_extents/nisar_gcov/<track>.json`; the grid moves up to ~5 km between repeats of a frame), the UTM zone found from them (a polar grid is stretched between its corners). Otherwise, and for the RSLC, the lat/lon composite fitted to the CMR footprint, 0-5 km off |
+| NISAR (S-band) | none: Bhoonidhi's products need a login (the poller records any browse link an item has, to check) | — |
 
 ## Terms and attribution
 
@@ -139,13 +141,13 @@ is derived from it.
 | USGS (acquisition calendar, STAC, WRS-2) | plans, scene footprints and times | U.S. Government work, public domain; credit "Landsat imagery courtesy of the U.S. Geological Survey" |
 | Element 84 Earth Search, Microsoft Planetary Computer | catalogue times, browse images | mirrors of the ESA and USGS data above, under the same terms ([Earth Search](https://element84.com/earth-search/), [Planetary Computer terms](https://planetarycomputer.microsoft.com/terms)) |
 | EUMETSAT Data Store (Sentinel-3 OLCI) | product identifiers and their `updated` times | Copernicus Sentinel data, under the same Copernicus notice as ESA's ([EUMETSAT data policy](https://www.eumetsat.int/data-policy)) |
-| ISRO / NRSC Bhoonidhi (NISAR S-band) | item identifiers and publication times | NISAR data are open data under ISRO's [data policy](https://bhoonidhi.nrsc.gov.in/bhoonidhi_resources/help/UIM2024/4-UIM2024-Bhoonidhi_SpacePolicy_Implementation.pdf) |
+| ISRO / NRSC Bhoonidhi (NISAR S-band) | item identifiers, sensing times, track, frame and polarization, and publication times | NISAR data are open data under ISRO's [data policy](https://bhoonidhi.nrsc.gov.in/bhoonidhi_resources/help/UIM2024/4-UIM2024-Bhoonidhi_SpacePolicy_Implementation.pdf) |
 | CelesTrak | orbital elements (`tle.json`) | [celestrak.org](https://celestrak.org/webmaster.php), public GP data |
 | Esri, OpenStreetMap | basemap tiles, shown by the map only | [Esri terms](https://www.esri.com/en-us/legal/terms/full-master-agreement), [OpenStreetMap (ODbL)](https://www.openstreetmap.org/copyright) |
 
 ---
 
-**Status & Next Steps** (last updated 2026-10-13; MODIS, VIIRS and Sentinel-3 rows checked live that day): every row was checked against the live service on
+**Status & Next Steps** (last updated 2026-10-14; the NISAR GCOV browse rows checked live that day, the Bhoonidhi history row not yet run live; MODIS, VIIRS and Sentinel-3 rows checked live 2026-10-13): every row was checked against the live service on
 2026-09-29..10-01, the outline and browse rows on 2026-10-06, Bhoonidhi with authenticated searches
 from a GitHub runner on 2026-10-01. The ISRO ROP is compared with this site's NISAR plan in the
 [methodology](methodology.md#isros-nisar-rop) but not used for the map yet. Links and terms added
