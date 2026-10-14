@@ -217,6 +217,8 @@ NISAR_S_COLUMNS = [
     "pol",
     "partial",
     "browse",
+    "corners",
+    "grid",
 ]
 
 
@@ -231,7 +233,8 @@ def publish_nisar_s(data_dir: Path, out_dir: Path, now: datetime) -> int:
         shutil.rmtree(folder)
     if not path.exists():
         return 0
-    t = pd.read_parquet(path)
+    t = pd.read_parquet(path).reindex(columns=[*NISAR_S_COLUMNS])
+    t = t.astype({c: "string" for c in ("browse", "corners", "grid")})
     t["time"] = pd.to_datetime(t["time"], utc=True)
     t = t[(t["time"] >= now - timedelta(days=NISAR_S_DAYS)) & (t["time"] <= now)]
     folder.mkdir(parents=True)

@@ -20,6 +20,22 @@ RSLC = "NISAR_S1_PR_RSLC_032_019_D_079_2500_CRNA_A_20261001T124419_20261001T1244
 GCOV = "NISAR_S2_PR_GCOV_032_019_D_079_2500_CRNA_A_20261001T124419_20261001T124424_P00500_N_F_I_001"
 
 
+IMG = [
+    (84.580824, 18.605045),
+    (86.893119, 19.168372),
+    (87.19987, 17.984522),
+    (84.902042, 17.427056),
+    (84.580824, 18.605045),
+]
+GRID = [
+    (84.1435387, 20.26613363),
+    (87.38998745, 20.28899433),
+    (87.38322254, 17.32835091),
+    (84.19300978, 17.3090487),
+    (84.1435387, 20.26613363),
+]
+
+
 def item(gid, when, updated="2026-10-01 22:56:03", **extra):
     """A live item's shape (trimmed); ``updated`` = 17:26:03 UTC."""
     props = {
@@ -34,6 +50,10 @@ def item(gid, when, updated="2026-10-01 22:56:03", **extra):
         "SceneCenterLat": 19.7617044,
         "GenerationTime": "2026-10-01T17:04:17",
         "Coverage": "F",
+        # the data's corners (RSLC and GCOV alike), and the GCOV's grid (live
+        # values of a GCOV, 2026-10-14; an RSLC's ProdLatLon is its ImgLatLon)
+        "ImgLatLon": [[str(x), str(y)] for x, y in IMG],
+        "ProdLatLon": [[str(x), str(y)] for x, y in (GRID if "_GCOV_" in gid else IMG)],
         **extra,
     }
     if updated:
@@ -320,3 +340,49 @@ def test_mission_runs_history_after_tracking(creds, tmp_path, monkeypatch):
     # a failing after-run step is logged, not raised
     assert missions.run_mission("nisar_s", tmp_path, now=NOW) is not None
     assert len(calls) == 1
+
+
+def test_history_keeps_corners_and_looks_up_grids(creds, tmp_path):
+    import pandas as pd
+
+    path = tmp_path / "missions" / "nisar_s" / bhoonidhi.HISTORY_FILE
+    s = FakeSession()  # no GCOV yet
+    bhoonidhi.BhoonidhiCatalog(session=s).list_new((NOW - timedelta(hours=4), NOW))
+    report = bhoonidhi.update_history(s, tmp_path, NOW)
+    t = pd.read_parquet(path)
+    assert t["corners"][0] == (
+        "84.58082,18.60505,86.89312,19.16837,87.19987,17.98452,84.90204,17.42706"
+    )
+    assert pd.isna(t["grid"][0]) and report["history_with_grid"] == 0
+    asked = lambda s: [c for c in s.calls if c[2] and "ids" in c[2]]  # noqa: E731
+    assert [c[2]["ids"] for c in asked(s) if "GCOV" in c[2]["collections"][0]] == [
+        [GCOV]
+    ]
+    # not again in the same hour; the next hourly run asks again (young row)
+    s = FakeSession()
+    bhoonidhi.update_history(s, tmp_path, NOW + timedelta(minutes=30))
+    assert not asked(s)
+    s = FakeSession()
+    bhoonidhi.update_history(s, tmp_path, NOW + timedelta(hours=1))
+    assert asked(s)
+    # older than two days: asked once a day
+    s = FakeSession()
+    bhoonidhi.update_history(s, tmp_path, NOW + timedelta(days=3))
+    assert asked(s)
+    s = FakeSession()
+    bhoonidhi.update_history(s, tmp_path, NOW + timedelta(days=3, hours=2))
+    assert not asked(s)
+    # a day on, the GCOV is out: its grid is kept, and survives a new listing
+    s = FakeSession(gcov=[GCOV])
+    report = bhoonidhi.update_history(s, tmp_path, NOW + timedelta(days=4, hours=1))
+    assert report["history_with_grid"] == 1
+    s = FakeSession()
+    bhoonidhi.BhoonidhiCatalog(session=s).list_new((NOW - timedelta(hours=4), NOW))
+    bhoonidhi.update_history(s, tmp_path, NOW + timedelta(days=4, hours=2))
+    t = pd.read_parquet(path)
+    assert len(t) == 1 and t["grid"][0].startswith("84.14354,20.26613,87.38999,")
+    from swathcast.publish import publish_nisar_s
+
+    publish_nisar_s(tmp_path, tmp_path / "site", NOW + timedelta(days=1))
+    pub = pd.read_parquet(tmp_path / "site" / "nisar_s" / "019.parquet")
+    assert pub["grid"][0] == t["grid"][0] and pub["corners"][0] == t["corners"][0]

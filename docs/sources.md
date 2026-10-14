@@ -172,7 +172,11 @@ with `curl` and the package's own source classes. The recorded responses are in 
   (`://<id>_QA.pdf`). The thumbnail is one channel, grey, the product decimated 20×: an RSLC's in radar
   geometry (median 1.8 MB, up to 12 MB), a GCOV's on its UTM grid (400 m pixels at 20 m spacing,
   median ~0.35 MB), exactly the extent the `.met` gives (`EPSG`, `ProdUL…LR MapX/Y`; the item's
-  `ProdLatLon` in lat/lon), black outside the swath. From a cloud development container the hosts
+  `ProdLatLon` in lat/lon, from the top-left, clockwise, then the first again), black outside the swath,
+  whose corners are `ImgLatLon` (the same in the RSLC and its GCOV; an RSLC's `ProdLatLon` is its
+  `ImgLatLon`). The map reads the thumbnails through `wsrv.nl` (adds CORS; it answered for 11 of 12
+  random GCOV thumbnails in 2-8 s, the twelfth a 404 because the GCOV was missing; it refuses a bare
+  Python user agent with 403). From a cloud development container the hosts
   reset about one connection in three (2026-10-14; earlier, every one); from a GitHub runner they
   answer.
 
