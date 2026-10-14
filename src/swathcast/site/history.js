@@ -689,11 +689,11 @@ const BROWSE = {
   // geometry; both are served without CORS, so listed, not placed.
   async nisar_s(b) {
     const gcov = b.url.replace(/\/NISAR_S1_(\w\w)_RSLC_([^/]*)$/, "/NISAR_S2_$1_GCOV_$2");
-    const url = gcov !== b.url && (await loads(gcov)) ? gcov : b.url;
+    const geocoded = gcov !== b.url && (await loads(gcov)), url = geocoded ? gcov : b.url;
     const name = url.split("/").pop().replace(/\.jpg$/, "");
     return {
       thumb: url, full: url, source: `Bhoonidhi's thumbnail of ${name} (ISRO, one channel)`,
-      note: `${url === gcov ? "Geocoded (UTM)" : "In radar geometry (the GCOV's is not out yet)"}, but served without CORS, so it cannot be placed on the map.`,
+      note: `${geocoded ? "Geocoded (UTM)" : "In radar geometry (the GCOV's is not out yet)"}, but served without CORS, so it cannot be placed on the map.`,
       links: [{ href: url, text: "the image at Bhoonidhi" }],
     };
   },
