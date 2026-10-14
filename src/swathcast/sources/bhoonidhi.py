@@ -36,7 +36,8 @@ also keeps a history table (:func:`update_history`,
 backfill of :data:`HISTORY_DAYS`, a few sensing days per run. publish.py writes
 it per track for the site. Each row keeps the item's browse image link, if it
 has one (any asset named or with a role like browse, quicklook or thumbnail;
-its query string, which could hold a token, dropped).
+its query string, which could hold a token, dropped). Every item has a public
+``thumbnail`` JPEG (no login, no CORS); the map lists it, it cannot place it.
 
 The universe is every ``NISAR_SSAR_RSLC`` item whose sensing time falls in the
 last :data:`LOOKBACK_DAYS`. ``updated`` is the provider timestamp, and a
