@@ -37,7 +37,19 @@ backfill of :data:`HISTORY_DAYS`, a few sensing days per run. publish.py writes
 it per track for the site. Each row keeps the item's browse image link, if it
 has one (any asset named or with a role like browse, quicklook or thumbnail;
 its query string, which could hold a token, dropped). Every item has a public
-``thumbnail`` JPEG (no login, no CORS); the map lists it, it cannot place it.
+``thumbnail`` JPEG (no login, no CORS: the map reads it through an image proxy),
+one channel, the product decimated 20x. To place it, each row also keeps
+
+* ``corners``: the data's four corners (``ImgLatLon``, the same in an RSLC and
+  its GCOV), from the image's top-left, clockwise: the RSLC's image is in radar
+  geometry, so these place it approximately;
+* ``grid``: the GCOV's grid corners (``ProdLatLon``, its UTM grid's extent,
+  which the GCOV's thumbnail fills exactly), from the GCOV item; looked up by
+  name (:func:`fill_grids`, at most :data:`GRID_LOOKUPS_PER_RUN` a run, each
+  row every run while it is under two days old, then daily, until its GCOV
+  is out).
+
+Both are ``"lon,lat,lon,lat,..."`` strings (8 numbers, 5 decimals).
 
 The universe is every ``NISAR_SSAR_RSLC`` item whose sensing time falls in the
 last :data:`LOOKBACK_DAYS`. ``updated`` is the provider timestamp, and a
@@ -342,7 +354,16 @@ HISTORY_COLUMNS = [
     "pol",
     "partial",
     "browse",
+    "corners",
+    "grid",
+    "grid_checked",
 ]
+#: GCOV items looked up (by name) per run for their grids, newest rows first
+GRID_LOOKUPS_PER_RUN = 500
+#: a row whose GCOV was not found is asked again after this long: every run
+#: while it is young (a GCOV follows its RSLC by minutes to hours), then daily
+GRID_RETRY_YOUNG, GRID_RETRY = timedelta(minutes=50), timedelta(days=1)
+GRID_YOUNG = timedelta(days=2)
 #: Bhoonidhi's polarization codes as the plan names the channel sets
 #: (seen 2026-10: DH, DV, HH, CP)
 POL = {
@@ -376,6 +397,20 @@ def browse_href(item: dict) -> str | None:
     return None
 
 
+def quad(item: dict, field: str) -> str | None:
+    """A ``[[lon, lat], ...]`` property (``ImgLatLon``, ``ProdLatLon``: the
+    four corners from the image's top-left, clockwise, then the first again)
+    as ``"lon,lat,..."``, or None."""
+    pts = (item.get("properties") or {}).get(field)
+    try:
+        xy = [(float(p[0]), float(p[1])) for p in pts[:4]]
+    except (TypeError, ValueError, IndexError):
+        return None
+    if len(xy) != 4 or not all(-180 <= x <= 180 and -90 <= y <= 90 for x, y in xy):
+        return None
+    return ",".join(f"{v:.5f}" for p in xy for v in p)
+
+
 def history_row(item: dict) -> dict:
     a = acquisition(item, "RSLC", None)
     p = item.get("properties") or {}
@@ -393,6 +428,9 @@ def history_row(item: dict) -> dict:
         "pol": POL.get(code.upper(), code) or None,
         "partial": cov.upper() == "P",
         "browse": browse_href(item),
+        "corners": quad(item, "ImgLatLon"),
+        "grid": None,
+        "grid_checked": None,
     }
 
 
@@ -466,30 +504,83 @@ def update_history(session, data_dir: Path, now: datetime | None = None) -> dict
         if path.exists()
         else pd.DataFrame(columns=HISTORY_COLUMNS)
     )
+    table = table.reindex(columns=HISTORY_COLUMNS)  # files from before a column
     if rows:
         new = pd.DataFrame(rows, columns=HISTORY_COLUMNS)
+        # a row listed again keeps the grid (and data corners) found earlier
+        old = table.drop_duplicates("id", keep="last").set_index("id")
+        for col in ("corners", "grid", "grid_checked"):
+            new[col] = new[col].where(new[col].notna(), new["id"].map(old[col]))
         table = pd.concat([table, new], ignore_index=True) if len(table) else new
     if len(table):
         table["time"] = pd.to_datetime(table["time"], utc=True)
         table = table.dropna(subset=["track", "frame", "time"])
         table = table[table["time"] >= floor].drop_duplicates("id", keep="last")
         table = table.astype({"track": "int16", "frame": "int16", "partial": "bool"})
+        table["grid_checked"] = pd.to_datetime(table["grid_checked"], utc=True)
+        if not error:
+            error = fill_grids(session, table, now)
+        # strings even when all empty (a column of nulls has no type)
+        table = table.astype({c: "string" for c in ("browse", "corners", "grid")})
         root.mkdir(parents=True, exist_ok=True)
         table.sort_values(["track", "frame", "time"]).to_parquet(
             path, index=False, compression="zstd"
         )
     root.mkdir(parents=True, exist_ok=True)
     state_path.write_text(json.dumps(state, indent=1) + "\n")
-    with_browse = int(table["browse"].notna().sum()) if len(table) else 0
+    count = lambda c: int(table[c].notna().sum()) if len(table) else 0  # noqa: E731
     report = {
         "history_rows": len(table),
         "history_backfill_before": state["backfill_before"],
-        "history_with_browse": with_browse,
+        "history_with_browse": count("browse"),
+        "history_with_grid": count("grid"),
     }
     if error:
         report["history_error"] = error
     LOGGER.info("Bhoonidhi history: %s", report)
     return report
+
+
+def fill_grids(session, table: pd.DataFrame, now: datetime) -> str | None:
+    """Sets ``grid`` (and ``corners``, if missing) on rows without a grid from
+    their GCOV items, newest rows first, at most GRID_LOOKUPS_PER_RUN, each
+    asked at most once per GRID_RETRY (GRID_RETRY_YOUNG while younger than
+    GRID_YOUNG). In place; returns an error or None."""
+    young = table["time"] > now - GRID_YOUNG
+    since = now - table["grid_checked"]
+    due = table["grid"].isna() & (
+        table["grid_checked"].isna()
+        | (since > GRID_RETRY)
+        | (young & (since > GRID_RETRY_YOUNG))
+    )
+    todo = table[due].sort_values("time", ascending=False).head(GRID_LOOKUPS_PER_RUN)
+    if todo.empty:
+        return None
+    by_name = {gcov_name(i): i for i in todo["id"]}
+    names = sorted(by_name)
+    found: dict[str, dict] = {}
+    try:
+        for batch in chunks(names, 100):
+            body = {
+                "collections": [COLLECTIONS["GCOV"]],
+                "ids": batch,
+                "limit": len(batch),
+            }
+            for it in search(session, body):
+                if it.get("id") in by_name:
+                    found[by_name[it["id"]]] = it
+    except SourceError as exc:
+        return str(exc)
+    idx = todo.index
+    table.loc[idx, "grid_checked"] = pd.Timestamp(now)
+    for i, rid in zip(idx, todo["id"], strict=True):
+        it = found.get(rid)
+        if it is None:
+            continue
+        table.at[i, "grid"] = quad(it, "ProdLatLon")
+        if pd.isna(table.at[i, "corners"]):
+            table.at[i, "corners"] = quad(it, "ImgLatLon")
+    return None
 
 
 def gcov_name(rslc: str) -> str:

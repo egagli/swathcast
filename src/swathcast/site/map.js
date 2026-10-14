@@ -1546,7 +1546,7 @@ function renderQueue() {
     const src = q.b ? [q.b.source, q.note].filter(Boolean).join(". ") : "";
     tr.innerHTML = `<td class="bq-handle" tabindex="0" role="button" title="Drag (or arrow up/down) to reorder: top is drawn on top" aria-label="Reorder: arrow up or down">⠿</td>`
       + `<td class="bq-thumb">${q.b && q.b.full ? `<a href="${esc(q.b.full)}" target="_blank" rel="noopener" title="${esc(src || "full size")}">${thumb}</a>` : thumb}</td>`
-      + `<td class="bq-when"><button type="button" class="link-btn bq-fit" title="Go to it">${utc}</button><div class="sub"><span class="chip" style="background:${missionColor(m.mission)}"></span>${MISSION[m.mission].label}${q.status === "ok" && q.b.georef && q.b.georef.fit ? ` · <span class="warn-ink" title="${esc(q.b.note || "")}">approx. place</span>` : ""}</div></td>`
+      + `<td class="bq-when"><button type="button" class="link-btn bq-fit" title="Go to it">${utc}</button><div class="sub"><span class="chip" style="background:${missionColor(m.mission)}"></span>${MISSION[m.mission].label}${q.status === "ok" && q.b.georef && (q.b.georef.fit || q.b.georef.approx) ? ` · <span class="warn-ink" title="${esc(q.b.note || "")}">approx. place</span>` : ""}</div></td>`
       + `<td>${esc(m.platform)}</td><td>${esc(m.direction)}</td><td>${esc(m.track)}${m.frame ? ` / ${esc(m.frame)}` : ""}</td>`
       + `<td class="bq-op">${op}</td>`
       + '<td><button type="button" class="bq-x" title="Remove from the map" aria-label="Remove from the map">×</button></td>';

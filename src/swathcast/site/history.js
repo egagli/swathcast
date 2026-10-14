@@ -203,6 +203,7 @@ export function nisarS(track) {
         return rows.map((r) => ({
           track: Number(r.track), frame: Number(r.frame), direction: String(r.direction || ""), when: new Date(typeof r.time === "bigint" ? Number(r.time) : r.time),
           id: String(r.id), pol: r.pol ? String(r.pol) : null, partial: Boolean(r.partial), browse: r.browse ? String(r.browse) : null,
+          corners: quadOf(r.corners), grid: quadOf(r.grid),
         }));
       })
       .catch(() => null);
@@ -211,6 +212,12 @@ export function nisarS(track) {
   return sFiles.get(key);
 }
 const BHOONIDHI = "https://bhoonidhi.nrsc.gov.in/";
+// "lon,lat,..." (8 numbers: four corners from the top-left, clockwise) as
+// [[lon, lat] x 4], or null
+function quadOf(v) {
+  const n = v == null ? [] : String(v).split(",").map(Number);
+  return n.length === 8 && n.every(Number.isFinite) ? [0, 2, 4, 6].map((i) => [n[i], n[i + 1]]) : null;
+}
 
 async function nisarFrame(c, since) {
   const query = (coll) => new URLSearchParams([
@@ -242,13 +249,13 @@ async function nisarFrame(c, since) {
   const s = (sband || []).filter((r) => r.frame === c.frame && r.when >= since).map((r) => ({
     when: r.when, platform: "NISAR", track: r.track, direction: r.direction, pol: r.pol ? `S ${r.pol}` : "S", partial: r.partial, id: r.id,
     links: [{ href: BHOONIDHI, text: "Bhoonidhi", title: `${r.id} (search there; needs a login)` }],
-    browse: r.browse ? { kind: "nisar_s", url: r.browse } : null,
+    browse: r.browse ? { kind: "nisar_s", url: r.browse, corners: r.corners, grid: r.grid } : null,
   }));
   return {
     source: `NASA CMR, ASF NISAR L1 RSLC, track ${c.track} frame ${c.frame}${sband ? "; ISRO Bhoonidhi S-band RSLC (this site's hourly listing)" : ""}`,
     items: [...items, ...s],
     note: sband
-      ? "S-band from ISRO's Bhoonidhi, listed hourly by this site (its search needs a login); its previews are listed, not placed on the map (Bhoonidhi serves them without CORS)."
+      ? "S-band from ISRO's Bhoonidhi, listed hourly by this site (its search needs a login); previews are Bhoonidhi's thumbnails, read through the wsrv.nl image proxy (Bhoonidhi serves them without CORS)."
       : "L-band only: S-band products are at ISRO's Bhoonidhi, whose search needs a login.",
   };
 }
@@ -472,7 +479,9 @@ function nisarBrowse(rslc, gcov) {
 //               days behind, so the newest scenes may have none yet)
 //   NISAR       ASF's browse of the GCOV (UTM, colour or one channel), else
 //               of the RSLC (lat/lon, colour); S-band: Bhoonidhi's thumbnail
-//               of the GCOV, else of the RSLC (no CORS: listed, not placed)
+//               of the GCOV (UTM, exact from the grid the poller looked up),
+//               else of the RSLC (radar geometry, placed approximately), read
+//               through an image proxy (Bhoonidhi sends no CORS)
 // Exact extents published by the poller (extents.py, with an Earthdata
 // login): browse_extents/nisar_gcov/<track>.json {GCOV granule: [lon, lat] x 4
 // from the top-left, clockwise} and
@@ -685,20 +694,45 @@ const BROWSE = {
   },
   // NISAR S-band: Bhoonidhi's thumbnail (public JPEG, one channel, grey, the
   // product decimated 20x) of the GCOV, else of the RSLC whose link the poller
-  // keeps (b.url). The GCOV's sits on its UTM grid, the RSLC's in radar
-  // geometry; both are served without CORS, so listed, not placed.
+  // keeps (b.url). Bhoonidhi sends no CORS, so the map reads it through the
+  // wsrv.nl image proxy (which adds it). The GCOV's fills its UTM grid exactly:
+  // placed from the grid's corners (b.grid, the poller's lookup of the GCOV
+  // item) and cut to the data's (b.corners), else fitted to the data's
+  // corners (its data found by a black key). The RSLC's is in
+  // radar geometry: stretched between the data's corners (approximate).
+  // Without corners (rows from before the poller kept them), listed only.
   async nisar_s(b) {
     const gcov = b.url.replace(/\/NISAR_S1_(\w\w)_RSLC_([^/]*)$/, "/NISAR_S2_$1_GCOV_$2");
     const geocoded = gcov !== b.url && (await loads(gcov)), url = geocoded ? gcov : b.url;
     const name = url.split("/").pop().replace(/\.jpg$/, "");
-    return {
-      thumb: url, full: url, source: `Bhoonidhi's thumbnail of ${name} (ISRO, one channel)`,
-      note: `${geocoded ? "Geocoded (UTM)" : "In radar geometry (the GCOV's is not out yet)"}, but served without CORS, so it cannot be placed on the map.`,
-      links: [{ href: url, text: "the image at Bhoonidhi" }],
-    };
+    const base = { full: url, links: [{ href: url, text: "the image at Bhoonidhi" }] };
+    const source = `Bhoonidhi's thumbnail of ${name} (ISRO, one channel${geocoded ? ", geocoded" : ", radar geometry"}), via the wsrv.nl image proxy`;
+    const img = wsrv(url, 2048), thumb = wsrv(url, 256);
+    if (geocoded && b.grid) {
+      // outside the data, black: cut away along the data's corners, as a black
+      // key would also take dark data (water, radar shadow: ~9% of a frame)
+      const where = gcovGrid(b.grid), clip = b.corners && where ? { type: "Polygon", coordinates: [[...b.corners, b.corners[0]]] } : null;
+      return { ...base, thumb, source, georef: { url: img, corners: b.grid, where, clip, key: clip ? null : "black" } };
+    }
+    if (geocoded && b.corners) {
+      return {
+        ...base, thumb, source, note: "Placed approximately: fitted to the data's corners (this site has not read the image's grid yet)",
+        georef: { url: img, corners: b.corners, fit: { ring: b.corners }, key: "black" },
+      };
+    }
+    if (b.corners) {
+      return {
+        ...base, thumb, source, note: "The RSLC's image (the GCOV's is not out yet): in radar geometry, stretched between its corners, so a few km off",
+        georef: { url: img, corners: b.corners, approx: true, key: null }, // all data, edge to edge
+      };
+    }
+    return { ...base, thumb: url, source: source.replace(/, via the .*$/, ""), note: "Not placed: this row has no corners (listed before this site kept them)." };
   },
 };
 
+// An image through wsrv.nl (an open-source image proxy and cache): served
+// with CORS, at most `w` px wide (never enlarged).
+const wsrv = (url, w) => `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=${w}&we`;
 // Whether an image loads (an <img> needs no CORS, unlike fetch).
 function loads(url) {
   return new Promise((resolve) => {

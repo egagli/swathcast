@@ -696,9 +696,12 @@ def test_a_preview_is_clipped_to_its_shape(browser, server):
     page.close()
 
 
-def test_nisar_s_preview_is_listed_not_placed(browser, server):
+def test_nisar_s_preview_through_the_proxy(browser, server):
     """An S-band row's preview: Bhoonidhi's GCOV thumbnail when it loads, else
-    the RSLC's the poller stored; never placed (Bhoonidhi sends no CORS)."""
+    the RSLC's the poller stored, read through the wsrv.nl proxy (Bhoonidhi
+    sends no CORS) and placed from the poller's corners: the GCOV's grid
+    (exact), else fitted to the data's corners; the RSLC's stretched between
+    them; without corners, listed only."""
     page = open_page(browser, server)
     seen = []
 
@@ -711,24 +714,52 @@ def test_nisar_s_preview_is_listed_not_placed(browser, server):
 
     page.route("https://bhoonidhi.nrsc.gov.in/**", bhoonidhi)
     base = "https://bhoonidhi.nrsc.gov.in/stac/PRODUCTJPGS/NISAR/SSAR/2026/OCT/13/"
-    rslc = "NISAR_S1_PR_RSLC_033_{}_A_010_2500_CRNA_A_20261013T234419_20261013T234452_P00500_M_P_I_001.jpg"
+    rslc = base + (
+        "NISAR_S1_PR_RSLC_033_{}_A_010_2500_CRNA_A_20261013T234419_"
+        "20261013T234452_P00500_M_P_I_001.jpg"
+    )
+    # live values (GCOV 033_026_A_011, 2026-10-13): data corners, UTM 45N grid
+    corners = [
+        [84.58082, 18.60505],
+        [86.89312, 19.16837],
+        [87.19987, 17.98452],
+        [84.90204, 17.42706],
+    ]
+    grid = [
+        [84.14354, 20.26613],
+        [87.38999, 20.28899],
+        [87.38322, 17.32835],
+        [84.19301, 17.30905],
+    ]
     out = js(
         page,
         f"""(async () => {{
           const h = await import('./history.js');
-          const a = await h.fetchBrowse({{kind: 'nisar_s', url: '{base}{rslc.format("011")}'}});
-          const b = await h.fetchBrowse({{kind: 'nisar_s', url: '{base}{rslc.format("026")}'}});
-          return [a, b];
+          const c = {json.dumps(corners)}, g = {json.dumps(grid)};
+          const get = (track, extra) => h.fetchBrowse({{kind: 'nisar_s', url: '{rslc}'.replace('{{}}', track), ...extra}});
+          return [await get('011', {{corners: c, grid: g}}), await get('012', {{corners: c, grid: null}}),
+                  await get('026', {{corners: c, grid: g}}), await get('027', {{corners: null, grid: null}})];
         }})()""",
     )
-    gcov, fallback = out
-    assert gcov["thumb"] == base + rslc.format("011").replace(
-        "S1_PR_RSLC", "S2_PR_GCOV"
+    exact, fitted, radar, bare = out
+    gcov = rslc.format("011").replace("S1_PR_RSLC", "S2_PR_GCOV")
+    assert exact["full"] == gcov
+    assert exact["georef"]["url"].startswith(
+        "https://wsrv.nl/?url=https%3A%2F%2Fbhoonidhi"
     )
-    assert "Geocoded" in gcov["note"] and "CORS" in gcov["note"]
-    assert fallback["thumb"] == base + rslc.format("026")
-    assert "radar geometry" in fallback["note"]
-    assert not gcov.get("georef") and not fallback.get("georef")
+    assert exact["thumb"].startswith("https://wsrv.nl/") and "w=256" in exact["thumb"]
+    assert (
+        exact["georef"]["where"]["kind"] == "utm"
+        and exact["georef"]["where"]["epsg"] == 32645
+    )
+    assert exact["georef"]["corners"] == grid and not exact.get("note")
+    # cut to the data's corners, not keyed: dark data stays
+    assert exact["georef"]["clip"]["coordinates"] == [[*corners, corners[0]]]
+    assert exact["georef"]["key"] is None
+    assert fitted["georef"]["fit"] == {"ring": corners}
+    assert radar["full"] == rslc.format("026") and radar["georef"]["approx"] is True
+    assert radar["georef"]["corners"] == corners and "radar geometry" in radar["note"]
+    assert not bare.get("georef") and bare["thumb"].startswith("https://bhoonidhi")
     assert any("_GCOV_033_026_" in u for u in seen)  # it tried the GCOV first
     assert page.errors == []
     page.close()
