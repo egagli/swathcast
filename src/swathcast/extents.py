@@ -3,10 +3,14 @@
 Two browse images the map drapes have public pixels but their placement
 behind an Earthdata login (checked 2026-10-06):
 
-- NISAR RSLC ``_LATLON.png``: its extent is the ``LatLonQuad`` of the
-  granule's ``_LATLON.kml``. The CMR footprint's box overshoots the image's
-  data by 0-5 km on varying sides, and the extent moves up to ~5 km between
-  repeat passes of a frame, so it is kept per granule.
+- NISAR GCOV ``_NATIVE.png`` and its single channels (``_NATIVE_A_HHHH.png``,
+  ``_NATIVE_A_HVHV.png``, ...): geocoded on the product's own grid (UTM, or
+  polar stereographic near the poles), whose four corners are the
+  ``LatLonQuad`` of the granule's ``_NATIVE.kml`` (the same for every
+  channel, checked 2026-10-14). The CMR footprint overshoots the image's data
+  by 0-5 km on varying sides, and the grid moves up to ~5 km between repeat
+  passes of a frame, so it is kept per granule. (The ``_LATLON.png`` colour
+  composite's box is the quad's: to ~20 m.)
 - OPERA RTC-S1 ``_BROWSE*.png``: it spans the burst's UTM grid exactly,
   which is in the product's GeoTIFF header (and ``.iso.xml``). The grid is
   fixed per burst (the same 2016-2026), so it is kept per burst ID, read
@@ -38,7 +42,7 @@ import pandas as pd
 LOGGER = logging.getLogger(__name__)
 
 EXTENTS_DIR = "extents"
-NISAR_FILE = "nisar_rslc.parquet"
+NISAR_FILE = "nisar_gcov.parquet"
 OPERA_FILE = "opera_bursts.parquet"
 STATE_FILE = "state.json"
 SITE_DIR = "browse_extents"
@@ -47,11 +51,11 @@ EDL_TOKEN = "https://urs.earthdata.nasa.gov/api/users/find_or_create_token"
 CMR_CSV = "https://cmr.earthdata.nasa.gov/search/granules.csv"
 NISAR_PRODUCTS = "https://nisar.asf.earthdatacloud.nasa.gov/NISAR"
 OPERA_PRODUCTS = "https://cumulus.asf.earthdatacloud.nasa.gov/OPERA/OPERA_L2_RTC-S1"
-#: NISAR_L1_PR_RSLC_031_106_A_026_4005_DHDH_A_20260925T130400_...
-RSLC_NAME = re.compile(
-    r"^NISAR_L1_(PR|OP)_RSLC_\d{3}_(\d{3})_[AD]_\d{3}_.*_(\d{8})T\d{6}_"
+#: NISAR_L2_PR_GCOV_033_011_D_094_4005_DHDH_A_20261012T233338_...
+GCOV_NAME = re.compile(
+    r"^NISAR_L2_(PR|OP)_GCOV_\d{3}_(\d{3})_[AD]_\d{3}_.*_(\d{8})T\d{6}_"
 )
-NISAR_COLLECTION = {"PR": "NISAR_L1_RSLC_PROVISIONAL_V1"}
+NISAR_COLLECTION = {"PR": "NISAR_L2_GCOV_PROVISIONAL_V1"}
 #: OPERA_L2_RTC-S1_T137-292398-IW2_20261001T020133Z_...
 OPERA_NAME = re.compile(r"^OPERA_L2_RTC-S1_(T(\d{3})-\d{6}-IW\d)_")
 
@@ -60,8 +64,8 @@ NISAR_MAX_TRIES = 3
 #: kind -> (CMR query, days to backfill, backfill step per run); every OPERA
 #: burst is seen within a 12-day repeat
 BACKFILL = {
-    "nisar": (
-        {"collection_concept_id": "C2853145197-ASF"},
+    "nisar_gcov": (
+        {"collection_concept_id": "C2854338529-ASF"},
         NISAR_DAYS,
         timedelta(days=2),
     ),
@@ -70,13 +74,16 @@ BACKFILL = {
 
 
 # ---------------------------------------------------------------- parsing
-def kml_box(text: str) -> list[float]:
-    """A ``_LATLON.kml``'s ``LatLonQuad`` (or ``LatLonBox``) -> [w, s, e, n]."""
+def kml_quad(text: str) -> list[float]:
+    """A KML ``LatLonQuad`` (or ``LatLonBox``) -> the image's corners
+    [lon, lat] x 4 flattened, from its top-left clockwise (KML lists them from
+    the bottom-left, counter-clockwise)."""
     m = re.search(r"<coordinates>([^<]+)</coordinates>", text)
     if m:
-        pts = [tuple(map(float, p.split(",")[:2])) for p in m.group(1).split()]
-        lons, lats = [p[0] for p in pts], [p[1] for p in pts]
-        return [min(lons), min(lats), max(lons), max(lats)]
+        pts = [list(map(float, p.split(",")[:2])) for p in m.group(1).split()]
+        if len(pts) != 4:
+            raise ValueError(f"a LatLonQuad of {len(pts)} points")
+        return [v for p in (pts[3], pts[2], pts[1], pts[0]) for v in p]
     box = {
         k: float(re.search(f"<{k}>([^<]+)</{k}>", text).group(1))
         for k in ("west", "south", "east", "north")
@@ -84,7 +91,8 @@ def kml_box(text: str) -> list[float]:
     }
     if len(box) != 4:
         raise ValueError("no LatLonQuad or LatLonBox in the KML")
-    return [box["west"], box["south"], box["east"], box["north"]]
+    w, s, e, n = box["west"], box["south"], box["east"], box["north"]
+    return [w, n, e, n, e, s, w, s]
 
 
 def tiff_grid(head: bytes) -> tuple[int, float, float, float, float]:
@@ -128,9 +136,9 @@ def tiff_grid(head: bytes) -> tuple[int, float, float, float, float]:
 
 
 def nisar_kml_url(granule: str) -> str | None:
-    m = RSLC_NAME.match(granule)
+    m = GCOV_NAME.match(granule)
     coll = m and NISAR_COLLECTION.get(m[1])
-    return f"{NISAR_PRODUCTS}/{coll}/{granule}/{granule}_LATLON.kml" if coll else None
+    return f"{NISAR_PRODUCTS}/{coll}/{granule}/{granule}_NATIVE.kml" if coll else None
 
 
 def opera_mask_url(granule: str) -> str:
@@ -151,16 +159,9 @@ def _write(df: pd.DataFrame, path: Path) -> None:
     os.replace(tmp, path)
 
 
-NISAR_COLUMNS = [
-    "granule",
-    "track",
-    "sensed",
-    "west",
-    "south",
-    "east",
-    "north",
-    "tries",
-]
+#: the corners from the top-left, clockwise
+QUAD = ["lon0", "lat0", "lon1", "lat1", "lon2", "lat2", "lon3", "lat3"]
+NISAR_COLUMNS = ["granule", "track", "sensed", *QUAD, "tries"]
 OPERA_COLUMNS = ["burst", "track", "epsg", "xmin", "ymin", "xmax", "ymax"]
 
 
@@ -257,15 +258,15 @@ def _parallel(fn, items, deadline, workers):
 def update_nisar(
     data_dir: Path, session, now: datetime, deadline, state: dict, workers=16
 ) -> dict:
-    """KML extents of NISAR RSLC granules: those added to CMR since the last
+    """KML extents of NISAR GCOV granules: those added to CMR since the last
     run, and a backfill of NISAR_DAYS; failures are retried NISAR_MAX_TRIES
     times (when listed again, or still to do)."""
     path = Path(data_dir) / EXTENTS_DIR / NISAR_FILE
     table = _read(path, NISAR_COLUMNS)
     done = table.set_index("granule")["tries"].to_dict() if len(table) else {}
-    have = set(table.loc[table["west"].notna(), "granule"]) if len(table) else set()
-    pending = list(table.loc[table["west"].isna(), "granule"]) if len(table) else []
-    names = list(dict.fromkeys(listing(session, "nisar", now, state) + pending))
+    have = set(table.loc[table["lon0"].notna(), "granule"]) if len(table) else set()
+    pending = list(table.loc[table["lon0"].isna(), "granule"]) if len(table) else []
+    names = list(dict.fromkeys(listing(session, "nisar_gcov", now, state) + pending))
     todo = [
         g
         for g in names
@@ -273,12 +274,12 @@ def update_nisar(
     ]
 
     def fetch(g):
-        return kml_box(_get(session, nisar_kml_url(g)).text)
+        return kml_quad(_get(session, nisar_kml_url(g)).text)
 
     results = _parallel(fetch, todo, deadline, workers)
     rows = []
     for g, res in results:
-        m = RSLC_NAME.match(g)
+        m = GCOV_NAME.match(g)
         ok = not isinstance(res, Exception)
         rows.append(
             {
@@ -287,8 +288,8 @@ def update_nisar(
                 "sensed": pd.Timestamp(m[3], tz="UTC"),
                 **dict(
                     zip(
-                        ["west", "south", "east", "north"],
-                        res if ok else [float("nan")] * 4,
+                        QUAD,
+                        res if ok else [float("nan")] * 8,
                         strict=True,
                     )
                 ),
@@ -310,7 +311,7 @@ def update_nisar(
         "nisar_new": len(results) - failed,
         "nisar_failed": failed,
         "nisar_left": len(todo) - len(results),
-        "nisar_known": int(table["west"].notna().sum()) if len(table) else 0,
+        "nisar_known": int(table["lon0"].notna().sum()) if len(table) else 0,
     }
 
 
@@ -368,6 +369,10 @@ def update(data_dir: Path, now: datetime | None = None, budget_s: float = 480) -
         return {"skipped": "no Earthdata login"}
     state_path = Path(data_dir) / EXTENTS_DIR / STATE_FILE
     state = json.loads(state_path.read_text()) if state_path.exists() else {}
+    # until 2026-10-14 the RSLC's _LATLON.kml was read (the GCOV's grid now)
+    (Path(data_dir) / EXTENTS_DIR / "nisar_rslc.parquet").unlink(missing_ok=True)
+    for k in ("nisar_after", "nisar_backfill_before"):
+        state.pop(k, None)
     t0 = time.monotonic()
     report = {}
     for name, fn in (
@@ -390,18 +395,15 @@ def update(data_dir: Path, now: datetime | None = None, budget_s: float = 480) -
 
 # ---------------------------------------------------------------- the site
 def publish_extents(data_dir: Path, out_dir: Path) -> dict:
-    """``browse_extents/nisar/<track>.json`` ({granule: [w, s, e, n]}) and
+    """``browse_extents/nisar_gcov/<track>.json`` ({GCOV granule: [lon, lat]
+    x 4 from the top-left, clockwise}) and
     ``browse_extents/opera/<track>.json`` ({burst: [epsg, xmin, ymin, xmax,
     ymax]}): what the map reads to place those previews exactly."""
     src = Path(data_dir) / EXTENTS_DIR
     out = Path(out_dir) / SITE_DIR
     counts = {}
     for kind, name, value in (
-        (
-            "nisar",
-            NISAR_FILE,
-            lambda r: [round(r[c], 6) for c in ("west", "south", "east", "north")],
-        ),
+        ("nisar_gcov", NISAR_FILE, lambda r: [round(r[c], 6) for c in QUAD]),
         (
             "opera",
             OPERA_FILE,
@@ -415,9 +417,9 @@ def publish_extents(data_dir: Path, out_dir: Path) -> dict:
         if not path.exists():
             continue
         table = pd.read_parquet(path)
-        if kind == "nisar":
-            table = table[table["west"].notna()]
-        key = "granule" if kind == "nisar" else "burst"
+        if kind == "nisar_gcov":
+            table = table[table["lon0"].notna()]
+        key = "granule" if kind == "nisar_gcov" else "burst"
         folder = out / kind
         folder.mkdir(parents=True, exist_ok=True)
         for track, group in table.groupby("track"):

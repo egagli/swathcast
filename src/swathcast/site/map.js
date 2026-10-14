@@ -1850,7 +1850,7 @@ function recentBrowse(a) {
   if (a.mission === "s2") { const x = of("es_s2_l2a") || of("es_s2_l1c"); return x ? { kind: "s2", id: x.id } : null; }
   if (a.mission === "landsat") { const x = of("es_landsat_l2") || of("pc_landsat_l2"); return x ? { kind: "landsat", id: x.id } : null; }
   if (a.mission === "nisar") {
-    const x = ["asf_nisar_rslc", "asf_nisar_gcov"].map(of).find((y) => y && y.browseUrls && y.browseUrls.length);
+    const x = ["asf_nisar_gcov", "asf_nisar_rslc"].map(of).find((y) => y && y.browseUrls && y.browseUrls.length);
     return x ? { kind: "nisar", urls: x.browseUrls, bbox: isArea(x.geometry) ? turf.bbox(x.geometry) : null } : null;
   }
   // Sentinel-3 by day: CDSE's quicklook of the OLCI frame over the AOI

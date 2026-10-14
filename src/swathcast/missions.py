@@ -32,6 +32,9 @@ class Mission:
     bootstrap_hours: float = 6.0
     #: environment variables the mission needs (credentials); skipped without
     requires_env: tuple[str, ...] = ()
+    #: called with (session, data_dir, now) after each run, before cleanup;
+    #: its failure is logged, never fails the run
+    after: object = None
     #: called with the session after each run (e.g. to log out)
     cleanup: object = None
 
@@ -107,6 +110,8 @@ MISSIONS: dict[str, Mission] = {
             # no prompt sightings on the first run (see sources/bhoonidhi.py)
             bootstrap_hours=24.0,
             requires_env=(bhoonidhi.ENV_USER, bhoonidhi.ENV_PASSWORD),
+            # the map's history of S-band frames (Bhoonidhi needs a login)
+            after=bhoonidhi.update_history,
             cleanup=bhoonidhi.close,
         ),
         # LANCE deletes its near-real-time products after 7 days: their
@@ -170,7 +175,13 @@ def run_mission(key: str, data_dir: Path, now: datetime | None = None):
         sources=m.build_sources(session),
     )
     try:
-        return tracker.run()
+        result = tracker.run()
+        if m.after:
+            try:
+                m.after(session, data_dir, now)
+            except Exception:  # noqa: BLE001 - an extra, never fails the run
+                LOGGER.exception("mission %s: after-run step failed", key)
+        return result
     finally:
         if m.cleanup:
             m.cleanup(session)

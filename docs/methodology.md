@@ -236,8 +236,9 @@ none:
   Sentinel-2 tiles from Earth Search `sentinel-2-l1c` by MGRS tile (the tile's own sensing time and
   cloud cover; a reprocessed datatake counted once); Landsat scenes from Earth Search
   `landsat-c2-l2` by path/row (Level-2, days behind USGS's Level-1, whose STAC does not allow browser
-  requests); NISAR frames from CMR's ASF L1 RSLC by track and frame (L-band; S-band needs a Bhoonidhi
-  login). The planned acquisitions follow, and a timeline shows both.
+  requests); NISAR frames from CMR's ASF L1 RSLC by track and frame (L-band), and S-band from
+  this site's per-track files of the poller's Bhoonidhi listing (`nisar_s/<track>.parquet`; its
+  search needs a login). The planned acquisitions follow, and a timeline shows both.
 - **Grey and filtered footprints.** A footprint whose acquisitions are all filtered out is not drawn.
   Grey means nothing is planned for it at all in the schedule, and is drawn only while that mission's
   filters and the dates are at their defaults. Fill opacity defaults to 30 % (adjustable on the map).

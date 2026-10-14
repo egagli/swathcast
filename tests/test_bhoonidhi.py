@@ -256,3 +256,67 @@ def test_tracker_run_first_run_is_backlog(creds, tmp_path):
     assert df["prompt"].all()
     assert set(df["provider_timestamp_field"].dropna()) == {"updated (IST)"}
     assert set(df["source"]) == {"bhoonidhi_nisar_s_rslc", "bhoonidhi_nisar_s_gcov"}
+
+
+def test_history_row_maps_pol_coverage_and_browse():
+    it = item(RSLC, "2026-10-01T12:44:19Z", Coverage="P", Polarization="DH")
+    it["assets"] = {
+        "data": {"href": "https://x/data.h5", "roles": ["data"]},
+        "ql": {"href": "https://x/ql.png?token=secret", "roles": ["overview"]},
+    }
+    r = bhoonidhi.history_row(it)
+    assert (r["track"], r["frame"], r["direction"]) == (19, 79, "descending")
+    assert r["pol"] == "HH+HV" and r["partial"] is True
+    # the query string (it could hold a token) is dropped
+    assert r["browse"] == "https://x/ql.png"
+    del it["assets"], it["properties"]["Coverage"]
+    r = bhoonidhi.history_row(it)
+    assert r["browse"] is None and r["partial"] is False  # the name's _N_F_
+
+
+def test_history_keeps_listed_items_and_backfills(creds, tmp_path):
+    s = FakeSession()
+    # the run's listing (the newest 10 days) is remembered on the session
+    bhoonidhi.BhoonidhiCatalog(session=s).list_new((NOW - timedelta(hours=4), NOW))
+    s.searches.clear()
+    report = bhoonidhi.update_history(s, tmp_path, NOW)
+    # then BACKFILL_DAYS_PER_RUN older days, one search each
+    assert s.searches == [
+        "2026-09-20T18:00:00Z/2026-09-21T17:59:59Z",
+        "2026-09-19T18:00:00Z/2026-09-20T17:59:59Z",
+        "2026-09-18T18:00:00Z/2026-09-19T17:59:59Z",
+    ]
+    assert report["history_rows"] == 1
+    assert report["history_backfill_before"] == "2026-09-18T18:00:00Z"
+    # the next run carries on from there, and keeps what it had
+    s2 = FakeSession()
+    bhoonidhi.update_history(s2, tmp_path, NOW)
+    assert s2.searches[0] == "2026-09-17T18:00:00Z/2026-09-18T17:59:59Z"
+    t = __import__("pandas").read_parquet(
+        tmp_path / "missions" / "nisar_s" / bhoonidhi.HISTORY_FILE
+    )
+    assert t["id"].tolist() == [RSLC] and t["pol"].tolist() == ["RH+RV"]
+
+
+def test_history_publishes_per_track(creds, tmp_path):
+    from swathcast.publish import _check_nisar_s, publish_nisar_s
+
+    s = FakeSession()
+    bhoonidhi.BhoonidhiCatalog(session=s).list_new((NOW - timedelta(hours=4), NOW))
+    bhoonidhi.update_history(s, tmp_path, NOW)
+    out = tmp_path / "site"
+    assert publish_nisar_s(tmp_path, out, NOW) == 1
+    assert [f.name for f in (out / "nisar_s").iterdir()] == ["019.parquet"]
+    assert _check_nisar_s(out) == []
+    # 90 days on, it is gone
+    assert publish_nisar_s(tmp_path, out, NOW + timedelta(days=91)) == 0
+
+
+def test_mission_runs_history_after_tracking(creds, tmp_path, monkeypatch):
+    calls = []
+    monkeypatch.setattr(missions, "make_session", lambda: FakeSession())
+    m = missions.MISSIONS["nisar_s"]
+    monkeypatch.setattr(m, "after", lambda *a: calls.append(a) or 1 / 0)
+    # a failing after-run step is logged, not raised
+    assert missions.run_mission("nisar_s", tmp_path, now=NOW) is not None
+    assert len(calls) == 1

@@ -20,6 +20,6 @@ disabled workflows. Re-enabling is one click per workflow in the Actions tab.
 | Secret | Used by | Without it |
 |---|---|---|
 | `EARTHDATA_USERNAME`, `EARTHDATA_PASSWORD` | `poll` (exact placement of NISAR and OPERA browse images) | previews are fitted to the catalogue footprint instead (NISAR 0–5 km off, OPERA 1.5–3 km) |
-| `BHOONIDHI_USER_ID`, `BHOONIDHI_PASSWORD` | `poll` (NISAR S-band latency at ISRO's Bhoonidhi) | the S-band mission is skipped; the job does not fail |
+| `BHOONIDHI_USER_ID`, `BHOONIDHI_PASSWORD` | `poll` (NISAR S-band latency at ISRO's Bhoonidhi, and the S-band history the map's popup shows) | the S-band mission is skipped and the popup shows L-band only; the job does not fail |
 
 Secrets are not passed to workflows triggered by pull requests from forks; `ci.yml` needs none.

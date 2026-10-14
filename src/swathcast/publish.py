@@ -110,6 +110,7 @@ def publish(
     for key, mission_summary in publish_missions(data_dir, now).items():
         (out_dir / f"latency_{key}.json").write_text(_dumps(mission_summary))
     publish_landsat_l1(data_dir, out_dir, now)
+    publish_nisar_s(data_dir, out_dir, now)
     from swathcast.extents import publish_extents
 
     publish_extents(data_dir, out_dir)
@@ -201,6 +202,45 @@ def publish_landsat_l1(data_dir: Path, out_dir: Path, now: datetime) -> int:
         )
     LOGGER.info("published %d Landsat L1 scenes in %s", len(scenes), folder)
     return len(scenes)
+
+
+#: NISAR S-band acquisitions of the last 90 days, one file per track (the
+#: poller's Bhoonidhi history: the site cannot search Bhoonidhi, a login)
+NISAR_S_DAYS = 90
+NISAR_S_DIR = "nisar_s"
+NISAR_S_COLUMNS = [
+    "track",
+    "frame",
+    "direction",
+    "time",
+    "id",
+    "pol",
+    "partial",
+    "browse",
+]
+
+
+def publish_nisar_s(data_dir: Path, out_dir: Path, now: datetime) -> int:
+    """``nisar_s/<track>.parquet``: S-band RSLC items sensed in the last 90
+    days (``missions/nisar_s/history.parquet``, sources/bhoonidhi.py)."""
+    from swathcast.sources.bhoonidhi import HISTORY_FILE
+
+    path = Path(data_dir) / "missions" / "nisar_s" / HISTORY_FILE
+    folder = Path(out_dir) / NISAR_S_DIR
+    if folder.exists():
+        shutil.rmtree(folder)
+    if not path.exists():
+        return 0
+    t = pd.read_parquet(path)
+    t["time"] = pd.to_datetime(t["time"], utc=True)
+    t = t[(t["time"] >= now - timedelta(days=NISAR_S_DAYS)) & (t["time"] <= now)]
+    folder.mkdir(parents=True)
+    for track, group in t.groupby("track"):
+        group[NISAR_S_COLUMNS].sort_values(["frame", "time"]).to_parquet(
+            folder / f"{int(track):03d}.parquet", index=False, compression="zstd"
+        )
+    LOGGER.info("published %d NISAR S-band items in %s", len(t), folder)
+    return len(t)
 
 
 def orbit_models(df: pd.DataFrame, now: datetime, days: float = 14.0) -> dict:
@@ -446,6 +486,7 @@ def check_site(site_dir: Path) -> list[str]:
     problems += _check_s2(data)
     problems += _check_landsat(data)
     problems += _check_landsat_l1(data)
+    problems += _check_nisar_s(data)
     problems += _check_wideswath(data)
 
     # what the map loads before the first draw: the index, the Sentinel-1/2
@@ -550,6 +591,27 @@ def _check_landsat_l1(data: Path) -> list[str]:
         paths = set(t.column("path").to_pylist())
         if paths != {int(f.stem)}:
             problems.append(f"{LANDSAT_L1_DIR}/{f.name} holds paths {sorted(paths)}")
+    return problems
+
+
+def _check_nisar_s(data: Path) -> list[str]:
+    """nisar_s/<track>.parquet (optional): the columns the map reads, and one
+    track per file, named for it."""
+    import pyarrow.parquet as pq
+
+    folder = data / NISAR_S_DIR
+    if not folder.exists():
+        return []
+    problems = []
+    for f in sorted(folder.glob("*.parquet")):
+        t = pq.read_table(f)
+        missing = set(NISAR_S_COLUMNS) - set(t.column_names)
+        if missing:
+            problems.append(f"{NISAR_S_DIR}/{f.name} missing columns {sorted(missing)}")
+            continue
+        tracks = set(t.column("track").to_pylist())
+        if tracks != {int(f.stem)}:
+            problems.append(f"{NISAR_S_DIR}/{f.name} holds tracks {sorted(tracks)}")
     return problems
 
 

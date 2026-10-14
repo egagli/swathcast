@@ -30,6 +30,14 @@ What the live items look like (2026-10-01):
 Credentials come from ``BHOONIDHI_USER_ID`` and ``BHOONIDHI_PASSWORD``; without
 them the mission is skipped (missions.py).
 
+The map's "Recent acquisitions" cannot search Bhoonidhi (login), so each run
+also keeps a history table (:func:`update_history`,
+``missions/nisar_s/history.parquet``): the items the run listed, plus a
+backfill of :data:`HISTORY_DAYS`, a few sensing days per run. publish.py writes
+it per track for the site. Each row keeps the item's browse image link, if it
+has one (any asset named or with a role like browse, quicklook or thumbnail;
+its query string, which could hold a token, dropped).
+
 The universe is every ``NISAR_SSAR_RSLC`` item whose sensing time falls in the
 last :data:`LOOKBACK_DAYS`. ``updated`` is the provider timestamp, and a
 sighting is prompt when it comes within the tracker's tolerance of it, as for
@@ -40,11 +48,14 @@ the run after an outage list a backlog, which is excluded from the statistics).
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import re
 from datetime import datetime, timedelta
+from pathlib import Path
 
+import pandas as pd
 import requests
 
 from swathcast.sources.base import (
@@ -55,7 +66,7 @@ from swathcast.sources.base import (
     SourceError,
     chunks,
 )
-from swathcast.timeutil import parse_utc, to_iso
+from swathcast.timeutil import parse_utc, to_iso, utcnow
 
 LOGGER = logging.getLogger(__name__)
 
@@ -276,7 +287,9 @@ class BhoonidhiCatalog(ReferenceCatalog):
                 "datetime": f"{to_iso(t0)}/{to_iso(t1)}",
                 "limit": 500,
             }
-            for item in search(self.session, body):
+            items = search(self.session, body)
+            _remember(self.session, items)
+            for item in items:
                 if item.get("id") in seen:
                     continue
                 seen.add(item.get("id"))
@@ -310,6 +323,172 @@ def _lookup(session, collection: str, by_name: dict[str, str]) -> dict[str, Foun
                 provider_id=item["id"],
             )
     return found
+
+
+# ---------------------------------------------------------------- history
+HISTORY_FILE = "history.parquet"
+HISTORY_STATE = "history_state.json"
+#: the map shows a frame's last 90 days
+HISTORY_DAYS = 92
+#: sensing days backfilled per run (one search each, ~3-30 s)
+BACKFILL_DAYS_PER_RUN = 3
+HISTORY_COLUMNS = [
+    "id",
+    "track",
+    "frame",
+    "direction",
+    "time",
+    "pol",
+    "partial",
+    "browse",
+]
+#: Bhoonidhi's polarization codes as the plan names the channel sets
+#: (seen 2026-10: DH, DV, HH, CP)
+POL = {
+    "SH": "HH",
+    "HH": "HH",
+    "SV": "VV",
+    "VV": "VV",
+    "DH": "HH+HV",
+    "DV": "VV+VH",
+    "QP": "HH+HV+VH+VV",
+    "QD": "HH+VV",
+    "CP": "RH+RV",
+}
+BROWSE_ASSET = re.compile(r"browse|quick.?look|thumbnail|overview|preview", re.I)
+
+
+def browse_href(item: dict) -> str | None:
+    """The item's browse image link, without its query string, or None."""
+    cands = [
+        (k, a)
+        for k, a in (item.get("assets") or {}).items()
+        if isinstance(a, dict) and a.get("href")
+    ] + [
+        (ln.get("rel", ""), ln)
+        for ln in item.get("links") or []
+        if isinstance(ln, dict) and ln.get("href")
+    ]
+    for name, a in cands:
+        if BROWSE_ASSET.search(f"{name} {' '.join(a.get('roles') or [])}"):
+            return str(a["href"]).split("?", 1)[0]
+    return None
+
+
+def history_row(item: dict) -> dict:
+    a = acquisition(item, "RSLC", None)
+    p = item.get("properties") or {}
+    code = str(a.polarization or "")
+    cov = str(_prop(p, "Coverage") or "")
+    if not cov:
+        m = re.search(r"_([FP])_[A-Z]_\d{3}$", item["id"])
+        cov = m[1] if m else ""
+    return {
+        "id": item["id"],
+        "track": a.relative_orbit,
+        "frame": int(a.datatake_id) if a.datatake_id else None,
+        "direction": a.orbit_direction,
+        "time": a.sensing_start,
+        "pol": POL.get(code.upper(), code) or None,
+        "partial": cov.upper() == "P",
+        "browse": browse_href(item),
+    }
+
+
+def _remember(session, items: list[dict]) -> None:
+    """Keep the run's listed items on the session for update_history."""
+    rows = getattr(session, "_bhoonidhi_rows", None)
+    if rows is None:
+        rows = session._bhoonidhi_rows = []
+    if items and not rows:
+        # what an item links to (for previews), once a run, without query strings
+        it = items[0]
+        LOGGER.info(
+            "Bhoonidhi item %s: assets %s; links %s",
+            it.get("id"),
+            {
+                k: [a.get("type"), a.get("roles"), str(a.get("href", "")).split("?")[0]]
+                for k, a in (it.get("assets") or {}).items()
+                if isinstance(a, dict)
+            },
+            [
+                [ln.get("rel"), str(ln.get("href", "")).split("?")[0]]
+                for ln in it.get("links") or []
+                if isinstance(ln, dict)
+            ],
+        )
+    for it in items:
+        try:
+            rows.append(history_row(it))
+        except (KeyError, TypeError, ValueError):
+            pass
+
+
+def update_history(session, data_dir: Path, now: datetime | None = None) -> dict:
+    """``missions/nisar_s/history.parquet``: this run's listed items, and up to
+    BACKFILL_DAYS_PER_RUN older sensing days until HISTORY_DAYS are covered
+    (the cursor is in ``history_state.json``). A failed backfill search ends
+    the step; it is retried next run."""
+    now = now or utcnow()
+    root = Path(data_dir) / "missions" / "nisar_s"
+    path, state_path = root / HISTORY_FILE, root / HISTORY_STATE
+    state = json.loads(state_path.read_text()) if state_path.exists() else {}
+    rows = list(getattr(session, "_bhoonidhi_rows", None) or [])
+    floor = now - timedelta(days=HISTORY_DAYS)
+    before = (
+        parse_utc(state["backfill_before"])
+        if state.get("backfill_before")
+        else (now - timedelta(days=LOOKBACK_DAYS))
+    )
+    filled, error = 0, None
+    while before > floor and filled < BACKFILL_DAYS_PER_RUN:
+        start = max(floor, before - timedelta(days=1))
+        body = {
+            "collections": [COLLECTIONS["RSLC"]],
+            "datetime": f"{to_iso(start)}/{to_iso(before - timedelta(seconds=1))}",
+            "limit": 500,
+        }
+        try:
+            items = search(session, body)
+        except SourceError as exc:
+            error = str(exc)
+            break
+        for it in items:
+            try:
+                rows.append(history_row(it))
+            except (KeyError, TypeError, ValueError):
+                pass
+        before, filled = start, filled + 1
+    state["backfill_before"] = to_iso(before)
+    table = (
+        pd.read_parquet(path)
+        if path.exists()
+        else pd.DataFrame(columns=HISTORY_COLUMNS)
+    )
+    if rows:
+        new = pd.DataFrame(rows, columns=HISTORY_COLUMNS)
+        table = pd.concat([table, new], ignore_index=True) if len(table) else new
+    if len(table):
+        table["time"] = pd.to_datetime(table["time"], utc=True)
+        table = table.dropna(subset=["track", "frame", "time"])
+        table = table[table["time"] >= floor].drop_duplicates("id", keep="last")
+        table = table.astype({"track": "int16", "frame": "int16", "partial": "bool"})
+        root.mkdir(parents=True, exist_ok=True)
+        table.sort_values(["track", "frame", "time"]).to_parquet(
+            path, index=False, compression="zstd"
+        )
+    root.mkdir(parents=True, exist_ok=True)
+    state_path.write_text(json.dumps(state, indent=1) + "\n")
+    with_browse = int(table["browse"].notna().sum()) if len(table) else 0
+    report = {
+        "history_rows": len(table),
+        "history_backfill_before": state["backfill_before"],
+        "history_with_browse": with_browse,
+    }
+    if error:
+        report["history_error"] = error
+    LOGGER.info("Bhoonidhi history: %s", report)
+    return report
 
 
 def gcov_name(rslc: str) -> str:
