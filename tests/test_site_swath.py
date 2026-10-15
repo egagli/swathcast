@@ -260,12 +260,39 @@ out.m = {urls: m.georef.urls, fallback: m.georef.fallback, layer: new URL(m.geor
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")
+def test_worldview_night_preview(tmp_path):
+    """A night pass: the night's thermal mosaic (no granule layer), nothing
+    keyed out (the warm sea is dark), and for SNPP/NOAA-20 the Day/Night
+    Band as a second channel; MODIS: band 31 alone."""
+    out = run_node(
+        tmp_path,
+        """
+const box = [-125, 44, -118, 50];
+const lay = (u) => new URL(u).searchParams.get("LAYERS");
+const v = await h.fetchBrowse({kind: "gibs", platform: "N20", date: "2026-10-12", bbox: box, night: true});
+out.v = {layer: lay(v.georef.url), key: v.georef.key, urls: v.georef.urls ?? null, bands: v.bands.map((b) => [b.label, lay(b.url)])};
+const m = await h.fetchBrowse({kind: "gibs", platform: "Aqua", date: "2026-10-12", bbox: box, night: true});
+out.m = {layer: lay(m.georef.url), bands: m.bands, time: new URL(m.georef.url).searchParams.get("TIME")};
+""",
+    )
+    v = out["v"]
+    assert v["layer"] == "VIIRS_NOAA20_Brightness_Temp_BandI5_Night"
+    assert v["key"] is None and v["urls"] is None
+    assert [b[1] for b in v["bands"]] == [
+        "VIIRS_NOAA20_Brightness_Temp_BandI5_Night",
+        "VIIRS_NOAA20_DayNightBand_At_Sensor_Radiance",
+    ]
+    m = out["m"]
+    assert m["layer"] == "MODIS_Aqua_Brightness_Temp_Band31_Night"
+    assert m["bands"] is None and m["time"] == "2026-10-12"
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")
 def test_sentinel3_quicklook_is_placed_from_the_orbit(tmp_path):
     """A Sentinel-3 quicklook (rows: scan lines in time order; columns:
     across the track, right edge of the swath first) placed from the orbit:
     on the recorded S3B frames (relative orbit 304, ~80 N, descending), the
-    footprint's points map onto the image's edges; an ascending (night)
-    frame is not placed; s3Browse takes the quicklook from CDSE's download
+    footprint's points map onto the image's edges; s3Browse takes the quicklook from CDSE's download
     host (the catalogue's link redirects there)."""
     import urllib.request
 
@@ -294,9 +321,8 @@ const out = {json.dumps(items)}.map((p) => {{
   const ring = p.GeoFootprint.coordinates[0];
   const m = g.swathImageModel(sat, Date.parse(p.ContentDate.Start), Date.parse(p.ContentDate.End), ring);
   const f = ring.map(([lon, lat]) => m.toFraction(lon, lat));
-  const night = g.swathImageModel(sat, Date.parse(p.ContentDate.Start) + 50 * 60e3, Date.parse(p.ContentDate.End) + 50 * 60e3, ring);
   const b = h.s3Browse({{ ...p, Assets: [{{ Type: "QUICKLOOK", DownloadLink: "https://catalogue.dataspace.copernicus.eu/odata/v1/Assets(x)/$value" }}] }}, "S3B");
-  return {{ name: p.Name, f, night, url: b.url, kind: b.kind }};
+  return {{ name: p.Name, f, url: b.url, kind: b.kind, slstr: b.slstr }};
 }});
 console.log(JSON.stringify(out));
 """
@@ -317,6 +343,47 @@ console.log(JSON.stringify(out));
         assert min(u) < 0.02 and max(u) > 0.98 and min(v) < 0.02 and max(v) > 0.98, r[
             "name"
         ]
-        assert r["night"] is None
         assert r["kind"] == "s3"
+        assert r["slstr"] == ("_SL_1_RBT_" in r["name"])
         assert r["url"].startswith("https://download.dataspace.copernicus.eu/")
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")
+def test_night_sentinel3_quicklook_is_turned_north_up(tmp_path):
+    """An ascending (night) SLSTR frame: CDSE draws its quicklook north up,
+    half a turn from the scan order, and the model places it so: Sicily
+    and Lecce land where they are on the image (within ~3 % of it)."""
+    import urllib.request
+
+    from conftest import load_fixture
+
+    try:
+        lib = urllib.request.urlopen(SATELLITE_JS, timeout=20).read().decode()
+    except OSError:
+        pytest.skip("satellite.js CDN not reachable")
+    (tmp_path / "satellite.cjs").write_text(lib)
+    fx = load_fixture("cdse_s3_night_frame.json")
+    script = tmp_path / "night.mjs"
+    script.write_text(
+        f"""
+import {{ createRequire }} from "module";
+globalThis.satellite = createRequire(import.meta.url)({json.dumps(str(tmp_path / "satellite.cjs"))});
+const g = await import({json.dumps((SITE / "swathgeom.js").as_uri())});
+const p = {json.dumps(fx["product"])};
+const sat = satellite.json2satrec({json.dumps(fx["omm"])});
+const ring = p.GeoFootprint.coordinates[0];
+const m = g.swathImageModel(sat, Date.parse(p.ContentDate.Start), Date.parse(p.ContentDate.End), ring);
+console.log(JSON.stringify({{ sicily: m.toFraction(14.0, 37.55), lecce: m.toFraction(18.17, 40.35), f: ring.map(([x, y]) => m.toFraction(x, y)) }}));
+"""
+    )
+    out = json.loads(
+        subprocess.run(
+            ["node", str(script)], capture_output=True, text=True, check=True
+        ).stdout
+    )
+    assert out["sicily"] == pytest.approx([0.48, 0.50], abs=0.03)
+    assert out["lecce"] == pytest.approx([0.73, 0.31], abs=0.03)
+    u = [x[0] for x in out["f"]]
+    v = [x[1] for x in out["f"]]
+    assert min(u) == pytest.approx(0, abs=0.02) and max(u) == pytest.approx(1, abs=0.02)
+    assert min(v) == pytest.approx(0, abs=0.02) and max(v) == pytest.approx(1, abs=0.02)

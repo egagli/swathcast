@@ -44,8 +44,10 @@ snowmelt, for example), field campaigns, and coordination between missions.
 - **Preview a product on the map**: its browse image is draped over the footprint and can be
   reordered, faded and removed (Sentinel-1 in colour or one channel, VV or VH; MODIS and VIIRS: the
   true colour from [NASA Worldview](https://worldview.earthdata.nasa.gov/), within the tile: the
-  pass's own granules for SNPP and NOAA-20, the day's mosaic otherwise; Sentinel-3: CDSE's OLCI
-  quicklook of the frame, placed from the orbit, by day).
+  pass's own granules for SNPP and NOAA-20, the day's mosaic otherwise; at night, the night's
+  thermal mosaic (MODIS band 31, VIIRS I5) and for SNPP and NOAA-20 also the Day/Night Band;
+  Sentinel-3: CDSE's quicklook of the frame, placed from the orbit: OLCI's true colour by day,
+  SLSTR's thermal at night).
 - **Watch the satellites**: a globe (or flat map) shows where each selected satellite is now, at its
   altitude, with its orbit and the strip of ground its instrument sees (side-looking for the radars),
   filled while the plan has it imaging. Zoomed out, Sentinel-1/2 show their planned datatake swaths,

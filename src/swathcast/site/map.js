@@ -1425,7 +1425,7 @@ async function drapedImage(g) {
   if (g.where && g.where.kind === "swath" && !g.where.model) { // placed from the orbit
     const w = g.where, sr = (await satrecsFor())[w.platform];
     const model = sr && swathImageModel(sr, w.t0, w.t1, w.ring);
-    if (!model) throw new Error(sr ? "only daytime (descending) frames can be placed" : "no orbital elements for this satellite");
+    if (!model) throw new Error(sr ? "the frame could not be placed from the orbit" : "no orbital elements for this satellite");
     g = { ...g, where: { ...w, model } };
   }
   const got = await Promise.allSettled((g.urls || [g.url]).map(async (url) => {
@@ -1949,17 +1949,23 @@ function recentBrowse(a) {
     const x = ["asf_nisar_gcov", "asf_nisar_rslc"].map(of).find((y) => y && y.browseUrls && y.browseUrls.length);
     return x ? { kind: "nisar", urls: x.browseUrls, bbox: isArea(x.geometry) ? turf.bbox(x.geometry) : null } : null;
   }
-  // Sentinel-3 by day: CDSE's quicklook of the OLCI frame over the AOI
-  if (a.mission === "s3" && a.light !== "night") {
-    const efr = (a.products || []).filter((x) => /^cdse_s3_efr/.test(x.source) && x.odata);
+  // Sentinel-3: CDSE's quicklook of the frame over the AOI: OLCI's by day,
+  // SLSTR's (thermal) at night or where OLCI's narrower strip misses the AOI
+  if (a.mission === "s3") {
     const [lon, lat] = aoiCenter();
-    const x = efr.find((y) => isArea(y.geometry) && turf.booleanPointInPolygon([lon, lat], y.geometry)) || efr[0];
+    const frame = (re) => {
+      const xs = (a.products || []).filter((x) => re.test(x.source) && x.odata);
+      return xs.find((y) => isArea(y.geometry) && turf.booleanPointInPolygon([lon, lat], y.geometry)) || xs[0];
+    };
+    const x = (a.light !== "night" && frame(/^cdse_s3_efr/)) || frame(/^cdse_s3_rbt/);
     return x ? s3Browse(x.odata, x.platform) : null;
   }
-  // MODIS/VIIRS by day: NASA Worldview's (GIBS) true colour of that platform
+  // MODIS/VIIRS: NASA Worldview's (GIBS) true colour of that platform by day
   // (its granules of this pass where it has them, else the day's mosaic),
-  // around the AOI, within this pass's granules
-  if ((a.mission === "modis" || a.mission === "viirs") && a.platform && a.light !== "night") {
+  // its thermal (and VIIRS Day/Night Band) mosaic at night, around the AOI,
+  // within this pass's granules
+  if ((a.mission === "modis" || a.mission === "viirs") && a.platform) {
+    const night = a.light === "night";
     const [lon, lat] = aoiCenter();
     const grans = (a.products || []).filter((x) => FOOTPRINT_SOURCES[a.mission].includes(x.source) && isArea(x.geometry));
     const polys = grans.flatMap((x) => (x.geometry.type === "Polygon" ? [x.geometry.coordinates] : x.geometry.coordinates));
@@ -1969,7 +1975,8 @@ function recentBrowse(a) {
     const starts = grans.map((x) => x.when).filter(Boolean);
     return {
       kind: "gibs", platform: a.platform, date: a.shown.toISOString().slice(0, 10), bbox: gibsBox(lon, lat), clip,
-      granules: a.mission === "viirs" && starts.length ? granuleTimes(starts) : null,
+      granules: a.mission === "viirs" && !night && starts.length ? granuleTimes(starts) : null,
+      ...(night ? { night: true } : {}),
     };
   }
   return null;

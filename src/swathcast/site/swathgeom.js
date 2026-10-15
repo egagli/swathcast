@@ -223,8 +223,8 @@ export function scanTime(satrec, lon, lat, t0) {
 // image's [column, row] as fractions. The frame's first and last scan lines
 // and its swath edges are taken from the product's footprint, so a few
 // seconds' error in elements propagated weeks from their epoch is absorbed.
-// Only descending (daytime) frames: night quicklooks are thermal and their
-// orientation is not verified. Null if the frame is not descending.
+// Ascending (night, thermal) frames too: their quicklooks are drawn north
+// up as well (checked on a frame over Italy, tests/test_site_swath.py).
 // ring: the footprint's [lon, lat] points (all rings of a MultiPolygon).
 export function swathImageModel(satrec, t0, t1, ring) {
   // the track well beyond the frame: a shape clipping the image (a tile)
@@ -252,12 +252,19 @@ export function swathImageModel(satrec, t0, t1, ring) {
   const tmin = Math.min(...pts.map((p) => p[0])), tmax = Math.max(...pts.map((p) => p[0]));
   const xr = Math.max(...pts.map((p) => p[1])), xl = Math.min(...pts.map((p) => p[1]));
   const mid = position(satrec, new Date((tmin + tmax) / 2)), later = position(satrec, new Date((tmin + tmax) / 2 + 10e3));
-  if (!mid || !later || later.lat >= mid.lat) return null;
+  if (!mid || !later) return null;
+  // CDSE's quicklooks are drawn north up: a descending frame in its scan
+  // order (first line at the top, the right of travel on the left), an
+  // ascending one (at night) turned half a turn (last line at the top)
+  const asc = later.lat > mid.lat;
   // longitudes continuous across the antimeridian (a frame is < 40 deg wide)
   const lons = ring.map((p) => p[0] + 360 * Math.round((ring[0][0] - p[0]) / 360)), lats = ring.map((p) => p[1]);
   return {
     bbox: [Math.min(...lons), Math.min(...lats), Math.max(...lons), Math.max(...lats)],
-    toFraction: (lon, lat) => { const [t, x] = at(unit(lon, lat)); return [(x - xr) / (xl - xr), (t - tmin) / (tmax - tmin)]; },
+    toFraction: (lon, lat) => {
+      const [t, x] = at(unit(lon, lat)), u = (x - xr) / (xl - xr), v = (t - tmin) / (tmax - tmin);
+      return asc ? [1 - u, 1 - v] : [u, v];
+    },
   };
 }
 const unit = (lon, lat) => { const a = lon * D2R, b = lat * D2R; return [Math.cos(b) * Math.cos(a), Math.cos(b) * Math.sin(a), Math.sin(b)]; };
