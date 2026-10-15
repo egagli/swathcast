@@ -14,7 +14,7 @@
 // Positions are good to a few km for elements a day old; the pass times in
 // the lists come from the acquisition plans, timed with the same elements.
 
-import { fmtHours, fmtStamp } from "./common.js";
+import { fmtHours, fmtStamp, localStamp } from "./common.js";
 import { spherical } from "./overlay.js";
 import { TRACK_STEP_S, crossTrack, geometryOf, groundTrack, headingAt, position, sensorOf, swathRange } from "./swathgeom.js";
 
@@ -96,7 +96,7 @@ export class LiveSatellites {
     const html = `<div class="headline">${this.labelOf(sat.platform)}</div>`
       + `<div>Now ${Math.round(p.km)} km above ${Math.abs(p.lat).toFixed(1)}° ${ns}, ${Math.abs(p.lon).toFixed(1)}° ${ew}, heading ${dir}${g ? `; ${g.look}` : ""}.</div>`
       + (what ? `<div>${what}</div>` : "")
-      + `<div class="nm">SGP4 from CelesTrak elements, epoch ${fmtStamp(sat.epoch.toISOString())} (${fmtHours(age)} old)${age > 72 ? "; old elements, the position may be off by tens of km" : ""}. Its orbit is drawn at its altitude: the trail of the last ${TRACK_BACK_MIN} min tapers and fades with age, brightest at the satellite; the thin dashed line is the next ${TRACK_AHEAD_MIN} min; the strip on the ground trails the last ${SWATH_BACK_S / 60} min.</div>`;
+      + `<div class="nm">SGP4 from CelesTrak elements, epoch ${fmtStamp(sat.epoch.toISOString())} (${localStamp(sat.epoch.toISOString())}; ${fmtHours(age)} old)${age > 72 ? "; old elements, the position may be off by tens of km" : ""}. Its orbit is drawn at its altitude: the trail of the last ${TRACK_BACK_MIN} min tapers and fades with age, brightest at the satellite; the thin dashed line is the next ${TRACK_AHEAD_MIN} min; the strip on the ground trails the last ${SWATH_BACK_S / 60} min.</div>`;
     this.view.popup([p.lon, p.lat], html, { offset: 10 });
   }
 
@@ -161,10 +161,18 @@ export class LiveSatellites {
     const path = proj.path(ctx);
     const vis = this.visible();
     // ground first: the strips, then the curtains and the orbits
+    // flat map: each satellite's lines are moved to one world copy as a
+    // piece (the satellite's, nearest the view), not point by point: a wide
+    // swath astride the copies' seam would otherwise span the whole map
+    const pxOf = (s) => {
+      if (proj.globe || !s.now) return (lon, lat, km = 0) => (proj.hidden(lon, lat, km) ? null : proj.px(lon, lat, km));
+      const at = proj.near(s.now.lon);
+      return (lon, lat, km = 0) => proj.px(lon + 360 * Math.round((at - lon) / 360), lat, km, false);
+    };
     vis.forEach((s) => {
       if (!s.swath) return;
       const color = this.colorOf(s.sensor);
-      paintStrip(ctx, proj, path, s.swath.samples, Date.now(), color);
+      paintStrip(ctx, path, pxOf(s), s.swath.samples, Date.now(), color);
       ctx.setLineDash([]);
     });
     vis.forEach((s) => {
@@ -180,12 +188,12 @@ export class LiveSatellites {
       const ahead = [here, ...tr.filter((p) => p[3] > t && p[3] <= t + TRACK_AHEAD_MIN * 60e3)];
       fadingPath(ctx, proj, back, t, { color, span: TRACK_BACK_MIN * 60e3, shift, trail: true });
       fadingPath(ctx, proj, ahead, t, { color, span: TRACK_AHEAD_MIN * 60e3, shift, trail: false });
-      const sat = proj.hidden(s.now.lon, s.now.lat, s.now.km) ? null : proj.px(s.now.lon, s.now.lat, s.now.km);
+      const px = pxOf(s), sat = px(s.now.lon, s.now.lat, s.now.km);
       const cur = s.swath && s.swath.cur;
       if (sat && cur) {
         const on = Boolean(s.swath.imaging);
-        const sub = proj.hidden(cur.sub.lon, cur.sub.lat) ? null : proj.px(cur.sub.lon, cur.sub.lat);
-        const a = proj.hidden(...cur.a) ? null : proj.px(...cur.a), b = proj.hidden(...cur.b) ? null : proj.px(...cur.b);
+        const sub = px(cur.sub.lon, cur.sub.lat);
+        const a = px(...cur.a), b = px(...cur.b);
         if (a && b) {
           ctx.beginPath(); ctx.moveTo(...sat); ctx.lineTo(...a); ctx.lineTo(...b); ctx.closePath();
           ctx.fillStyle = rgba(color, on ? 0.22 : 0.07); ctx.fill();
@@ -302,7 +310,7 @@ function ribbon(ctx, xy, fp, half, col) {
 // filled, stronger with a solid edge where the plan has the satellite
 // imaging, faint where it does not, and fading with age (w = 1 now, 0 at
 // SWATH_BACK_S ago).
-function paintStrip(ctx, proj, path, samples, now, color) {
+function paintStrip(ctx, path, px, samples, now, color) {
   if (!samples || samples.length < 2) return;
   const w = (t) => Math.max(0, 1 - (now - t) / (SWATH_BACK_S * 1000)) ** 0.8;
   for (let i = 0; i + 1 < samples.length; i++) {
@@ -318,7 +326,7 @@ function paintStrip(ctx, proj, path, samples, now, color) {
   ["a", "b"].forEach((side) => {
     for (let i = 0; i + 1 < samples.length; i++) {
       const p = samples[i], q = samples[i + 1];
-      const pa = proj.hidden(...p[side]) ? null : proj.px(...p[side]), qa = proj.hidden(...q[side]) ? null : proj.px(...q[side]);
+      const pa = px(...p[side]), qa = px(...q[side]);
       if (!pa || !qa) continue;
       ctx.strokeStyle = rgba(color, (q.on ? 0.95 : 0.4) * w((p.t + q.t) / 2));
       ctx.lineWidth = q.on ? 1.5 : 1;

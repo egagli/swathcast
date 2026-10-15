@@ -1,5 +1,5 @@
 import {
-  getJSON, forgetSettings, showFreshness, failingSources, fmtHours, fmtStamp, fmtAge, ageHours, sourceColor, SOURCE_SLOT,
+  getJSON, forgetSettings, showFreshness, failingSources, fmtHours, fmtStamp, localStamp, fmtAge, ageHours, sourceColor, SOURCE_SLOT,
 } from "./common.js";
 import { Tour, flash, handOver, pendingStep, sleep } from "./tour.js";
 
@@ -208,7 +208,7 @@ function latestTable() {
     (!q || g.id.toLowerCase().includes(q) || String(g.track) === q));
   $("latest-count").textContent = `${rows.length} granules`;
   table("latest-table", [["Sensing (UTC)"], ["Plat."], ["Track"], ["Dir"], ["Granule"], ...srcs.map((k) => [esc(label(k)), "num"])],
-    rows.slice(0, 1500).map((g) => [[g.sensing.slice(5, 16).replace("T", " ")], [g.platform], [g.track ?? ""], [g.dir ? g.dir.slice(0, 4) : ""], [`<code>${esc(g.id)}</code>`],
+    rows.slice(0, 1500).map((g) => [[g.sensing.slice(5, 16).replace("T", " "), "", localStamp(g.sensing)], [g.platform], [g.track ?? ""], [g.dir ? g.dir.slice(0, 4) : ""], [`<code>${esc(g.id)}</code>`],
       ...srcs.map((k) => { const v = g.h[k]; return v === undefined ? [""] : v === null ? ['<span class="nm">…</span>', "num"] : v === "timeout" ? ['<span class="bad">timeout</span>', "num"] : [fmtHours(v), "num"]; })]));
 }
 
@@ -237,9 +237,9 @@ function auditNote() {
 function healthTable(health) {
   const entries = Object.entries((health && health.sources) || {});
   table("health-table", [["Source"], ["Last success"], ["Status"], ["Polled", "num"], ["Found", "num"], ["Last error"]],
-    entries.map(([k, e]) => [[esc(label(k) || k)], [`${fmtStamp(e.last_success_utc)} <span class="nm">(${fmtAge(ageHours(e.last_success_utc))})</span>`],
-      [e.failing_since_utc ? `<span class="bad">failing since ${fmtStamp(e.failing_since_utc)}</span>` : '<span class="good">ok</span>'],
-      [e.granules_polled ?? "", "num"], [e.granules_found ?? "", "num"], [esc(e.last_error || ""), "", e.last_error_utc ? `at ${e.last_error_utc}` : ""]]));
+    entries.map(([k, e]) => [[esc(label(k) || k)], [`${fmtStamp(e.last_success_utc)} <span class="nm">(${[localStamp(e.last_success_utc), fmtAge(ageHours(e.last_success_utc))].filter(Boolean).join(" · ")})</span>`],
+      [e.failing_since_utc ? `<span class="bad">failing since ${fmtStamp(e.failing_since_utc)}</span> <span class="nm">(${localStamp(e.failing_since_utc)})</span>` : '<span class="good">ok</span>'],
+      [e.granules_polled ?? "", "num"], [e.granules_found ?? "", "num"], [esc(e.last_error || ""), "", e.last_error_utc ? `at ${fmtStamp(e.last_error_utc)} (${localStamp(e.last_error_utc)})` : ""]]));
 }
 
 // ------------------------------------------------------------------ main

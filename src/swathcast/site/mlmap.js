@@ -16,23 +16,23 @@ const ESRI_IMAGERY_ATTR = 'Imagery &copy; <a href="https://www.esri.com/" target
 // attribution, maxzoom, paint?}], drawn bottom to top; invert: in dark mode
 // the layer is inverted and desaturated (OSM has no dark variant).
 export const BASEMAPS = {
-  streets: { label: "Streets", bg: ["#aad3df", "#0d0d0d"], layers: () => [{ tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"], attribution: OSM_ATTR, maxzoom: 19, invert: true }] },
+  streets: { label: "OpenStreetMap", title: "OpenStreetMap standard tiles (inverted in dark mode)", bg: ["#aad3df", "#0d0d0d"], layers: () => [{ tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"], attribution: OSM_ATTR, maxzoom: 19, invert: true }] },
   light: {
-    label: "Light", title: "Esri Light Gray Canvas (Dark Gray in dark mode): muted, so the footprint colours stand out", bg: ["#d8d8d8", "#262626"],
+    label: "Esri Gray Canvas", title: "Esri Light Gray Canvas (Dark Gray in dark mode): muted, so the footprint colours stand out", bg: ["#d8d8d8", "#262626"],
     layers: (dark) => [
       { tiles: ESRI(`Canvas/World_${dark ? "Dark" : "Light"}_Gray_Base`), attribution: "&copy; Esri, HERE, Garmin, &copy; OpenStreetMap contributors", maxzoom: 16 },
       { tiles: ESRI(`Canvas/World_${dark ? "Dark" : "Light"}_Gray_Reference`), attribution: "", maxzoom: 16 },
     ],
   },
-  imagery: { label: "Imagery", title: "Esri World Imagery", bg: ["#0b1a2a", "#0b1a2a"], layers: () => [{ tiles: ESRI("World_Imagery"), attribution: ESRI_IMAGERY_ATTR, maxzoom: 19 }] },
+  imagery: { label: "Esri World Imagery", title: "Esri World Imagery", bg: ["#0b1a2a", "#0b1a2a"], layers: () => [{ tiles: ESRI("World_Imagery"), attribution: ESRI_IMAGERY_ATTR, maxzoom: 19 }] },
   hybrid: {
-    label: "Imagery + labels", title: "Esri World Imagery with Esri's boundaries and place names", bg: ["#0b1a2a", "#0b1a2a"],
+    label: "Esri World Imagery + labels", title: "Esri World Imagery with Esri's boundaries and place names", bg: ["#0b1a2a", "#0b1a2a"],
     layers: () => [
       { tiles: ESRI("World_Imagery"), attribution: ESRI_IMAGERY_ATTR, maxzoom: 19 },
       { tiles: ESRI("Reference/World_Boundaries_and_Places"), attribution: "Labels &copy; Esri", maxzoom: 19 },
     ],
   },
-  topo: { label: "Topographic", title: "Esri World Topographic Map", bg: ["#c9dce8", "#c9dce8"], layers: () => [{ tiles: ESRI("World_Topo_Map"), attribution: "&copy; Esri and its data contributors", maxzoom: 19 }] },
+  topo: { label: "Esri World Topographic", title: "Esri World Topographic Map", bg: ["#c9dce8", "#c9dce8"], layers: () => [{ tiles: ESRI("World_Topo_Map"), attribution: "&copy; Esri and its data contributors", maxzoom: 19 }] },
 };
 export const DEFAULT_BASEMAP = "light";
 
@@ -82,7 +82,7 @@ class MapOptionsControl {
     sel.value = this.view.basemap;
     sel.addEventListener("change", () => this.view.setBasemap(sel.value));
     this.view.onBasemap.push((k) => { sel.value = k; });
-    row.append(Object.assign(document.createElement("span"), { textContent: "Map" }), sel);
+    row.append(Object.assign(document.createElement("span"), { textContent: "Basemap" }), sel);
     this.view.optionsEl = Object.assign(document.createElement("div"), { className: "mo-checks" });
     el.append(row, this.view.optionsEl);
     return el;
