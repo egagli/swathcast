@@ -695,13 +695,40 @@ async function missionCells(key, area, f, token) {
     cells.push(...datatakeCells("s1", area, (r) => overview || r.mode !== "IW"));
     if (overview) return cells;
     let bursts;
-    const parts = splitArea(area), progress = parts.map(() => [0, 0]);
-    // the legend counts the tiles in (a first visit fetches up to MAX_TILES of them)
-    const onProgress = (i) => (d, t) => {
+    const end = state.scheduleEnd.getTime();
+    const burstCell = (b) => {
+      // with an AOI, also the planned passes of the recent past (see PAST_MS)
+      const all = acquisitions(state.models, state.plans, b.track, b.tanx, state.aoi ? now - PAST_MS.s1 : now, end).map((a) => ({
+        when: a.when, platform: a.platform, track: b.track, direction: a.pass.direction, pol: a.pass.polarization,
+        mode: "IW", pass: a.pass, estimated: false,
+      }));
+      return {
+        mission: "s1", geojson: b.geojson, bbox: turf.bbox(b.geojson), center: centerOf(b.geojson), title: b.id,
+        track: b.track, frame: b.bid, frameLabel: `${String(b.bid).padStart(6, "0")} ${b.swath}`, burst: b,
+        times: all.filter((x) => x.when.getTime() >= now), past: all.filter((x) => x.when.getTime() < now),
+      };
+    };
+    // The bursts are drawn as their tiles come in (a first visit fetches up
+    // to MAX_TILES of them, 0.5-20 s each), at most every PREVIEW_MS, in place
+    // of the swaths; the legend counts the tiles. The finished build then
+    // replaces the preview (drawn.s1 marks it as not that build).
+    const parts = splitArea(area), progress = parts.map(() => [0, 0]), sofar = parts.map(() => []), made = new Map();
+    let lastPreview = 0;
+    const preview = () => {
+      lastPreview = Date.now();
+      sofar.flat().forEach((b) => { if (!made.has(b.id) && inRanges(f.m.s1.frames, b.bid)) made.set(b.id, burstCell(b)); });
+      if (!state.missions.has("s1")) return;
+      drawMission("s1", shownOf([...cells, ...made.values()], f).shown);
+      drawn.s1 = PREVIEW;
+    };
+    let finished = false; // the other part (across 180 degrees) may still report after
+    const onProgress = (i) => (d, t, got) => {
       progress[i] = [d, t];
-      if (token !== state.token) return;
+      sofar[i] = got;
+      if (finished || token !== state.token) return;
       const [done, total] = progress.reduce((a, p) => [a[0] + p[0], a[1] + p[1]], [0, 0]);
       state.s1Loading = done < total ? { done, total } : null;
+      if (done < total && Date.now() - lastPreview > PREVIEW_MS) preview();
       legendMissions();
     };
     try {
@@ -714,23 +741,11 @@ async function missionCells(key, area, f, token) {
       out.fallback = /too many/.test(err.message) ? "dense" : `the burst map did not load (${err.message})`;
       return out;
     } finally {
+      finished = true;
       if (token === state.token) state.s1Loading = null;
     }
     if (token !== state.token) return null;
-    const end = state.scheduleEnd.getTime();
-    bursts.forEach((b) => {
-      if (!inRanges(f.m.s1.frames, b.bid)) return;
-      // with an AOI, also the planned passes of the recent past (see PAST_MS)
-      const all = acquisitions(state.models, state.plans, b.track, b.tanx, state.aoi ? now - PAST_MS.s1 : now, end).map((a) => ({
-        when: a.when, platform: a.platform, track: b.track, direction: a.pass.direction, pol: a.pass.polarization,
-        mode: "IW", pass: a.pass, estimated: false,
-      }));
-      cells.push({
-        mission: "s1", geojson: b.geojson, bbox: turf.bbox(b.geojson), center: centerOf(b.geojson), title: b.id,
-        track: b.track, frame: b.bid, frameLabel: `${String(b.bid).padStart(6, "0")} ${b.swath}`, burst: b,
-        times: all.filter((x) => x.when.getTime() >= now), past: all.filter((x) => x.when.getTime() < now),
-      });
-    });
+    bursts.forEach((b) => { if (inRanges(f.m.s1.frames, b.bid)) cells.push(made.get(b.id) || burstCell(b)); });
   } else if (key === "s2") {
     if (overviewOf("s2")) return datatakeCells("s2", area, (r) => r.mode === "NOBS");
     const s2 = await loadS2();
@@ -1741,19 +1756,20 @@ view.extraHit = (lngLat) => {
 // Redraws the given missions' layers (default: all) from state.cells.
 function drawCells(keys = DRAW_ORDER) {
   drawPolarCaps();
-  const now = Date.now();
-  keys.forEach((key) => {
-    const layer = gridLayers[key];
-    layer.clear();
-    // latest first, soonest on top; Landsat's night scenes under its day ones
-    const night = (c) => (c.visible[0] && c.visible[0].light === "night" ? 1 : 0);
-    state.cells.filter((c) => c.mission === key).sort((a, b) => night(b) - night(a) || nextOf(b) - nextOf(a)).forEach((c) => {
-      const next = c.visible.length ? (c.visible[0].when - now) / 3.6e6 : null;
-      if (c.drawGeo === undefined) c.drawGeo = drawable(c.geojson, c.bbox);
-      if (!c.drawGeo) return;
-      c.layer = layer.add({ geojson: c.drawGeo, style: cellStyle(c), onClick: () => selectCell(c) });
-      c.layer.tooltip = () => cellTip(c, next);
-    });
+  keys.forEach((key) => drawMission(key, state.cells.filter((c) => c.mission === key)));
+}
+// One mission's layer: these cells, latest first, soonest on top; Landsat's
+// night scenes under its day ones.
+function drawMission(key, cells) {
+  const layer = gridLayers[key], now = Date.now();
+  layer.clear();
+  const night = (c) => (c.visible[0] && c.visible[0].light === "night" ? 1 : 0);
+  cells.slice().sort((a, b) => night(b) - night(a) || nextOf(b) - nextOf(a)).forEach((c) => {
+    const next = c.visible.length ? (c.visible[0].when - now) / 3.6e6 : null;
+    if (c.drawGeo === undefined) c.drawGeo = drawable(c.geojson, c.bbox);
+    if (!c.drawGeo) return;
+    c.layer = layer.add({ geojson: c.drawGeo, style: cellStyle(c), onClick: () => selectCell(c) });
+    c.layer.tooltip = () => cellTip(c, next);
   });
 }
 
@@ -2173,7 +2189,8 @@ function computeViewBounds(w, h) {
 // they were built for: the view plus a margin. Most pans and zooms then
 // rebuild nothing and send nothing to the map; only the list follows the view.
 const built = {};
-const drawn = {}; // per mission, the build its layer shows (null: empty)
+const drawn = {}; // per mission, the build its layer shows (null: empty; PREVIEW: bursts still loading)
+const PREVIEW = { preview: true }, PREVIEW_MS = 600;
 const MARGIN = { s1: 0.25, s2: 0.5, landsat: 0.5, nisar: 1, modis: 1, viirs: 1, s3: 1 }; // of the view's width/height, each side
 function padded([w, s, e, n], k) {
   const dx = (e - w) * k, dy = (n - s) * k;
@@ -2191,6 +2208,18 @@ const setKey = (x) => (x ? [...x].sort().join(",") : "");
 function missionSig(key) {
   const mf = state.mf[key];
   return [state.start, state.end, state.aoiVersion, overviewOf(key), setKey(mf.platforms), setKey(mf.dirs), setKey(mf.modes), setKey(mf.pols), setKey(mf.lights), mf.trackText, mf.frameText, mf.vzaText].join("|");
+}
+
+// The cells of a build that are drawn and listed: over the AOI if there is
+// one, and only footprints with a planned acquisition that passes the
+// filters (one with nothing planned, or all of it filtered out, is left
+// transparent, so the basemap shows through). pastCells: those over the
+// AOI with passes of the recent past.
+function shownOf(got, f) {
+  const over = state.aoi ? got.filter((c) => !c.candidate && intersects(state.aoi, c.geojson, c.bbox)) : got.filter((c) => !c.candidate);
+  const pastCells = state.aoi ? over.filter((c) => c.past && c.past.length) : [];
+  over.forEach((c) => { c.visible = c.times.filter((t) => timeOK(t, f)).sort((x, y) => x.when - y.when); });
+  return { shown: over.filter((c) => c.visible.length), pastCells };
 }
 
 async function refresh() {
@@ -2219,20 +2248,14 @@ async function refresh() {
     // without an AOI, so are swaths drawn because it was too dense (zoomed in, it may not be)
     const retry = b && b.fallback && (b.fallback !== "dense" || !state.aoi);
     if (b && b.sig === sig && !retry && (state.aoi || contains(b.area, viewArea))) continue;
-    if (!b || b.sig !== sig || retry) state.busy = true;
+    state.busy = true;
     const area = buildArea(m.key);
     try {
       const got = await missionCells(m.key, area, f, token);
       if (got == null || token !== state.token) return;
       // MODIS/VIIRS/Sentinel-3 over an AOI: their passes come from these candidates (wideOverAOI)
       const candidates = state.aoi && isWide(m.key) ? got : null;
-      let shown = state.aoi ? got.filter((c) => !c.candidate && intersects(state.aoi, c.geojson, c.bbox)) : got.filter((c) => !c.candidate);
-      const pastCells = state.aoi ? shown.filter((c) => c.past && c.past.length) : [];
-      shown.forEach((c) => { c.visible = c.times.filter((t) => timeOK(t, f)).sort((x, y) => x.when - y.when); });
-      // Only footprints with a planned acquisition that passes the filters are
-      // drawn: one with nothing planned (or all of it filtered out) is left
-      // transparent, so the basemap shows through.
-      shown = shown.filter((c) => c.visible.length);
+      const { shown, pastCells } = shownOf(got, f);
       built[m.key] = { sig, area, cells: shown, pastCells, candidates, fallback: got.fallback || null };
     } catch (err) {
       if (token !== state.token) return;
@@ -2303,7 +2326,10 @@ function legendMissions() {
     else if (st.mode === "hidden") { what = `hidden at this zoom · ${nativeName(m)} from zoom ${fz}`; btn = fz; }
     else if (m.key === "s1" && state.s1Loading) {
       const { done, total } = state.s1Loading;
-      what = `${st.mode === "native" ? nativeName(m) : "planned swaths"} · loading ${nativeName(m)}: ${done} of ${total} burst-map tiles${done === 0 ? "" : ` (${Math.round((100 * done) / total)} %)`}`;
+      const pct = done === 0 ? "" : ` (${Math.round((100 * done) / total)} %)`;
+      what = st.mode === "native" || drawn.s1 === PREVIEW
+        ? `${nativeName(m)} · loading: ${done} of ${total} burst-map tiles${pct}`
+        : `planned swaths · loading ${nativeName(m)}: ${done} of ${total} burst-map tiles${pct}`;
     } else if (st.mode === "overview" && st.fallback && st.fallback !== "dense") {
       what = `<span class="warn-ink">planned swaths: ${esc(st.fallback)}; tried again when the map moves</span>`;
     } else if (st.mode === "overview") {

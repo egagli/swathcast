@@ -142,6 +142,35 @@ out.max = fp.MAX_TILES;
     assert out["big"] > out["max"]
 
 
+def test_bursts_arrive_tile_by_tile(tmp_path):
+    out = run_node(
+        tmp_path,
+        """
+// a fake burst map: one IW burst at the centre of each 2-degree tile
+const entry = (x, y) => ({ title: `S1_137_${String(290000 + x * 100 + y).padStart(6, "0")}_IW2-BURSTMAP`,
+  polygons: [[[y * 2 + 0.9, x * 2 + 0.9, y * 2 + 0.9, x * 2 + 1.1, y * 2 + 1.1, x * 2 + 1.1, y * 2 + 0.9, x * 2 + 0.9].join(" ")]] });
+let calls = 0, failAt = null;
+globalThis.fetch = async (url) => {
+  calls++;
+  const [w, s] = new URL(url).searchParams.get("bounding_box").split(",").map(Number);
+  if (failAt && w === failAt[0] && s === failAt[1]) return { ok: false, status: 400 };
+  return { ok: true, headers: { get: (k) => (k === "CMR-Hits" ? "1" : null) }, json: async () => ({ feed: { entry: [entry(w / 2, s / 2)] } }) };
+};
+const seen = [];
+const got = await fp.fetchBursts([10, 10, 16, 14], { onProgress: (d, t, b) => seen.push([d, t, b.length]) });
+out.got = got.length; out.seen = seen;
+// a tile that fails ends the fetch: an error, and no tiles started after it
+calls = 0; failAt = [20, 10]; const after = [];
+out.failed = await fp.fetchBursts([20, 10, 30, 20], { onProgress: (d) => after.push(d) }).catch((e) => e.message);
+out.calls = calls; out.after = after.length;
+""",
+    )
+    assert out["got"] == 6
+    assert out["seen"] == [[i, 6, i] for i in range(1, 7)]
+    assert out["failed"] == "CMR burst map HTTP 400"
+    assert out["calls"] < 25 and out["after"] < 25
+
+
 def test_catalogue_retry(tmp_path):
     out = run_node(
         tmp_path,

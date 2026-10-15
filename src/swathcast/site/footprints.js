@@ -187,16 +187,15 @@ export function burstTiles(bbox) {
 // IW bursts intersecting [w, s, e, n] (lon -180..180). Throws if more than
 // MAX_TILES tiles or MAX_BURSTS bursts (callers check burstTiles first).
 // Tiles are fetched from the centre outwards (the view before its margin);
-// onProgress(done, total) follows them.
+// as each comes in, onProgress(done, total, bursts) gets the bursts so far
+// (the same array, growing: copy it to keep it).
 export async function fetchBursts([w, s, e, n], { signal, onProgress } = {}) {
   const { xs, ys } = tilesOf([w, s, e, n]);
   if (xs.length * ys.length > MAX_TILES) throw new Error("too many bursts");
   const cx = (w + e) / 2 / TILE_DEG - 0.5, cy = (s + n) / 2 / TILE_DEG - 0.5;
   const order = xs.flatMap((x) => ys.map((y) => [x, y])).sort((a, b) => Math.hypot(a[0] - cx, a[1] - cy) - Math.hypot(b[0] - cx, b[1] - cy));
-  let done = 0;
-  const tiles = await mapLimit(order, TILE_CONCURRENCY, ([x, y]) => tile(x, y, signal).then((t) => { onProgress?.(++done, order.length); return t; }));
   const seen = new Set(), bursts = [];
-  tiles.flat().forEach(([title, raw]) => {
+  const add = (got) => got.forEach(([title, raw]) => {
     const m = /^S1_(\d{3})_(\d{6})_(IW[123])-BURSTMAP$/.exec(title);
     if (!m || seen.has(title)) return; // a burst on a tile edge is in both tiles
     const ring = unwrapRing(raw);
@@ -206,7 +205,15 @@ export async function fetchBursts([w, s, e, n], { signal, onProgress } = {}) {
     const track = Number(m[1]), bid = Number(m[2]), swath = m[3];
     bursts.push({ id: `T${m[1]}-${m[2]}-${swath}`, track, bid, swath, tanx: burstTimeFromAnx(track, bid, swath), geojson: { type: "Polygon", coordinates: [ring] } });
   });
-  if (bursts.length > MAX_BURSTS) throw new Error("too many bursts");
+  // the first failure (a tile, or too many bursts) ends the fetch: no more
+  // tiles are started, and none reports progress after it
+  let done = 0, failed = false;
+  await mapLimit(order, TILE_CONCURRENCY, ([x, y]) => (failed ? null : tile(x, y, signal).then((got) => {
+    if (failed) return;
+    add(got);
+    if (bursts.length > MAX_BURSTS) throw new Error("too many bursts");
+    onProgress?.(++done, order.length, bursts);
+  }).catch((err) => { failed = true; throw err; })));
   return bursts;
 }
 
