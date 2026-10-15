@@ -293,7 +293,7 @@ async function wideTile(c, since) {
     return {
       when, platform, id: name, nrt, level: nrt ? "NRT" : null, light: flag === "Night" ? "night" : flag === "Day" ? "day" : null,
       links: [{ href: earthdata(nrt ? WIDE_NRT[platform] : WIDE_L1B[platform] || "", name), text: "Earthdata Search", title: name }],
-      browse: flag !== "Night" && platform ? { kind: "gibs", platform, date: when.toISOString().slice(0, 10), bbox: c.bbox, clip: c.geojson } : null,
+      browse: platform ? { kind: "gibs", platform, date: when.toISOString().slice(0, 10), bbox: c.bbox, clip: c.geojson, ...(flag === "Night" ? { night: true } : {}) } : null,
     };
   }).sort((a, b) => a.when - b.when || a.nrt - b.nrt); // a granule's standard product before its NRT copy
   // one pass: granules of one platform less than 15 min apart
@@ -305,13 +305,13 @@ async function wideTile(c, since) {
       prev.starts.push(x.when);
       if (x.light === "day") prev.light = "day";
       if (!x.nrt) prev.level = null; // the standard product is there too
-      if (!prev.browse && x.browse) prev.browse = x.browse;
+      if (x.browse && (!prev.browse || (prev.browse.night && !x.browse.night))) prev.browse = x.browse; // by day if it has a day granule
     } else items.push({ ...x, last: x.when, starts: [x.when] });
   });
   // the pass's own granules where Worldview has them (and those either side:
   // only the ones over the tile centre are listed)
   items.forEach((x) => {
-    if (x.browse && GIBS_GRANULE[x.platform]) x.browse = { ...x.browse, granules: granuleTimes(x.starts) };
+    if (x.browse && !x.browse.night && GIBS_GRANULE[x.platform]) x.browse = { ...x.browse, granules: granuleTimes(x.starts) };
   });
   return { source: `NASA CMR, LAADS Level-1B granules over the tile centre (${plats.join(", ")}), and LANCE's near-real-time ones of the last 7 days`, items: items.map(({ last, nrt, starts, ...x }) => x),
     note: "Times are each pass's first granule over the tile centre (granules are 5-6 min long)." };
@@ -335,13 +335,15 @@ async function s3Tile(c, since) {
     if (when < g.when) Object.assign(g, { when, frame: Number(m[3]) });
     if (!g.instruments.includes(inst)) g.instruments.push(inst);
     if (!g.links.some((l) => l.text === inst)) g.links.push({ href: `${ODATA}(${p.Id})?$expand=Attributes`, text: inst, title: p.Name });
-    // the preview: the OLCI frame over the tile centre (true colour, by day)
-    const b = inst === "OLCI" && s3Browse(p, plat, c.geojson);
-    if (b && (!g.browse || when < new Date(g.browse.start))) g.browse = b;
+    // the preview: the OLCI frame over the tile centre (true colour, by day),
+    // else SLSTR's (thermal at night)
+    const b = s3Browse(p, plat, c.geojson);
+    const key = inst === "OLCI" ? "browse" : "slstrBrowse";
+    if (b && (!g[key] || when < new Date(g[key].start))) g[key] = b;
   });
-  const items = [...by.values()].map((x) => ({ ...x, instruments: x.instruments.sort(), light: x.instruments.includes("OLCI") ? "day" : null }));
+  const items = [...by.values()].map(({ slstrBrowse, ...x }) => ({ ...x, browse: x.browse || slstrBrowse || null, instruments: x.instruments.sort(), light: x.instruments.includes("OLCI") ? "day" : null }));
   return { source: "CDSE, Sentinel-3 OLCI EFR and SLSTR RBT products over the tile centre", items,
-    note: "Previews: CDSE's OLCI quicklook of the frame, placed from the orbit (by day only)." };
+    note: "Previews: CDSE's quicklook of the frame, placed from the orbit: OLCI's true colour by day, SLSTR's (thermal) at night." };
 }
 
 // A Sentinel-3 preview request from a CDSE OData product (with its Assets):
@@ -351,7 +353,7 @@ export function s3Browse(p, platform, clip = null) {
   const g = p.GeoFootprint;
   if (!ql || !g) return null;
   return {
-    kind: "s3", platform, name: p.Name.replace(/\.SEN3$/, ""), start: p.ContentDate.Start, end: p.ContentDate.End, footprint: g, clip,
+    kind: "s3", platform, name: p.Name.replace(/\.SEN3$/, ""), slstr: p.Name.includes("_SL_1_"), start: p.ContentDate.Start, end: p.ContentDate.End, footprint: g, clip,
     // the download host serves it with CORS (the catalogue's link redirects there)
     url: ql.DownloadLink.replace("//catalogue.dataspace.copernicus.eu/", "//download.dataspace.copernicus.eu/"),
   };
@@ -513,6 +515,17 @@ const GIBS_LAYER = {
   Terra: "MODIS_Terra_CorrectedReflectance_TrueColor", Aqua: "MODIS_Aqua_CorrectedReflectance_TrueColor",
   SNPP: "VIIRS_SNPP_CorrectedReflectance_TrueColor", N20: "VIIRS_NOAA20_CorrectedReflectance_TrueColor", N21: "VIIRS_NOAA21_CorrectedReflectance_TrueColor",
 };
+// At night: brightness temperature in a thermal band (MODIS band 31, 11 um;
+// VIIRS I5, 11.45 um), and for SNPP and NOAA-20 also the Day/Night Band
+// (low-light visible: moonlit cloud and snow, city lights). Daily mosaics
+// only (no granule layers), as Worldview has them.
+const GIBS_NIGHT = {
+  Terra: [["Thermal (band 31)", "MODIS_Terra_Brightness_Temp_Band31_Night"]],
+  Aqua: [["Thermal (band 31)", "MODIS_Aqua_Brightness_Temp_Band31_Night"]],
+  SNPP: [["Thermal (I5)", "VIIRS_SNPP_Brightness_Temp_BandI5_Night"], ["Day/Night Band", "VIIRS_SNPP_DayNightBand_At_Sensor_Radiance"]],
+  N20: [["Thermal (I5)", "VIIRS_NOAA20_Brightness_Temp_BandI5_Night"], ["Day/Night Band", "VIIRS_NOAA20_DayNightBand_At_Sensor_Radiance"]],
+  N21: [["Thermal (I5)", "VIIRS_NOAA21_Brightness_Temp_BandI5_Night"]],
+};
 // and one granule (6 minutes) at a time, for the platforms it has them for
 // (the last ~90 days, a few hours behind)
 const GIBS_GRANULE = {
@@ -536,6 +549,23 @@ export function gibsURL(layer, date, [w, s, e, n], size = 1024) {
 // A footprint's points, all rings of a Polygon or MultiPolygon.
 const ringPoints = (g) => (g.type === "Polygon" ? g.coordinates : g.type === "MultiPolygon" ? g.coordinates.flat() : []).flat();
 
+// The night layers of a MODIS/VIIRS pass: the day's mosaic of each, the
+// first shown, the others as channels. Their PNGs are transparent where
+// there is no data, so no colour is keyed out (the warm sea is dark).
+function gibsNight(b) {
+  const layers = GIBS_NIGHT[b.platform];
+  if (!layers || !b.bbox) return { note: "No Worldview night layer for this platform." };
+  const [w, s, e, n] = b.bbox, [, first] = layers[0];
+  const bands = layers.map(([label, layer]) => ({ label, thumb: gibsURL(layer, b.date, b.bbox, 256), url: gibsURL(layer, b.date, b.bbox, 1024) }));
+  return {
+    thumb: bands[0].thumb, full: bands[0].url,
+    source: `NASA Worldview (GIBS) ${first.replace(/_/g, " ")}, ${b.date}: the night's mosaic of this platform's passes (brightness temperature)`,
+    links: [{ href: `https://worldview.earthdata.nasa.gov/?v=${w},${s},${e},${n}&l=${first}&t=${b.date}`, text: "Worldview" }],
+    bands: bands.length > 1 ? bands : null,
+    georef: { url: bands[0].url, corners: bboxCorners(b.bbox), where: { kind: "latlon", bbox: b.bbox }, key: null, clip: b.clip || null },
+  };
+}
+
 const BROWSE = {
   // Sentinel-3: CDSE's quicklook of the frame (OLCI EFR: true colour). It is
   // in the instrument's geometry (scan lines x across-track columns, no
@@ -544,9 +574,11 @@ const BROWSE = {
   async s3(b) {
     return {
       thumb: b.url, full: b.url,
-      source: `CDSE quicklook of ${b.name}, placed from the orbit (to a few km)`,
+      source: `CDSE ${b.slstr ? "SLSTR quicklook (thermal infrared at night: cold cloud bright)" : "OLCI quicklook"} of ${b.name}, placed from the orbit (to a few km)`,
+      // SLSTR's is thermal at night: warm sea is near black, so no colour is
+      // keyed out (its margins are trimmed, and it is clipped to the footprint)
       georef: {
-        url: b.url, corners: null, key: "black", clip: b.clip,
+        url: b.url, corners: null, key: b.slstr ? null : "black", clip: b.clip,
         where: { kind: "swath", platform: b.platform, t0: Date.parse(b.start), t1: Date.parse(b.end), ring: ringPoints(b.footprint) },
       },
     };
@@ -556,6 +588,7 @@ const BROWSE = {
   // alone, else the platform's day mosaic (all its passes that day); shown
   // only within b.clip (the tile, or the pass's granule footprints)
   async gibs(b) {
+    if (b.night) return gibsNight(b);
     const layer = GIBS_LAYER[b.platform];
     if (!layer || !b.bbox) return { note: "No Worldview layer for this platform." };
     const [w, s, e, n] = b.bbox;
