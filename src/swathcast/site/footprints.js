@@ -145,10 +145,16 @@ async function cmrTile(x, y, signal) {
   return out;
 }
 
+// CMR answers a tile in 0.5 to 20 s, and now and then with a 5xx: retried once.
+const cmrTileRetried = (x, y, signal) => cmrTile(x, y, signal).catch((err) => {
+  if (signal?.aborted || !/HTTP 5|fetch/i.test(String(err.message))) throw err;
+  return new Promise((r) => setTimeout(r, 1500)).then(() => cmrTile(x, y, signal));
+});
+
 function tile(x, y, signal) {
   const key = `${x},${y}`;
   if (!tileCache.has(key)) {
-    const p = storedTile(key).then((hit) => hit || cmrTile(x, y, signal).then((got) => { storeTile(key, got); return got; }));
+    const p = storedTile(key).then((hit) => hit || cmrTileRetried(x, y, signal).then((got) => { storeTile(key, got); return got; }));
     tileCache.set(key, p);
     p.catch(() => tileCache.delete(key));
   }
@@ -180,10 +186,15 @@ export function burstTiles(bbox) {
 
 // IW bursts intersecting [w, s, e, n] (lon -180..180). Throws if more than
 // MAX_TILES tiles or MAX_BURSTS bursts (callers check burstTiles first).
-export async function fetchBursts([w, s, e, n], { signal } = {}) {
+// Tiles are fetched from the centre outwards (the view before its margin);
+// onProgress(done, total) follows them.
+export async function fetchBursts([w, s, e, n], { signal, onProgress } = {}) {
   const { xs, ys } = tilesOf([w, s, e, n]);
   if (xs.length * ys.length > MAX_TILES) throw new Error("too many bursts");
-  const tiles = await mapLimit(xs.flatMap((x) => ys.map((y) => [x, y])), TILE_CONCURRENCY, ([x, y]) => tile(x, y, signal));
+  const cx = (w + e) / 2 / TILE_DEG - 0.5, cy = (s + n) / 2 / TILE_DEG - 0.5;
+  const order = xs.flatMap((x) => ys.map((y) => [x, y])).sort((a, b) => Math.hypot(a[0] - cx, a[1] - cy) - Math.hypot(b[0] - cx, b[1] - cy));
+  let done = 0;
+  const tiles = await mapLimit(order, TILE_CONCURRENCY, ([x, y]) => tile(x, y, signal).then((t) => { onProgress?.(++done, order.length); return t; }));
   const seen = new Set(), bursts = [];
   tiles.flat().forEach(([title, raw]) => {
     const m = /^S1_(\d{3})_(\d{6})_(IW[123])-BURSTMAP$/.exec(title);
