@@ -652,28 +652,36 @@ function splitArea([w, s, e, n]) {
 const buildArea = (key) => (state.aoi ? aoiBBox(state.aoi) : padded(viewBounds(), MARGIN[key]));
 // Burst-map tiles Sentinel-1 would need here (more than MAX_TILES: swaths).
 const s1Tiles = () => splitArea(buildArea("s1")).reduce((n, p) => n + burstTiles(p), 0);
+// The same for the view v (seen at zoom vz) zoomed to z about its centre:
+// the view's extent scales with 2^-zoom. At z = vz it is s1Tiles() exactly,
+// and a view zoomed in further lies inside it, so needs no more tiles.
+function s1TilesAt(v, vz, z) {
+  const k = 2 ** (vz - z), cx = (v[0] + v[2]) / 2, cy = (v[1] + v[3]) / 2;
+  const hw = ((v[2] - v[0]) / 2) * k, hh = ((v[3] - v[1]) / 2) * k;
+  return splitArea(padded([cx - hw, Math.max(-90, cy - hh), cx + hw, Math.min(90, cy + hh)], MARGIN.s1)).reduce((n, p) => n + burstTiles(p), 0);
+}
 // Planned swaths instead of native footprints: zoomed out (without an AOI)
 // or, for Sentinel-1, an area too large for the burst map.
 function overviewOf(key) {
   const m = MISSION[key];
   if (!m.overview) return false;
-  if (!state.aoi && viewZoom() < m.minZoom - 0.3) return true;
-  return key === "s1" && (s1Tiles() > MAX_TILES || !Object.keys(state.models).length);
+  if (key === "s1" && !Object.keys(state.models).length) return true;
+  if (state.aoi) return key === "s1" && s1Tiles() > MAX_TILES;
+  return viewZoom() < fineZoom(m) - zoomSlack(m);
 }
-// The zoom at which Sentinel-1's bursts appear here: level 6, or further in
-// until the view plus its margin needs no more than MAX_TILES burst-map
-// tiles. Estimated for each candidate zoom from the canvas size at the
-// view's latitude (MapLibre: 512 px tiles), with a 20 % margin, so one press
-// of "Zoom in" gets there.
+// How far below a mission's native zoom its footprints already appear: the
+// zoom is shown to one decimal, so Sentinel-1's bursts appear once the zoom
+// reads as its burst zoom. (The other missions keep their older 0.3.)
+const ZOOM_SLACK = { s1: 0.05 };
+const zoomSlack = (m) => ZOOM_SLACK[m.key] ?? 0.3;
+// The zoom at which Sentinel-1's bursts appear here, to 0.1: level 6, or
+// further in until the view plus its margin needs no more than MAX_TILES
+// burst-map tiles. The one rule for both the switch (overviewOf) and the
+// legend, so "Zoom in" (to this zoom + 0.1) always lands on bursts.
 function s1BurstZoom() {
-  const canvas = map.getCanvas(), lat = Math.min(80, Math.abs(map.getCenter().lat));
-  const pad = 1 + 2 * MARGIN.s1;
-  for (let z = MISSION.s1.minZoom; z < 13; z += 0.5) {
-    // degrees per pixel: viewZoom is equator-equivalent on the globe, MapLibre's own on the flat map
-    const deg = 360 / (512 * 2 ** z), cos = Math.cos((lat * Math.PI) / 180);
-    const w = canvas.clientWidth * deg * pad / (isGlobe() ? cos : 1);
-    const h = canvas.clientHeight * deg * pad * (isGlobe() ? 1 : cos);
-    if ((Math.ceil(w / 2) + 1) * (Math.ceil(h / 2) + 1) <= 0.8 * MAX_TILES) return z;
+  const v = viewBounds(), vz = viewZoom();
+  for (let z = MISSION.s1.minZoom; z < 13; z = Math.round((z + 0.1) * 10) / 10) {
+    if (s1TilesAt(v, vz, z - ZOOM_SLACK.s1) <= MAX_TILES) return z;
   }
   return 13;
 }
@@ -687,31 +695,57 @@ async function missionCells(key, area, f, token) {
     cells.push(...datatakeCells("s1", area, (r) => overview || r.mode !== "IW"));
     if (overview) return cells;
     let bursts;
-    try {
-      bursts = (await Promise.all(splitArea(area).map((p) => fetchBursts([p[0], Math.max(-90, p[1]), p[2], Math.min(90, p[3])])))).flat();
-    } catch (err) {
-      if (token !== state.token) return null;
-      if (!/too many/.test(err.message)) throw err;
-      // denser than the burst map allows here: the IW swaths instead
-      const out = [...cells, ...datatakeCells("s1", area, (r) => r.mode === "IW")];
-      out.fallback = true;
-      return out;
-    }
-    if (token !== state.token) return null;
     const end = state.scheduleEnd.getTime();
-    bursts.forEach((b) => {
-      if (!inRanges(f.m.s1.frames, b.bid)) return;
+    const burstCell = (b) => {
       // with an AOI, also the planned passes of the recent past (see PAST_MS)
       const all = acquisitions(state.models, state.plans, b.track, b.tanx, state.aoi ? now - PAST_MS.s1 : now, end).map((a) => ({
         when: a.when, platform: a.platform, track: b.track, direction: a.pass.direction, pol: a.pass.polarization,
         mode: "IW", pass: a.pass, estimated: false,
       }));
-      cells.push({
+      return {
         mission: "s1", geojson: b.geojson, bbox: turf.bbox(b.geojson), center: centerOf(b.geojson), title: b.id,
         track: b.track, frame: b.bid, frameLabel: `${String(b.bid).padStart(6, "0")} ${b.swath}`, burst: b,
         times: all.filter((x) => x.when.getTime() >= now), past: all.filter((x) => x.when.getTime() < now),
-      });
-    });
+      };
+    };
+    // The bursts are drawn as their tiles come in (a first visit fetches up
+    // to MAX_TILES of them, 0.5-20 s each), at most every PREVIEW_MS, in place
+    // of the swaths; the legend counts the tiles. The finished build then
+    // replaces the preview (drawn.s1 marks it as not that build).
+    const parts = splitArea(area), progress = parts.map(() => [0, 0]), sofar = parts.map(() => []), made = new Map();
+    let lastPreview = 0;
+    const preview = () => {
+      lastPreview = Date.now();
+      sofar.flat().forEach((b) => { if (!made.has(b.id) && inRanges(f.m.s1.frames, b.bid)) made.set(b.id, burstCell(b)); });
+      if (!state.missions.has("s1")) return;
+      drawMission("s1", shownOf([...cells, ...made.values()], f).shown);
+      drawn.s1 = PREVIEW;
+    };
+    let finished = false; // the other part (across 180 degrees) may still report after
+    const onProgress = (i) => (d, t, got) => {
+      progress[i] = [d, t];
+      sofar[i] = got;
+      if (finished || token !== state.token) return;
+      const [done, total] = progress.reduce((a, p) => [a[0] + p[0], a[1] + p[1]], [0, 0]);
+      state.s1Loading = done < total ? { done, total } : null;
+      if (done < total && Date.now() - lastPreview > PREVIEW_MS) preview();
+      legendMissions();
+    };
+    try {
+      bursts = (await Promise.all(parts.map((p, i) => fetchBursts([p[0], Math.max(-90, p[1]), p[2], Math.min(90, p[3])], { onProgress: onProgress(i) })))).flat();
+    } catch (err) {
+      if (token !== state.token) return null;
+      // denser than the burst map allows here, or the burst map did not
+      // answer: the IW swaths instead (retried when the view next changes)
+      const out = [...cells, ...datatakeCells("s1", area, (r) => r.mode === "IW")];
+      out.fallback = /too many/.test(err.message) ? "dense" : `the burst map did not load (${err.message})`;
+      return out;
+    } finally {
+      finished = true;
+      if (token === state.token) state.s1Loading = null;
+    }
+    if (token !== state.token) return null;
+    bursts.forEach((b) => { if (inRanges(f.m.s1.frames, b.bid)) cells.push(made.get(b.id) || burstCell(b)); });
   } else if (key === "s2") {
     if (overviewOf("s2")) return datatakeCells("s2", area, (r) => r.mode === "NOBS");
     const s2 = await loadS2();
@@ -1722,19 +1756,20 @@ view.extraHit = (lngLat) => {
 // Redraws the given missions' layers (default: all) from state.cells.
 function drawCells(keys = DRAW_ORDER) {
   drawPolarCaps();
-  const now = Date.now();
-  keys.forEach((key) => {
-    const layer = gridLayers[key];
-    layer.clear();
-    // latest first, soonest on top; Landsat's night scenes under its day ones
-    const night = (c) => (c.visible[0] && c.visible[0].light === "night" ? 1 : 0);
-    state.cells.filter((c) => c.mission === key).sort((a, b) => night(b) - night(a) || nextOf(b) - nextOf(a)).forEach((c) => {
-      const next = c.visible.length ? (c.visible[0].when - now) / 3.6e6 : null;
-      if (c.drawGeo === undefined) c.drawGeo = drawable(c.geojson, c.bbox);
-      if (!c.drawGeo) return;
-      c.layer = layer.add({ geojson: c.drawGeo, style: cellStyle(c), onClick: () => selectCell(c) });
-      c.layer.tooltip = () => cellTip(c, next);
-    });
+  keys.forEach((key) => drawMission(key, state.cells.filter((c) => c.mission === key)));
+}
+// One mission's layer: these cells, latest first, soonest on top; Landsat's
+// night scenes under its day ones.
+function drawMission(key, cells) {
+  const layer = gridLayers[key], now = Date.now();
+  layer.clear();
+  const night = (c) => (c.visible[0] && c.visible[0].light === "night" ? 1 : 0);
+  cells.slice().sort((a, b) => night(b) - night(a) || nextOf(b) - nextOf(a)).forEach((c) => {
+    const next = c.visible.length ? (c.visible[0].when - now) / 3.6e6 : null;
+    if (c.drawGeo === undefined) c.drawGeo = drawable(c.geojson, c.bbox);
+    if (!c.drawGeo) return;
+    c.layer = layer.add({ geojson: c.drawGeo, style: cellStyle(c), onClick: () => selectCell(c) });
+    c.layer.tooltip = () => cellTip(c, next);
   });
 }
 
@@ -2154,7 +2189,8 @@ function computeViewBounds(w, h) {
 // they were built for: the view plus a margin. Most pans and zooms then
 // rebuild nothing and send nothing to the map; only the list follows the view.
 const built = {};
-const drawn = {}; // per mission, the build its layer shows (null: empty)
+const drawn = {}; // per mission, the build its layer shows (null: empty; PREVIEW: bursts still loading)
+const PREVIEW = { preview: true }, PREVIEW_MS = 600;
 const MARGIN = { s1: 0.25, s2: 0.5, landsat: 0.5, nisar: 1, modis: 1, viirs: 1, s3: 1 }; // of the view's width/height, each side
 function padded([w, s, e, n], k) {
   const dx = (e - w) * k, dy = (n - s) * k;
@@ -2174,11 +2210,24 @@ function missionSig(key) {
   return [state.start, state.end, state.aoiVersion, overviewOf(key), setKey(mf.platforms), setKey(mf.dirs), setKey(mf.modes), setKey(mf.pols), setKey(mf.lights), mf.trackText, mf.frameText, mf.vzaText].join("|");
 }
 
+// The cells of a build that are drawn and listed: over the AOI if there is
+// one, and only footprints with a planned acquisition that passes the
+// filters (one with nothing planned, or all of it filtered out, is left
+// transparent, so the basemap shows through). pastCells: those over the
+// AOI with passes of the recent past.
+function shownOf(got, f) {
+  const over = state.aoi ? got.filter((c) => !c.candidate && intersects(state.aoi, c.geojson, c.bbox)) : got.filter((c) => !c.candidate);
+  const pastCells = state.aoi ? over.filter((c) => c.past && c.past.length) : [];
+  over.forEach((c) => { c.visible = c.times.filter((t) => timeOK(t, f)).sort((x, y) => x.when - y.when); });
+  return { shown: over.filter((c) => c.visible.length), pastCells };
+}
+
 async function refresh() {
   if (!state.scheduleEnd) return; // the map can move before the data is in; load() refreshes
   writeHash();
   updateFilterSummaries();
   const token = ++state.token;
+  state.s1Loading = null; // a superseded build's progress
   const f = filters();
   if (state.aoi && !state.satrecs && MISSIONS.some((m) => isWide(m.key) && state.missions.has(m.key))) {
     state.satrecs = await satrecsFor();
@@ -2195,22 +2244,19 @@ async function refresh() {
       continue;
     }
     const sig = missionSig(m.key), b = built[m.key];
-    if (b && b.sig === sig && (state.aoi || contains(b.area, viewArea))) continue;
-    if (!b || b.sig !== sig) state.busy = true;
+    // swaths drawn because the burst map failed are retried on any change;
+    // without an AOI, so are swaths drawn because it was too dense (zoomed in, it may not be)
+    const retry = b && b.fallback && (b.fallback !== "dense" || !state.aoi);
+    if (b && b.sig === sig && !retry && (state.aoi || contains(b.area, viewArea))) continue;
+    state.busy = true;
     const area = buildArea(m.key);
     try {
       const got = await missionCells(m.key, area, f, token);
       if (got == null || token !== state.token) return;
       // MODIS/VIIRS/Sentinel-3 over an AOI: their passes come from these candidates (wideOverAOI)
       const candidates = state.aoi && isWide(m.key) ? got : null;
-      let shown = state.aoi ? got.filter((c) => !c.candidate && intersects(state.aoi, c.geojson, c.bbox)) : got.filter((c) => !c.candidate);
-      const pastCells = state.aoi ? shown.filter((c) => c.past && c.past.length) : [];
-      shown.forEach((c) => { c.visible = c.times.filter((t) => timeOK(t, f)).sort((x, y) => x.when - y.when); });
-      // Only footprints with a planned acquisition that passes the filters are
-      // drawn: one with nothing planned (or all of it filtered out) is left
-      // transparent, so the basemap shows through.
-      shown = shown.filter((c) => c.visible.length);
-      built[m.key] = { sig, area, cells: shown, pastCells, candidates, fallback: Boolean(got.fallback) };
+      const { shown, pastCells } = shownOf(got, f);
+      built[m.key] = { sig, area, cells: shown, pastCells, candidates, fallback: got.fallback || null };
     } catch (err) {
       if (token !== state.token) return;
       built[m.key] = { sig: null, area: [0, 0, 0, 0], cells: [], pastCells: [], error: err.message };
@@ -2278,8 +2324,17 @@ function legendMissions() {
     let what, btn = "";
     if (st.mode === "error") what = `<span class="bad">${esc(st.msg)}</span>`;
     else if (st.mode === "hidden") { what = `hidden at this zoom · ${nativeName(m)} from zoom ${fz}`; btn = fz; }
-    else if (st.mode === "overview") {
+    else if (m.key === "s1" && state.s1Loading) {
+      const { done, total } = state.s1Loading;
+      const pct = done === 0 ? "" : ` (${Math.round((100 * done) / total)} %)`;
+      what = st.mode === "native" || drawn.s1 === PREVIEW
+        ? `${nativeName(m)} · loading: ${done} of ${total} burst-map tiles${pct}`
+        : `planned swaths · loading ${nativeName(m)}: ${done} of ${total} burst-map tiles${pct}`;
+    } else if (st.mode === "overview" && st.fallback && st.fallback !== "dense") {
+      what = `<span class="warn-ink">planned swaths: ${esc(st.fallback)}; tried again when the map moves</span>`;
+    } else if (st.mode === "overview") {
       if (state.aoi) what = "planned swaths (the AOI is too large for burst footprints)";
+      else if (st.fallback) what = `planned swaths (too many bursts here) · zoom in for ${nativeName(m)}`;
       else { what = `planned swaths · ${nativeName(m)} from zoom ${fz}`; btn = fz; }
     } else what = st.native === 0 && !st.swaths ? `nothing planned ${state.aoi ? "over the AOI" : "here"}` : nativeName(m);
     const end = planEndOf(m.key);
@@ -2287,21 +2342,34 @@ function legendMissions() {
       what = '<span class="warn-ink">nothing known in your dates: the plan ends before them</span>';
     }
     const endTxt = end ? `<span class="${end < endSel ? "warn-ink" : "nm"}" title="${end < endSel ? "your dates run past the end of this plan: nothing is known after it" : isWide(m.key) ? "no plan: passes predicted from the orbit up to this date" : "the agency's plan reaches this date"}">${isWide(m.key) ? "predicted" : "plan"} to ${fmtWhen(end).split(" ").slice(0, 3).join(" ")}</span>` : "";
-    const zoomBtn = btn !== "" ? `<button type="button" data-z="${btn}" title="Zoom in to level ${btn}">Zoom in</button>` : "";
+    const zoomBtn = btn !== "" ? `<button type="button" data-z="${btn}" data-m="${m.key}" title="Zoom in to level ${btn}">Zoom in</button>` : "";
     // native footprints: one line; otherwise what is shown goes on a second line
     const short = st.mode === "native" && !/warn-ink/.test(what);
     return `<div class="ml" title="${esc(counts)}"><div class="ml-head"><span class="chip" style="background:${missionColor(m.key)}"></span><b>${m.label}</b>${short ? ` <span class="ml-what">${what}</span>` : ""} ${endTxt}${zoomBtn}</div>${short ? "" : `<div class="ml-what">${what}</div>`}</div>`;
   }).join("");
   // the ladder: only while some mission waits on a zoom
   const waiting = ms.filter((m) => !state.aoi && fineZoom(m) > 0 && ["hidden", "overview"].includes((state.missionState[m.key] || {}).mode));
+  const reached = (zz) => ms.some((m) => fineZoom(m) === zz && z >= zz - zoomSlack(m));
   const x = (v) => `${(100 * Math.min(v, LADDER_MAX) / LADDER_MAX).toFixed(1)}%`;
   const ticks = waiting.length ? [...new Set(ms.filter((m) => fineZoom(m) > 0).map(fineZoom))].map((zz) => {
     const here = ms.filter((m) => fineZoom(m) === zz);
-    return `<span class="tick${z >= zz - 0.3 ? "" : " off"}" data-z="${zz}" style="left:${x(zz)}">${here.map((m) => `<i style="background:${missionColor(m.key)}"></i>`).join("")}${zz}</span>`;
+    return `<span class="tick${reached(zz) ? "" : " off"}" data-z="${zz}" data-slack="${Math.min(...here.map(zoomSlack))}" style="left:${x(zz)}">${here.map((m) => `<i style="background:${missionColor(m.key)}"></i>`).join("")}${zz}</span>`;
   }).join("") : "";
   const ladder = waiting.length ? `<div class="dh-ladder" aria-hidden="true" title="Zoom ${z.toFixed(1)}"><div class="bar"></div><div class="fill" style="width:${x(z)}"></div>${ticks}<div class="now" style="left:${x(z)}"></div></div>` : "";
   el.innerHTML = `${waiting.length ? `<div class="dh-zoom nm">Zoom ${z.toFixed(1)}</div>` : ""}${ladder}<div class="dh-lines">${lines}</div>`;
-  el.querySelectorAll("button[data-z]").forEach((b) => b.addEventListener("click", () => map.easeTo({ zoom: Number(b.dataset.z) + 0.1 + (map.getZoom() - viewZoom()), duration: 900 })));
+  el.querySelectorAll("button[data-z]").forEach((b) => b.addEventListener("click", () => zoomToNative(MISSION[b.dataset.m], Number(b.dataset.z))));
+}
+// "Zoom in": to just past the mission's native zoom. Sentinel-1's is
+// estimated from the view (s1BurstZoom), which is only approximate from a
+// view showing the whole world: once there, it is checked again from the
+// new view and the zoom finished (twice at most).
+function zoomToNative(m, z, tries = 2) {
+  map.easeTo({ zoom: z + 0.1 + (map.getZoom() - viewZoom()), duration: 900 });
+  if (m.key !== "s1" || !tries) return;
+  map.once("moveend", () => {
+    const zz = fineZoom(m);
+    if (!state.aoi && viewZoom() < zz - zoomSlack(m)) zoomToNative(m, zz, tries - 1);
+  });
 }
 // The zoom readout and the ladder follow the zoom frame by frame (the rest
 // follows refresh(), once the map stops).
@@ -2319,7 +2387,7 @@ map.on("zoom", () => {
     ladder.querySelector(".fill").style.width = at;
     ladder.querySelector(".now").style.left = at;
     ladder.title = `Zoom ${z.toFixed(1)}`;
-    ladder.querySelectorAll(".tick").forEach((t) => t.classList.toggle("off", z < Number(t.dataset.z) - 0.3));
+    ladder.querySelectorAll(".tick").forEach((t) => t.classList.toggle("off", z < Number(t.dataset.z) - Number(t.dataset.slack)));
   });
 });
 let moveTimer = null;

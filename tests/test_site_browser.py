@@ -763,3 +763,98 @@ def test_nisar_s_preview_through_the_proxy(browser, server):
     assert any("_GCOV_033_026_" in u for u in seen)  # it tried the GCOV first
     assert page.errors == []
     page.close()
+
+
+# Sentinel-1's state, the zoom named by the legend's "Zoom in" (if shown) and
+# the zoom as the readout shows it (map.js viewZoom, to one decimal)
+READ_S1 = """(() => {
+  const m = window.__map, b = document.querySelector('#detail-hint button[data-z]'); // Sentinel-1 alone is on
+  const globe = (m.getProjection && m.getProjection()?.type) === "globe";
+  const lat = Math.min(85, Math.abs(m.getCenter().lat));
+  const z = m.getZoom() - (globe ? Math.log2(Math.cos((lat * Math.PI) / 180)) : 0);
+  return { mode: window.__state.missionState.s1.mode, named: b ? Number(b.dataset.z) : null, zoom: Number(z.toFixed(1)) };
+})()"""
+
+
+def test_bursts_appear_at_the_zoom_the_legend_gives(browser, server):
+    """Sentinel-1 turns from planned swaths into bursts at the zoom the
+    legend names, on the globe and the flat map, and "Zoom in" lands on
+    bursts (the legend once estimated it apart from the switch: off by up
+    to 0.75 of a zoom level)."""
+    page = open_page(browser, server, "m=s1")
+    # Sentinel-1 bursts need an orbit model (the fixture has none), and no tour
+    orbits = {
+        "platforms": {
+            "S1D": {
+                "platform": "S1D",
+                "epoch": "2026-10-07T18:16:20.786658Z",
+                "period_s": 5924.571543,
+                "offset": 146,
+            }
+        }
+    }
+    page.route(
+        "**/data/orbits.json",
+        lambda r: r.fulfill(content_type="application/json", body=json.dumps(orbits)),
+    )
+    js(page, "localStorage.setItem('swathcast-tour', 'seen')")
+    page.reload()
+    page.wait_for_function(
+        "window.__state && window.__state.scheduleEnd && !window.__state.busy",
+        timeout=120000,
+    )
+    assert js(page, "Object.keys(window.__state.models)") == ["S1D"]
+
+    def move(code, settle=""):
+        """Run code that moves the map, then wait for the page's refresh after it."""
+        before = js(page, "window.__state.token")
+        js(page, code)
+        page.wait_for_function(
+            f"window.__state.token > {before} && !window.__map.isMoving() && !window.__state.busy{settle}",
+            timeout=60000,
+        )
+
+    for globe in (True, False):
+        js(
+            page,
+            f"(() => {{ const b = document.getElementById('opt-globe'); if (b.checked !== {str(globe).lower()}) b.click(); }})()",
+        )
+        page.wait_for_timeout(1500)
+        for lat in (0, 60):
+            # zooming in by 0.1 from just below level 6: while swaths are shown
+            # the legend names a zoom above the readout, and bursts appear
+            # once the readout reaches it
+            move(
+                f"""(() => {{ const m = window.__map; m.jumpTo({{center: [-100, {lat}]}});
+                const g = (m.getProjection && m.getProjection()?.type) === 'globe';
+                m.jumpTo({{zoom: 5.9 + (g ? Math.log2(Math.cos({lat} * Math.PI / 180)) : 0)}}); }})()"""
+            )
+            named = None
+            for _ in range(40):
+                st = js(page, READ_S1)
+                if st["mode"] == "native":
+                    assert named is not None and st["zoom"] >= named, (
+                        globe,
+                        lat,
+                        st,
+                        named,
+                    )
+                    break
+                assert st["mode"] == "overview" and st["zoom"] < st["named"], (
+                    globe,
+                    lat,
+                    st,
+                )
+                named = st["named"]
+                move("window.__map.jumpTo({zoom: window.__map.getZoom() + 0.1})")
+            else:
+                raise AssertionError(f"no bursts by zoom {st['zoom']} ({globe}, {lat})")
+            # "Zoom in" from far out lands on bursts (it may take a second step)
+            move(f"window.__map.jumpTo({{center: [-100, {lat}], zoom: 4}})")
+            js(page, "document.querySelector('#detail-hint button[data-z]').click()")
+            page.wait_for_function(
+                "window.__state.missionState.s1.mode === 'native' && !window.__map.isMoving()",
+                timeout=60000,
+            )
+    assert not page.errors
+    page.close()
