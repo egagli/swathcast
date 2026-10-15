@@ -75,6 +75,27 @@ export function position(satrec, date) {
   return { lon: satellite.degreesLong(geo.longitude), lat: satellite.degreesLat(geo.latitude), km: geo.height };
 }
 
+// Local mean solar time (hours, 0-24) at which the orbit after t crosses the
+// equator going north and going south: {ascending, descending}. For a
+// sun-synchronous orbit the same every day (drifting slowly, as Terra's and
+// Aqua's do).
+export function nodeSolarTimes(satrec, t = Date.now(), stepS = 30) {
+  const out = {};
+  let prev = position(satrec, new Date(t));
+  for (let dt = stepS * 1e3; dt <= 120 * 60e3 && (out.ascending == null || out.descending == null); dt += stepS * 1e3) {
+    const p = position(satrec, new Date(t + dt));
+    if (p && prev && (prev.lat < 0) !== (p.lat < 0)) {
+      const f = prev.lat / (prev.lat - p.lat);
+      let dlon = p.lon - prev.lon;
+      dlon -= 360 * Math.round(dlon / 360);
+      const lon = prev.lon + f * dlon, utcH = (((t + dt - (1 - f) * stepS * 1e3) / 3.6e6) % 24 + 24) % 24;
+      out[p.lat > prev.lat ? "ascending" : "descending"] = (((utcH + lon / 15) % 24) + 24) % 24;
+    }
+    prev = p;
+  }
+  return out;
+}
+
 // Ground heading (deg from north) of the sub-satellite point at t: the
 // direction of travel over the rotating Earth, which is what a zero-Doppler
 // radar looks perpendicular to.

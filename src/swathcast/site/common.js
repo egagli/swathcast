@@ -34,6 +34,14 @@ export function fmtStamp(iso) {
   return `${d.toISOString().slice(0, 16).replace("T", " ")} UTC`;
 }
 
+// The same instant in the viewer's time zone: "9:08 PM PDT, your time" (with
+// its date when not the UTC one), for the page's own timestamps (data as of,
+// last success), which belong to no place.
+export function localStamp(iso) {
+  if (!iso) return "";
+  return fmtBoth(new Date(iso)).split(" · ")[1] || "";
+}
+
 export function ageHours(iso, now = Date.now()) {
   if (!iso) return Infinity;
   return (now - new Date(iso).getTime()) / 3.6e6;
@@ -55,7 +63,7 @@ export function showFreshness({ scheduleAt, latencyAt, failing = [] }) {
   el.innerHTML = "";
   const part = (label, iso, age) => {
     const span = document.createElement("span");
-    span.innerHTML = `${label} <b>${fmtStamp(iso)}</b> (${fmtAge(age)})`;
+    span.innerHTML = `${label} <b title="${localStamp(iso)}">${fmtStamp(iso)}</b> (${fmtAge(age)})`;
     return span;
   };
   el.append(part("schedule generated", scheduleAt, sAge), document.createTextNode(" · "),

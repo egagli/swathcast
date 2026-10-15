@@ -457,7 +457,8 @@ export function timelineSVG(past, upcoming, color, { daysBack = HISTORY_DAYS, da
 // else its RSLC's.
 function nisarBrowse(rslc, gcov) {
   const u = gcov && visuals(gcov).length ? gcov : rslc;
-  return { kind: "nisar", urls: visuals(u), bbox: ummBBox(u) };
+  const bw = (rslc.AdditionalAttributes || []).find((x) => x.Name === "RANGE_BANDWIDTH_CONCAT");
+  return { kind: "nisar", urls: visuals(u), bbox: ummBBox(u), mhz: bw && bw.Values ? bw.Values[0] : null };
 }
 
 // ---------------------------------------------------------------- browse images
@@ -670,8 +671,13 @@ const BROWSE = {
       const chans = b.urls.map((u) => [u, /_NATIVE_([AB])_([HVRL]{2})\2\.png$/.exec(u)]).filter(([, x]) => x)
         .map(([u, x]) => ({ freq: x[1], pol: x[2], url: u }))
         .sort((p, q) => p.freq.localeCompare(q.freq) || (POL_RANK[p.pol] ?? 9) - (POL_RANK[q.pol] ?? 9));
-      const hasA = chans.some((x) => x.freq === "A");
-      const bands = chans.map((x) => ({ label: `${x.pol}${hasA && x.freq === "B" ? " (B, 5 MHz)" : ""}`, thumb: x.url, url: x.url }));
+      // frequency A: the main band (20, 40 or 77 MHz: the fine range resolution);
+      // B: a 5 MHz side band (~30 m slant-range resolution; mostly for
+      // correcting the ionosphere), named apart when both are there
+      const hasA = chans.some((x) => x.freq === "A"), hasB = chans.some((x) => x.freq === "B");
+      const [mhzA, mhzB] = String(b.mhz || "").split("+").map((v) => (v ? `${Number(v)} MHz` : ""));
+      const bandOf = (f) => (!hasA || !hasB ? "" : f === "A" ? ` (main band${mhzA ? `, ${mhzA}` : ""})` : ` (side band, ${mhzB || "5 MHz"})`);
+      const bands = chans.map((x) => ({ label: `${x.pol}${bandOf(x.freq)}`, thumb: x.url, url: x.url }));
       const pols = [...new Set(chans.filter((x) => x.freq === (hasA ? "A" : "B")).map((x) => x.pol))];
       if (pols.length > 1) bands.unshift({ label: pols.join("+"), thumb: thumb || native, url: native });
       return {

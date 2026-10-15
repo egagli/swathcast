@@ -26,7 +26,7 @@ import { GlobeOverlay, PolarCaps } from "./overlay.js";
 import { clipToShape, fitUtmToData, resample, utmBox, utmEpsg } from "./drape.js";
 import { fetchBrowse, fetchHistory, granuleTimes, s3Browse, landsatL1, medianRevisit, timelineSVG, usgsItem, widenToImage, HISTORY_DAYS } from "./history.js";
 import { Tour, flash, handOver, markTourSeen, pendingStep, sleep, tourSeen, waitFor } from "./tour.js";
-import { ALTITUDE_KM, S3_OLCI_KM, WIDE_SWATH_KM, closestApproach, destination, position, scanHeadingAt, scanTime, sensorOf, swathImageModel, viewZenith } from "./swathgeom.js";
+import { ALTITUDE_KM, S3_OLCI_KM, WIDE_SWATH_KM, closestApproach, destination, nodeSolarTimes, position, scanHeadingAt, scanTime, sensorOf, swathImageModel, viewZenith } from "./swathgeom.js";
 import { RECENT_DAYS, SOURCES as SEARCHABLE, NOT_SEARCHABLE, PORTAL, registerSource, searchSources, groupAcquisitions } from "./recent.js";
 
 // Zoom levels are MapLibre's. minZoom: below it the footprints in view are too
@@ -406,7 +406,10 @@ function loadWide(key) {
         times.forEach((t) => { t.light = lightAt(t.when, center[0], center[1]); });
         return { tile: String(c.tile), h: Number(c.h), v: Number(c.v), title: `tile ${c.tile}`, geojson, bbox: turf.bbox(geojson), center, times };
       });
-      state.planEnds[key] = ends; // predicted to the schedule's end
+      // predicted through the schedule's whole window: its end, not the last pass's
+      // time (hours before it), lest the dates seem to run past the prediction
+      Object.keys(ends).forEach((p) => { if (state.scheduleEnd > ends[p]) ends[p] = state.scheduleEnd; });
+      state.planEnds[key] = ends;
       legendMissions();
       return cells;
     })();
@@ -414,6 +417,29 @@ function loadWide(key) {
     p.catch(() => { delete wideLoads[key]; });
   }
   return wideLoads[key];
+}
+
+// The wide-swath platforms have no direction filter (light stands for it):
+// their Platform pills carry the daytime equator crossing instead, in local
+// solar time ("Terra (~10:05 AM)"), from the current orbit (Terra and Aqua
+// drift), as Sentinel-1's directions carry theirs.
+const solarText = (h) => {
+  const m = Math.round(h * 12) * 5, hh = Math.floor(m / 60) % 24, mm = m % 60;
+  return `~${hh % 12 || 12}:${String(mm).padStart(2, "0")} ${hh < 12 ? "AM" : "PM"}`;
+};
+function labelCrossings(row, plats) {
+  satrecsFor().then((recs) => {
+    row.querySelectorAll("label.check").forEach((l, i) => {
+      const p = plats[i], x = recs[p] ? nodeSolarTimes(recs[p]) : {};
+      const day = ["ascending", "descending"].find((d) => x[d] >= 6 && x[d] < 18);
+      if (!day) return;
+      const night = day === "ascending" ? "descending" : "ascending";
+      l.lastChild.textContent = ` ${p} (${solarText(x[day])})`;
+      l.title = `${p} crosses the equator at ${solarText(x[day])} local solar time by day (${day})`
+        + `${x[night] != null ? ` and ${solarText(x[night])} by night (${night})` : ""}, from its current orbit. `
+        + "Its wide swath sees a place from neighbouring orbits too, so the time there runs ~45 min either side of this at the equator, and further apart towards the poles.";
+    });
+  });
 }
 
 // Orbital elements for timing passes at the AOI (the live satellites' file).
@@ -946,11 +972,11 @@ function passNote(p) {
   }
   const span = Math.round((p.whenEnd - p.when) / 1000);
   if (p.mission === "s1" && p.cells.some((c) => c.datatake)) {
-    return `${p.mode} datatake ${fmtWhen(p.pass.begin)}–${p.pass.end.toISOString().slice(11, 16)} UTC${p.pol ? `, ${polText(p.pol)}` : ""} (bursts are drawn for IW only); the swath is clipped to the AOI's surroundings.`;
+    return `${p.mode} datatake ${fmtWhen(p.pass.begin)}–${p.pass.end.toISOString().slice(11, 16)} UTC (${localText(p.pass.begin, p.ll)})${p.pol ? `, ${polText(p.pol)}` : ""} (bursts are drawn for IW only); the swath is clipped to the AOI's surroundings.`;
   }
   if (p.mission === "s1") {
     const bursts = p.cells.map((c) => c.burst);
-    return `T${String(p.track).padStart(3, "0")}-${burstRange(bursts)}, imaged within ${Math.max(1, span)} s from ${p.when.toISOString().slice(11, 19)} UTC; the datatake runs ${fmtWhen(p.pass.begin)}–${p.pass.end.toISOString().slice(11, 16)} UTC${p.pol ? `, ${polText(p.pol)}` : ""}.`;
+    return `T${String(p.track).padStart(3, "0")}-${burstRange(bursts)}, imaged within ${Math.max(1, span)} s from ${p.when.toISOString().slice(11, 19)} UTC (${localText(p.when, p.ll)}); the datatake runs ${fmtWhen(p.pass.begin)}–${p.pass.end.toISOString().slice(11, 16)} UTC${p.pol ? `, ${polText(p.pol)}` : ""}.`;
   }
   if (p.mission === "s2") return `Relative orbit ${p.track}; tile times from the orbit (SGP4), ~10 s. STAC items carry the datatake start instead.`;
   if (p.mission === "landsat") return `WRS-2 path ${p.track}, ${p.footprints}; scene times from the orbit (SGP4) on USGS's acquisition calendar.`;
@@ -1034,7 +1060,7 @@ function failingFor(mission, key) {
   const hit = Object.entries(state.health[mission] || {}).find(([k, e]) => e.failing_since_utc && (key === k || key.startsWith(`${k}_`)));
   return hit ? { since: new Date(hit[1].failing_since_utc), error: hit[1].last_error || "" } : null;
 }
-const failingNote = (f) => `this site's poller has been failing on this source since ${fmtWhen(f.since)} UTC, so the source may be down or slow; the estimate is from earlier measurements`;
+const failingNote = (f) => `this site's poller has been failing on this source since ${fmtBoth(f.since)}, so the source may be down or slow; the estimate is from earlier measurements`;
 const failingMark = (f) => (f ? ` <span class="warn" title="${esc(`${failingNote(f)}. ${f.error}`)}">⚠</span>` : "");
 let renderPending = false;
 function scheduleRender() {
@@ -1105,7 +1131,7 @@ function detailCard(p) {
   if (e && e.list.length) {
     const short = (d) => utcText(roundUp10(d), p.when);
     const rows = e.list.map((x) => (x.exp
-      ? `<tr title="${esc(`measured over ${x.exp.n_events} acquisitions, ${x.exp.stratum === "all" ? "all platforms" : x.exp.stratum}${x.failing ? `; ${failingNote(x.failing)}` : ""}`)}"><td>${x.label}${failingMark(x.failing)}</td><td class="t"><b>~${short(x.exp.median_at)}</b><div class="sub">${localText(roundUp10(x.exp.median_at), p.ll)}</div></td><td class="t nm">${x.exp.p90_at ? short(x.exp.p90_at) : "not yet known"}</td></tr>`
+      ? `<tr title="${esc(`measured over ${x.exp.n_events} acquisitions, ${x.exp.stratum === "all" ? "all platforms" : x.exp.stratum}${x.failing ? `; ${failingNote(x.failing)}` : ""}`)}"><td>${x.label}${failingMark(x.failing)}</td><td class="t"><b>~${short(x.exp.median_at)}</b><div class="sub">${localText(roundUp10(x.exp.median_at), p.ll)}</div></td><td class="t nm">${x.exp.p90_at ? `${short(x.exp.p90_at)}<div class="sub">${localText(roundUp10(x.exp.p90_at), p.ll)}</div>` : "not yet known"}</td></tr>`
       : `<tr><td>${x.label}</td><td class="nm" colspan="2">not measured</td></tr>`)).join("");
     card.insertAdjacentHTML("beforeend", `<table class="dl"><thead><tr><th>Likely downloadable at</th><th>median</th><th>90 %</th></tr></thead><tbody>${rows}</tbody></table>`);
   }
@@ -1214,7 +1240,7 @@ function recentSummary(a) {
   const waiting = av.filter((x) => x.status === "expected").sort((x, y) => x.exp.median_at - y.exp.median_at)[0];
   const head = av.some((x) => x.status === "searching") && !up ? '<span class="nm">searching…</span>'
     : up ? `<b>${up}</b> of ${searchable} up` : "not up yet";
-  const next = waiting ? `<div class="nm">next: ${waiting.label} ~${utcText(roundUp10(waiting.exp.median_at), new Date())}</div>` : "";
+  const next = waiting ? `<div class="nm">next: ${waiting.label} ~${utcText(roundUp10(waiting.exp.median_at), new Date())} · ${localText(roundUp10(waiting.exp.median_at), aoiCenter())}</div>` : "";
   return head + next;
 }
 
@@ -1229,7 +1255,7 @@ function recentCard(a) {
   const ul = document.createElement("ul");
   ul.className = "lat-list avail";
   const today = new Date();
-  const when = (d) => `${fmtWhen(roundUp10(d), today)} UTC`;
+  const when = (d) => `${fmtWhen(roundUp10(d), today)} UTC (${localText(roundUp10(d), aoiCenter())})`;
   const until = (d) => (d > now ? `, in ${fmtHours((d - now) / 3.6e6)}` : "");
   availability(a).forEach((x) => {
     let body;
@@ -1373,6 +1399,7 @@ const browseItems = new Map();
 function browseItem(req, meta) {
   const key = JSON.stringify(req);
   if (!browseItems.has(key)) browseItems.set(key, { req, key, meta });
+  else if (meta.item && !browseItems.get(key).meta.item) browseItems.get(key).meta.item = meta.item; // its pass in the AOI's list
   return key;
 }
 
@@ -1565,7 +1592,8 @@ function renderQueue() {
   const rows = queue.map((q) => {
     const m = q.meta, tr = document.createElement("tr");
     tr.dataset.id = q.id;
-    const [utc] = fmtBoth(m.when, m.center).split(" · ");
+    const [utc, local] = fmtBoth(m.when, m.center).split(" · ");
+    tr.classList.toggle("sel", previewSelected(q));
     const band = q.b && q.b.bands ? q.b.bands[q.band || 0] : null;
     const thumb = q.b && q.b.thumb
       ? `<img src="${esc(band ? band.thumb : q.b.thumb)}" alt=""${q.b.georef ? ' crossorigin="anonymous"' : ""}>`
@@ -1580,12 +1608,13 @@ function renderQueue() {
     const src = q.b ? [q.b.source, q.note].filter(Boolean).join(". ") : "";
     tr.innerHTML = `<td class="bq-handle" tabindex="0" role="button" title="Drag (or arrow up/down) to reorder: top is drawn on top" aria-label="Reorder: arrow up or down">⠿</td>`
       + `<td class="bq-thumb">${q.b && q.b.full ? `<a href="${esc(q.b.full)}" target="_blank" rel="noopener" title="${esc(src || "full size")}">${thumb}</a>` : thumb}</td>`
-      + `<td class="bq-when"><button type="button" class="link-btn bq-fit" title="Go to it">${utc}</button><div class="sub"><span class="chip" style="background:${missionColor(m.mission)}"></span>${MISSION[m.mission].label}${q.status === "ok" && q.b.georef && (q.b.georef.fit || q.b.georef.approx) ? ` · <span class="warn-ink" title="${esc(q.b.note || "")}">approx. place</span>` : ""}</div></td>`
+      + `<td class="bq-when"><button type="button" class="link-btn bq-fit" title="Go to it, and select its pass in the list and the timeline">${utc}</button>${local ? `<div class="sub">${local}</div>` : ""}<div class="sub"><span class="chip" style="background:${missionColor(m.mission)}"></span>${MISSION[m.mission].label}${q.status === "ok" && q.b.georef && (q.b.georef.fit || q.b.georef.approx) ? ` · <span class="warn-ink" title="${esc(q.b.note || "")}">approx. place</span>` : ""}</div></td>`
       + `<td>${esc(m.platform)}</td><td>${esc(m.direction)}</td><td>${esc(m.track)}${m.frame ? ` / ${esc(m.frame)}` : ""}</td>`
       + `<td class="bq-op">${op}</td>`
       + '<td><button type="button" class="bq-x" title="Remove from the map" aria-label="Remove from the map">×</button></td>';
     tr.querySelector(".bq-x").addEventListener("click", () => removePreview(q));
-    tr.querySelector(".bq-fit").addEventListener("click", () => fitPreview(q));
+    // the row (outside its controls) or its time: go to it and select its pass
+    tr.addEventListener("click", (e) => { if (e.target === tr || !e.target.closest("button:not(.bq-fit), a, input, select, .bq-handle")) pickPreview(q); });
     const sel = tr.querySelector(".bq-band");
     if (sel) sel.addEventListener("change", () => switchBand(q, Number(sel.value)));
     const range = tr.querySelector("input[type=range]");
@@ -1607,6 +1636,34 @@ function renderQueue() {
     return tr;
   });
   queueBox.querySelector("tbody").replaceChildren(...rows);
+}
+
+// A preview's pass in the AOI's list: the one it was opened from, else
+// (opened from a footprint's popup) the list's acquisition of its mission
+// nearest its time, within 15 min. null without an AOI or a match.
+function previewItem(q) {
+  if (!state.aoi) return null;
+  const items = listItems(), m = q.meta;
+  if (m.item) return items.find((x) => x.key === m.item) || null;
+  const t = m.when.getTime(), dt = (x) => Math.abs(x.when.getTime() - t);
+  return items.filter((x) => x.kind === "recent" && x.mission === m.mission && dt(x) < 15 * 60e3).sort((a, b) => dt(a) - dt(b))[0] || null;
+}
+// The preview last picked in the list (one with no pass in the AOI's list
+// stays marked until something else is selected).
+let pickedPreview = null;
+const previewSelected = (q) => q.id === pickedPreview || selected(previewItem(q));
+function pickPreview(q) {
+  const it = previewItem(q);
+  if (it) select(it.kind, it.key, { fit: false, scroll: true });
+  pickedPreview = q.id;
+  fitPreview(q);
+  syncPreviewSelection();
+}
+function syncPreviewSelection() {
+  queueBox.querySelectorAll("tbody tr").forEach((tr) => {
+    const q = queue.find((x) => x.id === tr.dataset.id);
+    tr.classList.toggle("sel", Boolean(q && previewSelected(q)));
+  });
 }
 
 // Drag to reorder (pointer events, so it works with touch): the row follows
@@ -1667,7 +1724,7 @@ function nextLine(c, h) {
 
 const TL_WIDTH = 640; // timeline drawn at the popup's width, so its labels stay small
 function cellPopup(c) {
-  const upcoming = c.visible.map((t) => ({ when: t.when, platform: t.platform, label: `${t.platform || ""} planned ${fmtWhen(t.when)} UTC` }));
+  const upcoming = c.visible.map((t) => ({ when: t.when, platform: t.platform, label: `${t.platform || ""} planned ${fmtBoth(t.when, c.center)}` }));
   return `${cellHead(c)}<div class="hist" data-cell="1">
     <div class="hist-next">${nextLine(c)}</div>
     <div class="hist-tl-box">${timelineSVG([], upcoming, missionColor(c.mission), { width: TL_WIDTH })}</div>
@@ -1680,7 +1737,7 @@ function planEndNote(key) {
   const ends = state.planEnds[key] || {};
   const parts = Object.entries(ends).sort().map(([p, d]) => `${p} ${fmtWhen(d).split(" ").slice(0, 3).join(" ")}`);
   if (parts.length && isWide(key)) return `Predicted to: ${parts.join(" · ")}`;
-  return parts.length ? `Plans reach: ${parts.join(" · ")}` : `Schedule to ${fmtWhen(state.scheduleEnd)} UTC`;
+  return parts.length ? `Plans reach: ${parts.join(" · ")}` : `Schedule to ${fmtBoth(state.scheduleEnd)}`;
 }
 
 // After the popup grew, pan so it is wholly inside the map (beside the panel).
@@ -1705,8 +1762,8 @@ async function fillHistory(c, popup) {
     const h = await fetchHistory(c);
     if (!box.isConnected) return;
     if (h.items == null) { recent.innerHTML = recentSection(c, null, `<tr><td colspan="${popupCols(c)}" class="nm">${h.note}</td></tr>`); return; }
-    const upcoming = c.visible.map((t) => ({ when: t.when, platform: t.platform, label: `${t.platform || ""} planned ${fmtWhen(t.when)} UTC` }));
-    tl.innerHTML = timelineSVG(h.items.map((x) => ({ when: x.when, platform: x.platform, label: `${x.platform} ${fmtWhen(x.when)} UTC` })), upcoming, missionColor(c.mission), { width: TL_WIDTH });
+    const upcoming = c.visible.map((t) => ({ when: t.when, platform: t.platform, label: `${t.platform || ""} planned ${fmtBoth(t.when, c.center)}` }));
+    tl.innerHTML = timelineSVG(h.items.map((x) => ({ when: x.when, platform: x.platform, label: `${x.platform} ${fmtBoth(x.when, c.center)}` })), upcoming, missionColor(c.mission), { width: TL_WIDTH });
     box.querySelector(".hist-next").innerHTML = nextLine(c, h);
     const now = Date.now();
     recent.innerHTML = recentSection(c, h.items.length, h.items.length
@@ -1795,6 +1852,7 @@ function highlight(shapes, mission, { fill = true } = {}) {
 const selected = (it) => Boolean(state.sel && it && state.sel.key === it.key);
 function select(kind, key = null, { fit = true, scroll = false } = {}) {
   state.sel = kind ? { kind, key } : null;
+  pickedPreview = null;
   view.closePopup();
   highlightLayer.clear();
   const it = kind && kind !== "cell" ? listItems().find((x) => x.key === key) : null;
@@ -1804,7 +1862,7 @@ function select(kind, key = null, { fit = true, scroll = false } = {}) {
     const h = highlight(shapes, it.mission);
     if (h && fit) view.fitBBox(h.bbox, { pad: 0.3, maxZoom: 9 });
     // a one-line label on the map; the details are in the list
-    const at = h ? h.center() : aoiCenter(), html = `<b>${passLabel(it.ref, { short: true })}</b> · ${utcText(it.when)} <span class="nm">${rel(it.when)}</span>`, opts = { className: "label-pop", maxWidth: "360px", offset: 6, focusAfterOpen: false };
+    const at = h ? h.center() : aoiCenter(), html = `<b>${passLabel(it.ref, { short: true })}</b> · ${utcText(it.when)} · ${localText(it.when, aoiCenter())} <span class="nm">${rel(it.when)}</span>`, opts = { className: "label-pop", maxWidth: "360px", offset: 6, focusAfterOpen: false };
     if (at) {
       popupBeside(h && h.bbox, at, html, opts);
       // placed again once the map has framed it (the room above and below changes)
@@ -1812,6 +1870,7 @@ function select(kind, key = null, { fit = true, scroll = false } = {}) {
     }
   }
   renderList();
+  syncPreviewSelection();
   if (scroll) requestAnimationFrame(() => { const row = document.querySelector("#results tr.sel"); if (row) row.scrollIntoView({ block: "center", behavior: "smooth" }); });
 }
 
@@ -1833,6 +1892,8 @@ function popupBeside(bbox, at, html, opts) {
 // A footprint picked on the map: its popup (history and plan).
 function selectCell(c) {
   state.sel = { kind: "cell", key: `${c.mission}|${c.title}` };
+  pickedPreview = null;
+  syncPreviewSelection();
   view.closePopup();
   const outline = highlight([c.drawGeo || drawable(c.geojson, c.bbox) || c.geojson], c.mission, { fill: false });
   const pop = popupBeside(outline && outline.bbox, c.center, cellPopup(c), { maxWidth: "720px" });
@@ -1977,7 +2038,7 @@ function renderTimeline() {
     const end = (state.planEnds[missionOf(p)] || {})[p];
     if (!end || end.getTime() >= t1) return "";
     const xe = Math.max(x(now), x(end.getTime()));
-    return `<rect x="${xe.toFixed(1)}" y="${yOf(p) - laneH / 2 + 2}" width="${(x(t1) - xe).toFixed(1)}" height="${laneH - 4}" fill="url(#tl-hatch)"><title>${esc(p)}: the plan ends ${utcText(end)}; nothing is known after it</title></rect>`;
+    return `<rect x="${xe.toFixed(1)}" y="${yOf(p) - laneH / 2 + 2}" width="${(x(t1) - xe).toFixed(1)}" height="${laneH - 4}" fill="url(#tl-hatch)"><title>${esc(p)}: the plan ends ${fmtBoth(end, aoiCenter())}; nothing is known after it</title></rect>`;
   }).join("");
   const laneLines = lanes.map((p) => `<text class="lane" x="0" y="${yOf(p) + 3.5}">${compact ? "" : esc(p)}</text><line x1="${labelW}" x2="${W - 6}" y1="${yOf(p)}" y2="${yOf(p)}" stroke="var(--hairline)"/>`).join("");
   const marks = items.map((it, i) => {
@@ -2094,7 +2155,7 @@ function renderList() {
     tbody.insertAdjacentHTML("beforeend", `<tr class="group"><td colspan="4">${dl.name} <span class="nm">UTC · ${dl.rel}</span></td></tr>`);
   };
   const addNow = () => {
-    tbody.insertAdjacentHTML("beforeend", `<tr class="now-row" id="now-row"><td colspan="4"><span>Now</span> <span class="nm">${utcText(new Date(now))} · ${tab === "planned" ? "soonest first below" : "newest first below"}</span></td></tr>`);
+    tbody.insertAdjacentHTML("beforeend", `<tr class="now-row" id="now-row"><td colspan="4"><span>Now</span> <span class="nm">${fmtBoth(new Date(now), aoiCenter())} · ${tab === "planned" ? "soonest first below" : "newest first below"}</span></td></tr>`);
     day = null; // the next day header is repeated under "Now"
   };
   // from "Now" outwards: the plan soonest first, or the last RECENT_DAYS newest first
@@ -2113,10 +2174,10 @@ function renderList() {
     let status;
     if (it.kind === "pass") {
       const e = earliest(it.ref);
-      status = e ? `~${utcText(roundUp10(e.exp.median_at), it.when)}${failingMark(e.failing)}<div class="nm">${e.label}</div>` : `<span class="nm">${latencyLoading(it.mission) ? "loading latency…" : "delivery not measured"}</span>`;
+      status = e ? `~${utcText(roundUp10(e.exp.median_at), it.when)}${failingMark(e.failing)}<div class="nm">${localText(roundUp10(e.exp.median_at), ll)} · ${e.label}</div>` : `<span class="nm">${latencyLoading(it.mission) ? "loading latency…" : "delivery not measured"}</span>`;
     } else status = selected(it) ? '<span class="nm">details below ▾</span>' : recentSummary(it.ref);
     const req = it.kind === "recent" ? recentBrowse(it.ref) : null;
-    const k = req && browseItem(req, { mission: it.mission, when: it.ref.shown, platform: it.ref.platform || MISSION[it.mission].label, direction: it.direction || "", track: it.track ?? "", frame: "", center: ll });
+    const k = req && browseItem(req, { mission: it.mission, when: it.ref.shown, platform: it.ref.platform || MISSION[it.mission].label, direction: it.direction || "", track: it.track ?? "", frame: "", center: ll, item: it.key });
     const prev = k ? `<button type="button" class="link-btn row-prev" data-browse="${esc(k)}" title="Drape its browse image on the map">${queued(k) ? "Remove" : "Preview"}</button>` : "";
     tr.innerHTML = `<td class="when">${whenCell(it.when, ll, it.kind === "pass" && it.ref.estimated, rel(it.when))}</td><td>${sat}</td><td class="status">${status}</td><td class="prev">${prev}</td>`;
     tr.querySelector(".row-prev")?.addEventListener("click", (e) => { e.stopPropagation(); togglePreview(e.currentTarget); });
@@ -2494,7 +2555,11 @@ function buildControls() {
     const box2 = document.createElement("div");
     box2.className = "mfilters";
     const plats = [...mf.platforms].sort();
-    if (plats.length > 1) box2.append(checkRow("Platform", plats, mf.platforms));
+    if (plats.length > 1) {
+      const pr = checkRow("Platform", plats, mf.platforms);
+      box2.append(pr);
+      if (isWide(m.key)) labelCrossings(pr, plats);
+    }
     if (mf.dirs) {
       const row = checkRow("Direction", ["ascending", "descending"], mf.dirs, (d) => `${cap(d)} (${SOLAR[m.key][d]})`,
         (d) => `${cap(d)} passes, at about ${SOLAR[m.key][d].slice(1)} local solar time${m.key === "landsat" && d === "ascending" ? ": the night side, thermal data only" : ""}`);
@@ -2762,7 +2827,7 @@ function exportICS() {
   const events = rows.map(({ p, e, cols }) => {
     const end = new Date(Math.max(p.whenEnd.getTime(), p.when.getTime() + 60e3));
     const desc = [`${passLabel(p)}.`, cols.mode, passNote(p),
-      e ? `Likely downloadable from ${e.label} by ~${fmtWhen(roundUp10(e.exp.median_at))} UTC (90%: ${e.exp.p90_at ? `${fmtWhen(roundUp10(e.exp.p90_at))} UTC` : "not yet known"}).` : "",
+      e ? `Likely downloadable from ${e.label} by ~${fmtBoth(roundUp10(e.exp.median_at), p.ll)} (90%: ${e.exp.p90_at ? fmtBoth(roundUp10(e.exp.p90_at), p.ll) : "not yet known"}).` : "",
       `A planned acquisition from the agencies' plans; plans can change. ${location.href}`].filter(Boolean).join("\n");
     const what = passLabel(p, { short: true });
     return ["BEGIN:VEVENT", `UID:${p.key.replace(/[^\w.-]/g, "-")}@swathcast`, `DTSTAMP:${now}`, `DTSTART:${t(p.when)}`, `DTEND:${t(end)}`,

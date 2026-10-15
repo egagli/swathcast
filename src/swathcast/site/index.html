@@ -205,6 +205,9 @@ table.data tr.detail-row .map-btn { margin-top: 6px; font-size: 12px; padding: 4
 table.bq { width: 100%; }
 table.bq td { padding: 3px 6px 3px 0; vertical-align: middle; white-space: nowrap; font-size: 11.5px; }
 table.bq tr.dragging { opacity: .6; background: var(--surface-2); }
+table.bq tbody tr { cursor: pointer; }
+table.bq tr.sel td { background: var(--accent-soft); }
+table.bq tr.sel td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
 .bq-handle { cursor: grab; color: var(--muted); font-size: 15px; user-select: none; touch-action: none; padding-left: 4px !important; }
 .bq-thumb img, .bq-ph { display: block; width: 40px; height: 40px; object-fit: cover; border-radius: 4px; background: var(--hairline); }
 .bq-ph { display: grid; place-items: center; color: var(--muted); }
@@ -355,7 +358,7 @@ table.pass-list tr.now-row td .nm { color: var(--ink-2); font-weight: 400; }
 .maplibregl-popup-anchor-left .maplibregl-popup-tip { border-right-color: var(--surface); }
 .maplibregl-popup-anchor-right .maplibregl-popup-tip { border-left-color: var(--surface); }
 .maplibregl-popup-close-button { color: var(--ink-2); font-size: 18px; }
-.basemap-ctrl select { border: 0; background: var(--surface); color: var(--ink); font: 500 12px/1 inherit; font-family: inherit; padding: 6px 4px; border-radius: 4px; cursor: pointer; max-width: 128px; }
+.basemap-ctrl select { border: 0; background: var(--surface); color: var(--ink); font: 500 12px/1 inherit; font-family: inherit; padding: 6px 4px; border-radius: 4px; cursor: pointer; max-width: 190px; }
 .maplibregl-ctrl-attrib { background: color-mix(in srgb, var(--surface) 85%, transparent) !important; color: var(--ink-2); }
 .maplibregl-ctrl-attrib a { color: var(--ink-2); }
 .maplibregl-ctrl-group { border-radius: 10px !important; box-shadow: var(--shadow) !important; background: var(--surface) !important; }
@@ -403,7 +406,7 @@ table.pass-list tr.now-row td .nm { color: var(--ink-2); font-weight: 400; }
   .map-opts { min-width: 0; }
   .maplibregl-ctrl-top-right { z-index: 3; } /* the open Layers panel over the legend */
   .map-opts:not(.open) .mo-row, .map-opts:not(.open) .mo-checks { display: none; }
-  .basemap-ctrl select { max-width: 110px; font-size: 11px; }
+  .basemap-ctrl select { max-width: 160px; font-size: 11px; }
   /* the timeline: one lane, just above the sheet */
   #aoi-timeline { display: block; left: 8px; right: 8px; bottom: calc(56% + 8px); padding: 4px 8px 2px; }
   body.panel-closed #aoi-timeline { left: 8px; bottom: 52px; }

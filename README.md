@@ -26,7 +26,8 @@ snowmelt, for example), field campaigns, and coordination between missions.
   and for the SAR missions the real polarization channels (e.g. VV+VH, or HH+HV+VH+VV; for NISAR per
   radar, L-band and S-band). Dates are shared across missions. Landsat's ascending (night, thermal
   only) passes are off by default. MODIS, VIIRS and Sentinel-3 filter by **light** (day or night at
-  the place; night off by default), MODIS and VIIRS also by **maximum view zenith angle** (their
+  the place; night off by default; each platform labelled with its daytime equator crossing in local
+  solar time, from its current orbit: Terra and Aqua have drifted), MODIS and VIIRS also by **maximum view zenith angle** (their
   pixels grow 2–5× towards the swath edges), Sentinel-3 by relative orbit and frame.
 - **Draw or paste an area of interest** (GeoJSON, WKT or `west,south,east,north`; one crossing 180°
   is split there) to get one list from now outwards: its planned passes, soonest first, then its
@@ -50,7 +51,8 @@ snowmelt, for example), field campaigns, and coordination between missions.
   filled while the plan has it imaging. Zoomed out, Sentinel-1/2 show their planned datatake swaths,
   and the legend says, per mission, what is shown, from which zoom its footprints appear and where
   its plan ends. The globe draws footprints up to the poles; the flat map stops at 85°. Basemaps are
-  Esri (grey by default, imagery included) and OpenStreetMap.
+  Esri Gray Canvas (the default), Esri World Imagery (with or without labels), Esri World Topographic
+  and OpenStreetMap.
 - **Share and export**: the page's state (AOI, missions, filters, dates) lives in the URL, so
   **Copy link** shares it; an AOI's passes can be saved as CSV or as a calendar (`.ics`, one event per
   pass with its likely download time). Optical passes show the sun's elevation at the AOI. Times are
