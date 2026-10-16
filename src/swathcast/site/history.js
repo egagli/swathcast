@@ -313,6 +313,14 @@ async function wideTile(c, since) {
   items.forEach((x) => {
     if (x.browse && !x.browse.night && GIBS_GRANULE[x.platform]) x.browse = { ...x.browse, granules: granuleTimes(x.starts) };
   });
+  // a mosaic (no granule layer): the same mosaic's other passes, for this
+  // pass's share of it (map.js withSplit)
+  items.forEach((x) => {
+    if (!x.browse || x.browse.granules) return;
+    const others = items.filter((y) => y !== x && y.browse && y.platform === x.platform && Boolean(y.browse.night) === Boolean(x.browse.night) && y.browse.date === x.browse.date)
+      .map((y) => y.when.getTime());
+    if (others.length) x.browse = { ...x.browse, split: { platform: x.platform, t: x.when.getTime(), others, point: c.center } };
+  });
   return { source: `NASA CMR, LAADS Level-1B granules over the tile centre (${plats.join(", ")}), and LANCE's near-real-time ones of the last 7 days`, items: items.map(({ last, nrt, starts, ...x }) => x),
     note: "Times are each pass's first granule over the tile centre (granules are 5-6 min long)." };
 }

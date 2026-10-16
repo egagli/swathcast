@@ -332,6 +332,13 @@ async function loadLandsat() {
     times.forEach((t) => { t.light = lightAt(t.when, lon, lat); });
     return { path: Number(c.path), row: Number(c.row), direction: String(c.direction), geojson, bbox: turf.bbox(geojson), times };
   });
+  // the legend's "plan to": USGS's calendar is timed into scenes through
+  // the schedule's window (its end, not the last scene's time)
+  const ends = {};
+  scenes.forEach((s) => { const p = String(s.platform), t = toDate(s.time); if (!ends[p] || t > ends[p]) ends[p] = t; });
+  Object.keys(ends).forEach((p) => { if (state.scheduleEnd > ends[p]) ends[p] = state.scheduleEnd; });
+  state.planEnds.landsat = ends;
+  legendMissions();
   return state.wrs2;
 }
 
@@ -483,13 +490,16 @@ function refineAtAOI(p, satrec) {
 
 // The strip a wide-swath pass images around the AOI (±3 min of the pass):
 // what the list highlights for it, rather than a 1,000 km tile.
-function swathStrip(platform, satrec, t) {
-  const [lo, hi] = WIDE_SWATH_KM[platform], ring = [], back = [];
-  for (let dt = -180; dt <= 180; dt += 15) {
+// range: the cross-track extent drawn (km, + right of travel; the swath's
+// by default); spanS: seconds either side of t.
+function swathStrip(platform, satrec, t, range = WIDE_SWATH_KM[platform], spanS = 180) {
+  const [lo, hi] = range, ring = [], back = [];
+  for (let dt = -spanS; dt <= spanS; dt += 15) {
     const at = t + dt * 1000, p = position(satrec, new Date(at)), h = scanHeadingAt(satrec, at, sensorOf(platform));
     if (!p || h == null) continue;
-    ring.push(destination(p.lon, p.lat, h + 90, hi));
-    back.unshift(destination(p.lon, p.lat, h - 90, -lo));
+    const pt = (d) => (d >= 0 ? destination(p.lon, p.lat, h + 90, d) : destination(p.lon, p.lat, h - 90, -d));
+    ring.push(pt(hi));
+    back.unshift(pt(lo));
   }
   const pts = [...ring, ...back];
   if (pts.length < 4) return null;
@@ -497,6 +507,81 @@ function swathStrip(platform, satrec, t) {
   const cont = pts.map(([x, y]) => { let l = x; if (prev != null) l += 360 * Math.round((prev - l) / 360); prev = l; return [l, y]; });
   return { type: "Polygon", coordinates: [[...cont, cont[0]]] };
 }
+
+// Worldview's MODIS/VIIRS daily mosaics (all of a platform's day, or night,
+// passes) keep, pixel by pixel, the pass that saw it nearest nadir (checked
+// against its per-granule layers: the seam runs midway between two
+// overlapping passes' ground tracks). So one mosaic holds every pass, each
+// where it was the nearest: a pass's preview is the mosaic within its own
+// share, between the midlines to its same-day neighbours' tracks (the
+// tracks are near parallel over a few hundred km). req.split: {platform, t,
+// others: [ms], point}: this pass's time, the same mosaic's other passes,
+// and where to compare them. Returns {req, split}: the request with its
+// clip narrowed (split true), or as it was.
+async function withSplit(req) {
+  const sp = req.split;
+  if (!sp) return { req, split: false };
+  const { split, ...rest } = req;
+  const sr = (await satrecsFor())[sp.platform];
+  const me = sr && closestApproach(sr, sp.point[0], sp.point[1], sp.t - 20 * 60e3, sp.t + 20 * 60e3);
+  if (!me) return { req: rest, split: false };
+  const [lo0, hi0] = WIDE_SWATH_KM[sp.platform], width = hi0 - lo0, sensor = sensorOf(sp.platform);
+  // the other passes of the same mosaic, timed at the same point, going the same way
+  const others = sp.others.map((t) => closestApproach(sr, sp.point[0], sp.point[1], t - 20 * 60e3, t + 20 * 60e3))
+    .filter((o) => o && o.ascending === me.ascending);
+  if (!others.length) return { req: rest, split: false };
+  // along this pass, every 20 s: where each other pass's track lies across
+  // this one's scan line (km, + right), and this pass's share up to the
+  // midline to it (where both see the ground at the same distance from nadir)
+  const ring = [], back = [];
+  let cut = false, any = false;
+  for (let dt = -420; dt <= 420; dt += 20) {
+    const t = me.t + dt * 1000, p = position(sr, new Date(t)), h = scanHeadingAt(sr, t, sensor);
+    if (!p || h == null) continue;
+    let lo = lo0, hi = hi0;
+    const pt = (x) => (x >= 0 ? destination(p.lon, p.lat, h + 90, x) : destination(p.lon, p.lat, h - 90, -x));
+    // the other pass's distance from nadir at a point (null: not near it)
+    const offNadir = (o, q) => {
+      const c = closestApproach(sr, q[0], q[1], o.t + dt * 1000 - 240e3, o.t + dt * 1000 + 240e3, 5);
+      return c ? Math.abs(c.xtrack) : null;
+    };
+    others.forEach((o) => {
+      const q = closestApproach(sr, p.lon, p.lat, o.t + dt * 1000 - 180e3, o.t + dt * 1000 + 180e3, 5);
+      if (!q) return;
+      const d = -q.xtrack; // the other track, across this one's scan line
+      if (Math.abs(d) >= width) return;
+      // the midline: the point of this scan line as far from the other
+      // pass's nadir as from this one's (bisection, to ~1 km)
+      let a = 0, b = d;
+      for (let i = 0; i < 12 && Math.abs(b - a) > 1; i++) {
+        const m = (a + b) / 2, e = offNadir(o, pt(m));
+        if (e == null) break;
+        if (Math.abs(m) < e) a = m; else b = m;
+      }
+      const mid = (a + b) / 2 + Math.sign(d) * 2; // 2 km past it: neighbours' shares abut
+      if (d > 0) hi = Math.min(hi, mid); else lo = Math.max(lo, mid);
+      cut = true;
+    });
+    if (hi <= lo) continue;
+    any = true;
+    ring.push(pt(hi));
+    back.unshift(pt(lo));
+  }
+  if (!cut) return { req: rest, split: false };
+  if (!any || ring.length < 2) return { req: rest, split: "none" }; // nowhere the nearest
+  let prev = null;
+  const cont = [...ring, ...back].map(([x, y]) => { let l = x; if (prev != null) l += 360 * Math.round((prev - l) / 360); prev = l; return [l, y]; });
+  const strip = { type: "Polygon", coordinates: [[...cont, cont[0]]] };
+  let clip = strip;
+  if (rest.clip) {
+    try { clip = turf.intersect(turf.featureCollection([turf.feature(strip), turf.feature(rest.clip)]))?.geometry || strip; } catch { /* the strip alone */ }
+  }
+  // the point (the AOI's centre, or the tile's) is in this pass's share
+  // where no overlapping pass of the mosaic saw it nearer nadir
+  const atPoint = others.every((o) => Math.abs(me.xtrack - o.xtrack) >= width || Math.abs(me.xtrack) <= Math.abs(o.xtrack));
+  return { req: { ...rest, clip }, split: true, atPoint };
+}
+const SPLIT_NOTE = "Worldview has one image per platform per day (and one per night), each pixel from the pass that saw it nearest nadir: this pass's preview is that image where it was the nearest. The rest of its swath is under another pass of the same day";
 
 // ---------------------------------------------------------------- filters
 // A polarization field: "VV+VH" (Sentinel-1), or per band for NISAR, one
@@ -1504,9 +1589,13 @@ async function togglePreview(btn) {
   queue.unshift(q); // newest on top
   renderQueue();
   try {
-    const b = await fetchBrowse(it.req);
+    const { req, split, atPoint } = await withSplit(it.req);
+    if (split === "none") { q.status = "none"; q.note = `${SPLIT_NOTE}; this pass is nowhere the nearest, so Worldview has no image of it.`; renderQueue(); return; }
+    const b = await fetchBrowse(req);
     if (!queue.includes(q)) return;
     q.b = b;
+    q.split = split;
+    q.splitAway = split === true && !atPoint;
     if (!b || !b.thumb) { q.status = "none"; q.note = (b && b.note) || "No browse image found."; renderQueue(); return; }
     if (!b.georef) { q.status = "unplaced"; q.note = b.note || "Not georeferenced: not placed on the map."; renderQueue(); return; }
     const img = await drapedImage(b.georef);
@@ -1608,7 +1697,7 @@ function renderQueue() {
     const src = q.b ? [q.b.source, q.note].filter(Boolean).join(". ") : "";
     tr.innerHTML = `<td class="bq-handle" tabindex="0" role="button" title="Drag (or arrow up/down) to reorder: top is drawn on top" aria-label="Reorder: arrow up or down">⠿</td>`
       + `<td class="bq-thumb">${q.b && q.b.full ? `<a href="${esc(q.b.full)}" target="_blank" rel="noopener" title="${esc(src || "full size")}">${thumb}</a>` : thumb}</td>`
-      + `<td class="bq-when"><button type="button" class="link-btn bq-fit" title="Go to it, and select its pass in the list and the timeline">${utc}</button>${local ? `<div class="sub">${local}</div>` : ""}<div class="sub"><span class="chip" style="background:${missionColor(m.mission)}"></span>${MISSION[m.mission].label}${q.status === "ok" && q.b.georef && (q.b.georef.fit || q.b.georef.approx) ? ` · <span class="warn-ink" title="${esc(q.b.note || "")}">approx. place</span>` : ""}</div></td>`
+      + `<td class="bq-when"><button type="button" class="link-btn bq-fit" title="Go to it, and select its pass in the list and the timeline">${utc}</button>${local ? `<div class="sub">${local}</div>` : ""}<div class="sub"><span class="chip" style="background:${missionColor(m.mission)}"></span>${MISSION[m.mission].label}${q.status === "ok" && q.b.georef && (q.b.georef.fit || q.b.georef.approx) ? ` · <span class="warn-ink" title="${esc(q.b.note || "")}">approx. place</span>` : ""}${q.status === "ok" && q.split ? ` · <span class="warn-ink" title="${esc(`${SPLIT_NOTE}.${q.splitAway ? " Here, another pass of that mosaic saw the place nearer nadir, so this pass's share does not reach it: no public image has this pass there." : ""}`)}">${q.splitAway ? "its share (not here)" : "its share of the mosaic"}</span>` : ""}</div></td>`
       + `<td>${esc(m.platform)}</td><td>${esc(m.direction)}</td><td>${esc(m.track)}${m.frame ? ` / ${esc(m.frame)}` : ""}</td>`
       + `<td class="bq-op">${op}</td>`
       + '<td><button type="button" class="bq-x" title="Remove from the map" aria-label="Remove from the map">×</button></td>';
@@ -1704,7 +1793,7 @@ function acqTable(c, recentRows) {
     <tbody><tr class="sec"><td colspan="${n}">Planned (${c.visible.length})${hiddenNote}</td></tr>${upcoming}</tbody>
     <tbody class="hist-recent">${recentRows}</tbody></table></div>`;
 }
-const recentSection = (c, count, body) => `<tr class="sec"><td colspan="${popupCols(c)}">Last ${HISTORY_DAYS} days${count == null ? "" : ` (${count})`} <span class="nm">from the catalogue, unfiltered</span></td></tr>${body}`;
+const recentSection = (c, count, body, nightHidden = 0) => `<tr class="sec"><td colspan="${popupCols(c)}">Last ${HISTORY_DAYS} days${count == null ? "" : ` (${count})`} <span class="nm">from the catalogue, ${nightHidden ? `night passes left out (${nightHidden})` : "unfiltered"}</span></td></tr>${body}`;
 
 // "Next in 2.1 d · typically every 12 d · last imaged 10 d ago" (the next
 // pass's date is the table's first row).
@@ -1723,10 +1812,33 @@ function nextLine(c, h) {
 }
 
 const TL_WIDTH = 640; // timeline drawn at the popup's width, so its labels stay small
+// MODIS, VIIRS, Sentinel-3 with Night unticked: their night passes are left
+// out of a footprint's popup (rows and timeline), and it says how to see them.
+function nightNote(c, hiddenRecent) {
+  const lights = state.mf[c.mission].lights;
+  if (!lights || lights.has("night")) return "";
+  const [t0, t1] = windowMs();
+  const planned = c.times.filter((t) => t.light === "night" && t.when.getTime() >= t0 && t.when.getTime() <= t1).length;
+  const n = planned + hiddenRecent;
+  return n ? `${n} night pass${n === 1 ? "" : "es"} not shown (thermal only): tick <b>Night</b> under ${MISSION[c.mission].label}'s Filters to show them.` : "";
+}
+// A wide-swath footprint's past passes, as the planned ones are described:
+// timed at the footprint's centre from the orbit, with the view zenith
+// there and the light (the sun at the centre, unless the catalogue said).
+async function wideDetails(c, items) {
+  const recs = await satrecsFor(), [lon, lat] = c.center;
+  return items.map((x) => {
+    const sr = recs[x.platform], t = x.when.getTime();
+    const ca = sr ? closestApproach(sr, lon, lat, t - 15 * 60e3, t + 15 * 60e3) : null;
+    const vza = x.vza ?? (ca ? vzaOf(x.platform, ca.xtrack) : null);
+    return { ...x, vza, light: x.light || lightAt(ca ? new Date(ca.t) : x.when, lon, lat) };
+  });
+}
 function cellPopup(c) {
   const upcoming = c.visible.map((t) => ({ when: t.when, platform: t.platform, label: `${t.platform || ""} planned ${fmtBoth(t.when, c.center)}` }));
   return `${cellHead(c)}<div class="hist" data-cell="1">
     <div class="hist-next">${nextLine(c)}</div>
+    <div class="hist-night nm">${isWide(c.mission) ? nightNote(c, 0) : ""}</div>
     <div class="hist-tl-box">${timelineSVG([], upcoming, missionColor(c.mission), { width: TL_WIDTH })}</div>
     ${acqTable(c, recentSection(c, null, `<tr><td colspan="${popupCols(c)}" class="nm">Loading…</td></tr>`))}
     <div class="hist-foot nm"><div>Upcoming: ${PLAN_OF[c.mission]}; ${TIMING_NOTE[c.mission]}. ${planEndNote(c.mission)}.</div><div class="hist-src"></div></div></div>`;
@@ -1759,16 +1871,25 @@ async function fillHistory(c, popup) {
   if (!box) return;
   const recent = box.querySelector(".hist-recent"), tl = box.querySelector(".hist-tl-box"), src = box.querySelector(".hist-src");
   try {
-    const h = await fetchHistory(c);
+    let h = await fetchHistory(c);
     if (!box.isConnected) return;
     if (h.items == null) { recent.innerHTML = recentSection(c, null, `<tr><td colspan="${popupCols(c)}" class="nm">${h.note}</td></tr>`); return; }
+    if (isWide(c.mission)) {
+      h = { ...h, items: await wideDetails(c, h.items) };
+      if (!box.isConnected) return;
+      // night passes only when Night is ticked (as for the planned ones)
+      const nightOK = !state.mf[c.mission].lights || state.mf[c.mission].lights.has("night");
+      const hidden = nightOK ? 0 : h.items.filter((x) => x.light === "night").length;
+      if (hidden) h = { ...h, items: h.items.filter((x) => x.light !== "night"), nightHidden: hidden };
+      box.querySelector(".hist-night").innerHTML = nightNote(c, hidden);
+    }
     const upcoming = c.visible.map((t) => ({ when: t.when, platform: t.platform, label: `${t.platform || ""} planned ${fmtBoth(t.when, c.center)}` }));
     tl.innerHTML = timelineSVG(h.items.map((x) => ({ when: x.when, platform: x.platform, label: `${x.platform} ${fmtBoth(x.when, c.center)}` })), upcoming, missionColor(c.mission), { width: TL_WIDTH });
     box.querySelector(".hist-next").innerHTML = nextLine(c, h);
     const now = Date.now();
     recent.innerHTML = recentSection(c, h.items.length, h.items.length
       ? h.items.map((x) => acqRow(c, x, false, now)).join("")
-      : `<tr><td colspan="${popupCols(c)}" class="nm">None found.</td></tr>`);
+      : `<tr><td colspan="${popupCols(c)}" class="nm">None found.</td></tr>`, h.nightHidden || 0);
     src.textContent = `Recent: ${h.source}.${h.note ? ` ${h.note}` : ""}`;
     recent.querySelectorAll("button[data-browse]").forEach((b) => b.addEventListener("click", () => togglePreview(b)));
     keepPopupInView(popup);
@@ -1973,11 +2094,19 @@ function recentBrowse(a) {
     const clip = polys.length && polys.every(([r]) => Math.max(...r.map((q) => q[0])) - Math.min(...r.map((q) => q[0])) < 180)
       ? { type: "MultiPolygon", coordinates: polys } : null;
     const starts = grans.map((x) => x.when).filter(Boolean);
-    return {
+    const req = {
       kind: "gibs", platform: a.platform, date: a.shown.toISOString().slice(0, 10), bbox: gibsBox(lon, lat), clip,
       granules: a.mission === "viirs" && !night && starts.length ? granuleTimes(starts) : null,
       ...(night ? { night: true } : {}),
     };
+    // a mosaic (no granule layer): this pass's share of it (withSplit)
+    if (!req.granules) {
+      const day = req.date, others = (state.recent ? state.recent.acqs : [])
+        .filter((x) => x !== a && x.mission === a.mission && x.platform === a.platform && (x.light === "night") === night && x.shown.toISOString().slice(0, 10) === day)
+        .map((x) => x.shown.getTime());
+      if (others.length) req.split = { platform: a.platform, t: a.shown.getTime(), others, point: [lon, lat] };
+    }
+    return req;
   }
   return null;
 }

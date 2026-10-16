@@ -26,7 +26,7 @@ snowmelt, for example), field campaigns, and coordination between missions.
   and for the SAR missions the real polarization channels (e.g. VV+VH, or HH+HV+VH+VV; for NISAR per
   radar, L-band and S-band). Dates are shared across missions. Landsat's ascending (night, thermal
   only) passes are off by default. MODIS, VIIRS and Sentinel-3 filter by **light** (day or night at
-  the place; night off by default; each platform labelled with its daytime equator crossing in local
+  the place; night off by default, and then left out of footprint popups too; each platform labelled with its daytime equator crossing in local
   solar time, from its current orbit: Terra and Aqua have drifted), MODIS and VIIRS also by **maximum view zenith angle** (their
   pixels grow 2–5× towards the swath edges), Sentinel-3 by relative orbit and frame.
 - **Draw or paste an area of interest** (GeoJSON, WKT or `west,south,east,north`; one crossing 180°
@@ -47,7 +47,9 @@ snowmelt, for example), field campaigns, and coordination between missions.
   pass's own granules for SNPP and NOAA-20, the day's mosaic otherwise; at night, the night's
   thermal mosaic (MODIS band 31, VIIRS I5) and for SNPP and NOAA-20 also the Day/Night Band;
   Sentinel-3: CDSE's quicklook of the frame, placed from the orbit: OLCI's true colour by day,
-  SLSTR's thermal at night).
+  SLSTR's thermal at night). Worldview's mosaics hold one image per platform per day (and per
+  night), each pixel from the pass that saw it nearest nadir, so a MODIS/VIIRS pass from a mosaic
+  shows its own share of it, and says so when that share does not reach the place.
 - **Watch the satellites**: a globe (or flat map) shows where each selected satellite is now, at its
   altitude, with its orbit and the strip of ground its instrument sees (side-looking for the radars),
   filled while the plan has it imaging. Zoomed out, Sentinel-1/2 show their planned datatake swaths,
