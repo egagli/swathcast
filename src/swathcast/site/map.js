@@ -1811,7 +1811,7 @@ function nextLine(c, h) {
   return parts.join(" · ");
 }
 
-const TL_WIDTH = 640; // timeline drawn at the popup's width, so its labels stay small
+const TL_WIDTH = 740; // timeline drawn at the popup's width, so its labels stay small
 // MODIS, VIIRS, Sentinel-3 with Night unticked: their night passes are left
 // out of a footprint's popup (rows and timeline), and it says how to see them.
 function nightNote(c, hiddenRecent) {
@@ -2017,7 +2017,7 @@ function selectCell(c) {
   syncPreviewSelection();
   view.closePopup();
   const outline = highlight([c.drawGeo || drawable(c.geojson, c.bbox) || c.geojson], c.mission, { fill: false });
-  const pop = popupBeside(outline && outline.bbox, c.center, cellPopup(c), { maxWidth: "720px" });
+  const pop = popupBeside(outline && outline.bbox, c.center, cellPopup(c), { maxWidth: "820px" });
   requestAnimationFrame(() => keepPopupInView(pop)); // the map moves, the frame and its popup together
   fillHistory(c, pop);
   renderList(); // the list's selection, if any, is cleared
