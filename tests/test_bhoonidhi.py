@@ -386,3 +386,25 @@ def test_history_keeps_corners_and_looks_up_grids(creds, tmp_path):
     publish_nisar_s(tmp_path, tmp_path / "site", NOW + timedelta(days=1))
     pub = pd.read_parquet(tmp_path / "site" / "nisar_s" / "019.parquet")
     assert pub["grid"][0] == t["grid"][0] and pub["corners"][0] == t["corners"][0]
+
+
+def test_history_grid_lookup_with_a_real_clock(creds, tmp_path):
+    """The run's time has microseconds (NOW has none): the first lookup, into
+    an all-empty column, once failed on the live poller (2026-10-15)."""
+    import pandas as pd
+
+    now = NOW.replace(microsecond=118453)
+    s = FakeSession(gcov=[GCOV])
+    bhoonidhi.BhoonidhiCatalog(session=s).list_new((now - timedelta(hours=4), now))
+    report = bhoonidhi.update_history(s, tmp_path, now)
+    assert report["history_with_grid"] == 1 and "history_error" not in report
+    t = pd.read_parquet(tmp_path / "missions" / "nisar_s" / bhoonidhi.HISTORY_FILE)
+    assert t["grid_checked"][0] == pd.Timestamp(now)
+    # and a file from before the new columns (as on the data branch)
+    old = t.drop(columns=["corners", "grid", "grid_checked"])
+    old.to_parquet(tmp_path / "missions" / "nisar_s" / bhoonidhi.HISTORY_FILE)
+    s = FakeSession(gcov=[GCOV])
+    report = bhoonidhi.update_history(
+        s, tmp_path, now + timedelta(hours=1, microseconds=7)
+    )
+    assert report["history_with_grid"] == 1
