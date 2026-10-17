@@ -1,5 +1,6 @@
 """Tracker state machine: universe, sightings, censoring, failures, idempotency."""
 
+import dataclasses
 from datetime import UTC, datetime, timedelta
 
 import pandas as pd
@@ -7,7 +8,7 @@ import pytest
 
 from swathcast.config import TrackerConfig
 from swathcast.sources.base import Acquisition, Found, ReferenceCatalog, Source
-from swathcast.storage import Store
+from swathcast.storage import Store, dedupe, months_between, normalize
 from swathcast.tracker import Tracker
 
 T0 = datetime(2026, 10, 1, 12, 0, tzinfo=UTC)
@@ -338,3 +339,54 @@ def test_error_applying_results_is_isolated_and_rolled_back(tmp_path):
     assert df.loc[(a.granule_id, "garbage"), "n_checks"] == 0
     health = Store(tmp_path).read_json("health.json")
     assert health["sources"]["garbage"]["last_error"]
+
+
+def test_granule_listed_twice_gets_one_row_per_source(tmp_path):
+    """2026-10-16: a Sentinel-3 frame republished in one listing window lists
+    twice under one granule id; the two rows per source made every lookup's
+    ``index[g]`` ambiguous, so each S-3 source's results were rolled back."""
+    a = acq(1, T0 - timedelta(hours=2), T0 - timedelta(minutes=30))
+    again = dataclasses.replace(a, provider_timestamp=T0 - timedelta(minutes=10))
+    catalog = FakeCatalog({T0: [again, a]})
+    fake = FakeSource(available={a.granule_id: T0})
+    r = run(tmp_path, T0, catalog, fake)
+    assert r.exit_code == 0 and r.new_rows == 2 and r.sightings["fake_grd"] == 1
+    df = Store(tmp_path).read_all()
+    assert not df.duplicated(["granule_id", "source"]).any()
+    ref = table(tmp_path).loc[(a.granule_id, "cdse_grd")]
+    assert ref["provider_timestamp_utc"] == a.provider_timestamp  # earliest kept
+
+
+def test_duplicate_rows_on_disk_are_healed_and_results_apply(tmp_path):
+    a = acq(1, T0 - timedelta(hours=2), T0 - timedelta(minutes=30))
+    fake = FakeSource(available={a.granule_id: T0 + timedelta(hours=1)})
+    run(tmp_path, T0, FakeCatalog({T0: [a]}), fake)
+    # a table written before the fix: the pending row duplicated
+    store = Store(tmp_path)
+    df = store.read_all()
+    df = pd.concat([df, df[df["source"] == "fake_grd"]], ignore_index=True)
+    store.write(df, months_between(T0 - timedelta(days=1), T0))
+    later = T0 + timedelta(hours=1)
+    r = run(tmp_path, later, FakeCatalog({}), fake)
+    assert r.exit_code == 0 and r.sightings["fake_grd"] == 1
+    health = Store(tmp_path).read_json("health.json")
+    assert not health["sources"]["fake_grd"].get("last_error")
+    df = Store(tmp_path).read_all()
+    assert len(df) == 2 and not df.duplicated(["granule_id", "source"]).any()
+    assert table(tmp_path).loc[(a.granule_id, "fake_grd"), "status"] == "seen"
+
+
+def test_dedupe_keeps_the_most_advanced_row():
+    rows = pd.DataFrame(
+        {
+            "granule_id": ["g", "g", "g", "h"],
+            "source": ["s", "s", "s", "s"],
+            "status": ["pending", "seen", "pending", "pending"],
+            "closed_utc": [None, T0, None, None],
+            "tracking_started_utc": [T0, T0 + timedelta(hours=1), T0, T0],
+            "sensing_start": [T0] * 4,
+        }
+    )
+    out = dedupe(normalize(rows))
+    assert list(out["granule_id"]) == ["g", "h"]
+    assert out.loc[0, "status"] == "seen"
