@@ -1,0 +1,37 @@
+{
+  "generated_at": "2026-10-17T21:30:08Z",
+  "sources": {
+    "asf_nisar": {
+      "consecutive_failures": 0,
+      "details": {
+        "skipped_too_old": 0,
+        "window_end": "2026-10-17T21:30:08Z",
+        "window_start": "2026-10-17T17:33:19Z"
+      },
+      "failing_since_utc": null,
+      "granules_found": 54,
+      "granules_polled": 270,
+      "last_attempt_utc": "2026-10-17T21:30:08Z",
+      "last_error": null,
+      "last_error_utc": null,
+      "last_success_utc": "2026-10-17T21:30:08Z"
+    },
+    "asf_nisar_gcov": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 33
+      },
+      "failing_since_utc": null,
+      "granules_found": 33,
+      "granules_polled": 541,
+      "last_attempt_utc": "2026-10-17T21:30:08Z",
+      "last_error": null,
+      "last_error_utc": null,
+      "last_success_utc": "2026-10-17T21:30:08Z"
+    }
+  },
+  "this_run": {
+    "asf_nisar": "ok",
+    "asf_nisar_gcov": "ok"
+  }
+}

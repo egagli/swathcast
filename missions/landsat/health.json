@@ -1,0 +1,63 @@
+{
+  "generated_at": "2026-10-17T21:29:41Z",
+  "sources": {
+    "es_landsat_l2": {
+      "consecutive_failures": 0,
+      "details": {},
+      "failing_since_utc": null,
+      "granules_found": 0,
+      "granules_polled": 0,
+      "last_attempt_utc": "2026-10-17T21:29:41Z",
+      "last_error": null,
+      "last_error_utc": null,
+      "last_success_utc": "2026-10-17T21:29:41Z"
+    },
+    "hls_l30": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 0
+      },
+      "failing_since_utc": null,
+      "granules_found": 0,
+      "granules_polled": 9214,
+      "last_attempt_utc": "2026-10-17T21:29:41Z",
+      "last_error": null,
+      "last_error_utc": null,
+      "last_success_utc": "2026-10-17T21:29:41Z"
+    },
+    "pc_landsat_l2": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 0
+      },
+      "failing_since_utc": null,
+      "granules_found": 0,
+      "granules_polled": 1086,
+      "last_attempt_utc": "2026-10-17T21:29:41Z",
+      "last_error": null,
+      "last_error_utc": null,
+      "last_success_utc": "2026-10-17T21:29:41Z"
+    },
+    "usgs_landsat": {
+      "consecutive_failures": 0,
+      "details": {
+        "skipped_too_old": 0,
+        "window_end": "2026-10-17T21:29:41Z",
+        "window_start": "2026-10-17T17:32:53Z"
+      },
+      "failing_since_utc": null,
+      "granules_found": 1,
+      "granules_polled": 171,
+      "last_attempt_utc": "2026-10-17T21:29:41Z",
+      "last_error": null,
+      "last_error_utc": null,
+      "last_success_utc": "2026-10-17T21:29:41Z"
+    }
+  },
+  "this_run": {
+    "es_landsat_l2": "ok",
+    "hls_l30": "ok",
+    "pc_landsat_l2": "ok",
+    "usgs_landsat": "ok"
+  }
+}

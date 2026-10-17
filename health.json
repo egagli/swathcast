@@ -1,0 +1,111 @@
+{
+  "generated_at": "2026-10-17T21:28:17Z",
+  "sources": {
+    "asf_grd": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 16
+      },
+      "failing_since_utc": null,
+      "granules_found": 16,
+      "granules_polled": 721,
+      "last_attempt_utc": "2026-10-17T21:28:17Z",
+      "last_error": null,
+      "last_error_utc": null,
+      "last_success_utc": "2026-10-17T21:28:17Z"
+    },
+    "asf_slc": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 30
+      },
+      "failing_since_utc": null,
+      "granules_found": 30,
+      "granules_polled": 69,
+      "last_attempt_utc": "2026-10-17T21:28:17Z",
+      "last_error": null,
+      "last_error_utc": null,
+      "last_success_utc": "2026-10-17T21:28:17Z"
+    },
+    "cdse": {
+      "consecutive_failures": 0,
+      "details": {
+        "skipped_too_old": 0,
+        "window_end": "2026-10-17T21:28:17Z",
+        "window_start": "2026-10-17T17:29:49Z"
+      },
+      "failing_since_utc": null,
+      "granules_found": 50,
+      "granules_polled": 343,
+      "last_attempt_utc": "2026-10-17T21:28:17Z",
+      "last_error": "SourceError: CDSE listing truncated: 312 of 313 products for 2026-10-05 06:47:42+00:00..2026-10-05 10:36:56.930520+00:00",
+      "last_error_utc": "2026-10-05T10:36:56Z",
+      "last_success_utc": "2026-10-17T21:28:17Z"
+    },
+    "opera_cslc": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 1,
+        "stream_items": 691,
+        "unmatched_items": 0
+      },
+      "failing_since_utc": null,
+      "granules_found": 25,
+      "granules_polled": 12594,
+      "last_attempt_utc": "2026-10-17T21:28:17Z",
+      "last_error": null,
+      "last_error_utc": null,
+      "last_success_utc": "2026-10-17T21:28:17Z"
+    },
+    "opera_rtc": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 54,
+        "stream_items": 5498,
+        "unmatched_items": 0
+      },
+      "failing_since_utc": null,
+      "granules_found": 201,
+      "granules_polled": 1994,
+      "last_attempt_utc": "2026-10-17T21:28:17Z",
+      "last_error": null,
+      "last_error_utc": null,
+      "last_success_utc": "2026-10-17T21:28:17Z"
+    },
+    "pc_grd": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 0
+      },
+      "failing_since_utc": null,
+      "granules_found": 0,
+      "granules_polled": 83,
+      "last_attempt_utc": "2026-10-17T21:28:17Z",
+      "last_error": "RetryError: HTTPSConnectionPool(host='planetarycomputer.microsoft.com', port=443): Max retries exceeded with url: /api/stac/v1/search (Caused by ResponseError('too many 504 error responses'))",
+      "last_error_utc": "2026-10-12T23:32:19Z",
+      "last_success_utc": "2026-10-17T21:28:17Z"
+    },
+    "pc_rtc": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 0
+      },
+      "failing_since_utc": null,
+      "granules_found": 0,
+      "granules_polled": 969,
+      "last_attempt_utc": "2026-10-17T21:28:17Z",
+      "last_error": null,
+      "last_error_utc": null,
+      "last_success_utc": "2026-10-17T21:28:17Z"
+    }
+  },
+  "this_run": {
+    "asf_grd": "ok",
+    "asf_slc": "ok",
+    "cdse": "ok",
+    "opera_cslc": "ok",
+    "opera_rtc": "ok",
+    "pc_grd": "ok",
+    "pc_rtc": "ok"
+  }
+}
