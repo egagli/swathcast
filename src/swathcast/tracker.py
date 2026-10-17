@@ -231,8 +231,25 @@ class Tracker:
 
         oldest = now - timedelta(days=self.config.max_new_age_days)
         known = set(df["granule_id"].unique()) if len(df) else set()
+        # One listing can name a granule twice: Sentinel-3 ids keep only the
+        # frame and start, so a frame republished (new creation time or
+        # baseline) inside one window lists as the same id. Keep the earliest
+        # publication, or the (granule, source) key is no longer unique.
+        first: dict[str, Acquisition] = {}
+        for a in listed:
+            prev = first.get(a.granule_id)
+            if prev is None or (
+                a.provider_timestamp is not None
+                and (
+                    prev.provider_timestamp is None
+                    or a.provider_timestamp < prev.provider_timestamp
+                )
+            ):
+                first[a.granule_id] = a
         new = [
-            a for a in listed if a.granule_id not in known and a.sensing_start >= oldest
+            a
+            for a in first.values()
+            if a.granule_id not in known and a.sensing_start >= oldest
         ]
         too_old = sum(1 for a in listed if a.sensing_start < oldest)
         rows = [

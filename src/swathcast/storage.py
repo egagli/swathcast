@@ -100,6 +100,32 @@ def normalize(df: pd.DataFrame) -> pd.DataFrame:
     return table.to_pandas()
 
 
+def dedupe(df: pd.DataFrame) -> pd.DataFrame:
+    """One row per (granule, source), keeping the most advanced duplicate.
+
+    Closed rows win over open ones and seen over pending, then the earliest
+    tracked. Heals tables written before the poller deduplicated listings.
+    """
+    dup = df.duplicated(KEY, keep=False)
+    if not dup.any():
+        return df
+    LOGGER.warning(
+        "dropping %d duplicate (granule, source) rows",
+        int(dup.sum()) - df.loc[dup, KEY].drop_duplicates().shape[0],
+    )
+    rank = pd.DataFrame(
+        {
+            "open": df["closed_utc"].isna(),
+            "unseen": df["status"] != "seen",
+            "started": df["tracking_started_utc"],
+        },
+        index=df.index,
+    )
+    order = rank.sort_values(["open", "unseen", "started"], kind="stable").index
+    keep = ~df.loc[order].duplicated(KEY, keep="first")
+    return df.loc[keep[keep].index.sort_values()].reset_index(drop=True)
+
+
 def _partition_dir(root: Path, year: int, month: int) -> Path:
     return root / "observations" / f"year={year:04d}" / f"month={month:02d}"
 
@@ -136,7 +162,7 @@ class Store:
                 frames.append(pq.read_table(path, schema=SCHEMA).to_pandas())
         if not frames:
             return empty_frame()
-        return normalize(pd.concat(frames, ignore_index=True))
+        return dedupe(normalize(pd.concat(frames, ignore_index=True)))
 
     def read_all(self) -> pd.DataFrame:
         return self.read_months(self.partitions())
