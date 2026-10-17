@@ -504,7 +504,9 @@ def update_history(session, data_dir: Path, now: datetime | None = None) -> dict
         if path.exists()
         else pd.DataFrame(columns=HISTORY_COLUMNS)
     )
-    table = table.reindex(columns=HISTORY_COLUMNS)  # files from before a column
+    # files from before a column: added empty, as text (not float NaN)
+    table = table.reindex(columns=HISTORY_COLUMNS)
+    table = table.astype({c: "object" for c in ("browse", "corners", "grid")})
     if rows:
         new = pd.DataFrame(rows, columns=HISTORY_COLUMNS)
         # a row listed again keeps the grid (and data corners) found earlier
@@ -517,7 +519,11 @@ def update_history(session, data_dir: Path, now: datetime | None = None) -> dict
         table = table.dropna(subset=["track", "frame", "time"])
         table = table[table["time"] >= floor].drop_duplicates("id", keep="last")
         table = table.astype({"track": "int16", "frame": "int16", "partial": "bool"})
-        table["grid_checked"] = pd.to_datetime(table["grid_checked"], utc=True)
+        # microseconds: an all-empty column would get seconds, and the run's
+        # time (with microseconds) could then not be stored in it
+        table["grid_checked"] = pd.to_datetime(table["grid_checked"], utc=True).astype(
+            "datetime64[us, UTC]"
+        )
         if not error:
             error = fill_grids(session, table, now)
         # strings even when all empty (a column of nulls has no type)
@@ -572,7 +578,7 @@ def fill_grids(session, table: pd.DataFrame, now: datetime) -> str | None:
     except SourceError as exc:
         return str(exc)
     idx = todo.index
-    table.loc[idx, "grid_checked"] = pd.Timestamp(now)
+    table.loc[idx, "grid_checked"] = pd.Timestamp(now).as_unit("us")
     for i, rid in zip(idx, todo["id"], strict=True):
         it = found.get(rid)
         if it is None:
