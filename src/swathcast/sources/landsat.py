@@ -214,7 +214,10 @@ class HLSL30(Source):
     product = "HLS L30"
     reference_product = "L1"
     coverage = "learned"
-    batch_size = 50
+    #: CMR answers 250 attribute values about as fast as 50 (checked
+    #: 2026-10-19); at 50, ~15,000 open rows took ~300 requests and over half
+    #: of the poll job's 40 min
+    batch_size = 250
 
     def lookup(self, ids: list[str]) -> dict[str, Found]:
         found: dict[str, Found] = {}
