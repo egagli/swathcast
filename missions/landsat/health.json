@@ -1,0 +1,63 @@
+{
+  "generated_at": "2026-10-24T13:31:23Z",
+  "sources": {
+    "es_landsat_l2": {
+      "consecutive_failures": 0,
+      "details": {},
+      "failing_since_utc": null,
+      "granules_found": 0,
+      "granules_polled": 0,
+      "last_attempt_utc": "2026-10-24T13:31:23Z",
+      "last_error": null,
+      "last_error_utc": null,
+      "last_success_utc": "2026-10-24T13:31:23Z"
+    },
+    "hls_l30": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 0
+      },
+      "failing_since_utc": null,
+      "granules_found": 0,
+      "granules_polled": 7810,
+      "last_attempt_utc": "2026-10-24T13:31:23Z",
+      "last_error": "RetryError: HTTPSConnectionPool(host='cmr.earthdata.nasa.gov', port=443): Max retries exceeded with url: /search/granules.umm_json (Caused by ResponseError('too many 500 error responses'))",
+      "last_error_utc": "2026-10-20T12:46:56Z",
+      "last_success_utc": "2026-10-24T13:31:23Z"
+    },
+    "pc_landsat_l2": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 0
+      },
+      "failing_since_utc": null,
+      "granules_found": 0,
+      "granules_polled": 7815,
+      "last_attempt_utc": "2026-10-24T13:31:23Z",
+      "last_error": null,
+      "last_error_utc": null,
+      "last_success_utc": "2026-10-24T13:31:23Z"
+    },
+    "usgs_landsat": {
+      "consecutive_failures": 0,
+      "details": {
+        "skipped_too_old": 0,
+        "window_end": "2026-10-24T13:31:23Z",
+        "window_start": "2026-10-24T09:39:42Z"
+      },
+      "failing_since_utc": null,
+      "granules_found": 76,
+      "granules_polled": 537,
+      "last_attempt_utc": "2026-10-24T13:31:23Z",
+      "last_error": null,
+      "last_error_utc": null,
+      "last_success_utc": "2026-10-24T13:31:23Z"
+    }
+  },
+  "this_run": {
+    "es_landsat_l2": "ok",
+    "hls_l30": "ok",
+    "pc_landsat_l2": "ok",
+    "usgs_landsat": "ok"
+  }
+}

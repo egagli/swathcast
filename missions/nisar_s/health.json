@@ -1,0 +1,37 @@
+{
+  "generated_at": "2026-10-24T13:32:00Z",
+  "sources": {
+    "bhoonidhi_nisar_s": {
+      "consecutive_failures": 0,
+      "details": {
+        "skipped_too_old": 0,
+        "window_end": "2026-10-24T13:32:00Z",
+        "window_start": "2026-10-24T09:40:24Z"
+      },
+      "failing_since_utc": null,
+      "granules_found": 1,
+      "granules_polled": 1409,
+      "last_attempt_utc": "2026-10-24T13:32:00Z",
+      "last_error": "SourceError: Bhoonidhi search HTTP 404: 404: NO RESULTS FOUND",
+      "last_error_utc": "2026-10-07T05:37:56Z",
+      "last_success_utc": "2026-10-24T13:32:00Z"
+    },
+    "bhoonidhi_nisar_s_gcov": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 1
+      },
+      "failing_since_utc": null,
+      "granules_found": 1,
+      "granules_polled": 5,
+      "last_attempt_utc": "2026-10-24T13:32:00Z",
+      "last_error": "JSONDecodeError: Expecting value: line 1 column 1 (char 0)",
+      "last_error_utc": "2026-10-22T17:35:43Z",
+      "last_success_utc": "2026-10-24T13:32:00Z"
+    }
+  },
+  "this_run": {
+    "bhoonidhi_nisar_s": "ok",
+    "bhoonidhi_nisar_s_gcov": "ok"
+  }
+}

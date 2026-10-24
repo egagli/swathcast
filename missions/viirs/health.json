@@ -1,0 +1,65 @@
+{
+  "generated_at": "2026-10-24T13:32:26Z",
+  "sources": {
+    "laads_viirs_l1b": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 37
+      },
+      "failing_since_utc": null,
+      "granules_found": 37,
+      "granules_polled": 142,
+      "last_attempt_utc": "2026-10-24T13:32:26Z",
+      "last_error": "SourceError: CMR HTTP 400: {\"errors\":[\"Elasticsearch reported a bad request error: [{:type \\\"illegal_argument_exception\\\", :reason \\\"Fielddata is disabled on [provider-id-lowercase-doc-values] in [1_small_collections_700_shards]. Text fields are not optimised for operations that require per-document field data like aggregatio",
+      "last_error_utc": "2026-10-20T19:35:10Z",
+      "last_success_utc": "2026-10-24T13:32:26Z"
+    },
+    "lance_viirs": {
+      "consecutive_failures": 0,
+      "details": {
+        "skipped_too_old": 0,
+        "window_end": "2026-10-24T13:32:26Z",
+        "window_start": "2026-10-24T09:41:17Z"
+      },
+      "failing_since_utc": null,
+      "granules_found": 27,
+      "granules_polled": 104,
+      "last_attempt_utc": "2026-10-24T13:32:26Z",
+      "last_error": "SourceError: CMR HTTP 400: {\"errors\":[\"Elasticsearch reported a bad request error: [{:type \\\"illegal_argument_exception\\\", :reason \\\"Fielddata is disabled on [provider-id-lowercase-doc-values] in [1_small_collections_700_shards]. Text fields are not optimised for operations that require per-document field data like aggregatio",
+      "last_error_utc": "2026-10-20T19:35:10Z",
+      "last_success_utc": "2026-10-24T13:32:26Z"
+    },
+    "lance_viirs_snow": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 14
+      },
+      "failing_since_utc": null,
+      "granules_found": 14,
+      "granules_polled": 1331,
+      "last_attempt_utc": "2026-10-24T13:32:26Z",
+      "last_error": "SourceError: CMR HTTP 400: {\"errors\":[\"Elasticsearch reported a bad request error: [{:type \\\"illegal_argument_exception\\\", :reason \\\"Fielddata is disabled on [provider-id-lowercase-doc-values] in [1_small_collections_700_shards]. Text fields are not optimised for operations that require per-document field data like aggregatio",
+      "last_error_utc": "2026-10-20T19:35:10Z",
+      "last_success_utc": "2026-10-24T13:32:26Z"
+    },
+    "nsidc_viirs_snow": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 10
+      },
+      "failing_since_utc": null,
+      "granules_found": 10,
+      "granules_polled": 2824,
+      "last_attempt_utc": "2026-10-24T13:32:26Z",
+      "last_error": "SourceError: CMR HTTP 400: {\"errors\":[\"Elasticsearch reported a bad request error: [{:type \\\"illegal_argument_exception\\\", :reason \\\"Fielddata is disabled on [provider-id-lowercase-doc-values] in [1_small_collections_700_shards]. Text fields are not optimised for operations that require per-document field data like aggregatio",
+      "last_error_utc": "2026-10-20T19:35:10Z",
+      "last_success_utc": "2026-10-24T13:32:26Z"
+    }
+  },
+  "this_run": {
+    "laads_viirs_l1b": "ok",
+    "lance_viirs": "ok",
+    "lance_viirs_snow": "ok",
+    "nsidc_viirs_snow": "ok"
+  }
+}
