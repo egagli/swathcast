@@ -254,3 +254,54 @@ def test_landsat_turnaround_rows_timed_from_the_orbit(omm):
     for platform, path, _, _, when in truth:
         row = got[(got["platform"] == platform) & (got["path"] == path)].iloc[0]
         assert abs((row["time"] - pd.Timestamp(when)).total_seconds()) < 60
+
+
+class _EsaSession:
+    """The plans page, then each plan file: 404 for names in `missing`."""
+
+    def __init__(self, names, missing):
+        self.names, self.missing, self.calls = names, set(missing), []
+
+    def get(self, url, **kw):
+        import requests
+
+        self.calls.append(url)
+        r = requests.Response()
+        r.url, r.status_code = url, 200
+        if url == plans.ESA_PAGES["sentinel-1"]:
+            r._content = "".join(
+                f'<a href="/documents/d/sentinel/{n}">{n}</a>' for n in self.names
+            ).encode()
+        elif url.rsplit("/", 1)[1] in self.missing:
+            r.status_code = 404
+        else:
+            r._content = (FIXTURES / "esa_s1c_plan_excerpt.kml").read_bytes()
+        return r
+
+
+def test_sentinel_plans_skip_a_listed_file_that_is_a_404(tmp_path):
+    old = "s1c_mp_user_20260920t000000_20261010t000000"
+    new = "s1c_mp_user_20260928t000000_20261020t000000"
+    s = _EsaSession([old, new], missing=[new])
+    missing = []
+    df = plans.sentinel_plans(
+        "sentinel-1",
+        pd.Timestamp("2026-09-29T00:00Z"),
+        pd.Timestamp("2026-09-30T00:00Z"),
+        s,
+        tmp_path,
+        missing,
+    )
+    assert len(df) == 3 and set(df["plan_file"]) == {old}
+    assert missing == [f"{plans.ESA}/documents/d/sentinel/{new}"]
+    assert s.calls.count(f"{plans.ESA}/documents/d/sentinel/{new}") == 1  # no retries
+    assert not (tmp_path / "esa" / f"{new}.kml").exists()  # retried next run
+
+    with pytest.raises(RuntimeError, match="none of the current plan files"):
+        plans.sentinel_plans(
+            "sentinel-1",
+            pd.Timestamp("2026-09-29T00:00Z"),
+            pd.Timestamp("2026-09-30T00:00Z"),
+            _EsaSession([new], missing=[new]),
+            tmp_path,
+        )

@@ -1,7 +1,7 @@
 # Operations: keeping the scheduled jobs alive
 
 GitHub disables scheduled workflows in public repositories after 60 days without repository
-activity. swathcast guards against that four ways:
+activity. swathcast guards against that, and against failing jobs, five ways:
 
 1. **Every poll is repository activity.** Each hourly `poll` run pushes to the `data` branch.
 2. **The watchdog re-enables the jobs.** The weekly `watchdog` workflow runs `gh workflow enable` on
@@ -10,6 +10,10 @@ activity. swathcast guards against that four ways:
    twice its cadence: 48 h for the schedule, 2 h for latency.
 4. **The watchdog opens an issue.** It opens or updates a `stale-data` issue when data are stale or a
    source is failing, which notifies the repository owner, and closes it on recovery.
+5. **The schedule job opens its own issues, the same day.** A failed scheduled `schedule` run opens
+   or updates a `schedule-failed` issue. A plan file ESA lists but serves as a 404 is skipped (the
+   run still succeeds, from the platform's older files) and opens a `plan-file-missing` issue naming
+   it. Each closes itself on the first run that no longer has the problem.
 
 If every scheduled workflow *is* disabled, the watchdog cannot run either. The signals are then the
 site's banner, the absence of new commits on the `data` branch, and GitHub's own email about the
