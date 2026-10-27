@@ -283,14 +283,17 @@ def test_sentinel_plans_skip_a_listed_file_that_is_a_404(tmp_path):
     old = "s1c_mp_user_20260920t000000_20261010t000000"
     new = "s1c_mp_user_20260928t000000_20261020t000000"
     s = _EsaSession([old, new], missing=[new])
+    missing = []
     df = plans.sentinel_plans(
         "sentinel-1",
         pd.Timestamp("2026-09-29T00:00Z"),
         pd.Timestamp("2026-09-30T00:00Z"),
         s,
         tmp_path,
+        missing,
     )
     assert len(df) == 3 and set(df["plan_file"]) == {old}
+    assert missing == [f"{plans.ESA}/documents/d/sentinel/{new}"]
     assert s.calls.count(f"{plans.ESA}/documents/d/sentinel/{new}") == 1  # no retries
     assert not (tmp_path / "esa" / f"{new}.kml").exists()  # retried next run
 

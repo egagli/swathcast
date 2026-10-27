@@ -3,6 +3,8 @@ name: schedule
 # Daily: regenerate the upcoming-pass schedule from the ESA/USGS/NASA plans.
 # A failed scheduled run opens (or comments on) a schedule-failed issue at
 # once, rather than waiting for the weekly watchdog; a success closes it.
+# A plan file ESA lists but serves as a 404 is skipped (the run still
+# succeeds) and opens a plan-file-missing issue, closed once it downloads.
 on:
   schedule:
     - cron: "41 3 * * *"
@@ -46,6 +48,24 @@ jobs:
       - uses: ./.github/actions/push-data
         with:
           message: "data: schedule ${{ github.run_id }}"
+      - name: Open, update or close the plan-file-missing issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          missing=$(jq -r '.missing_plan_files[]? | "- " + .' "$RUNNER_TEMP/upcoming_passes.meta.json")
+          existing=$(gh issue list --repo "$GITHUB_REPOSITORY" --label plan-file-missing --state open --json number --jq '.[0].number')
+          if [ -n "$missing" ]; then
+            body=$(printf 'Listed on the acquisition-plans page but a 404 (%s), so the schedule was built without them:\n\n%s\n\nThe older plan files for the same satellite still cover most of the window. This issue closes itself once every listed file downloads.' "$RUN_URL" "$missing")
+            gh label create plan-file-missing --color fbca04 --description "Opened by the schedule workflow" --repo "$GITHUB_REPOSITORY" 2>/dev/null || true
+            if [ -n "$existing" ]; then
+              gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" --body "$body"
+            else
+              gh issue create --repo "$GITHUB_REPOSITORY" --title "Schedule: ESA plan file(s) missing" --label plan-file-missing --body "$body"
+            fi
+          elif [ -n "$existing" ]; then
+            gh issue close "$existing" --repo "$GITHUB_REPOSITORY" --reason completed --comment "Every listed plan file downloaded: $RUN_URL"
+          fi
       - name: Open or update the schedule-failed issue
         if: failure() && github.event_name == 'schedule'
         env:

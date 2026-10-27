@@ -224,7 +224,11 @@ def newest_wins(parts: list[tuple[PlanFile, pd.DataFrame]]) -> pd.DataFrame:
     return pd.concat(keep, ignore_index=True) if keep else pd.DataFrame()
 
 
-def sentinel_plans(sensor: str, start, end, session, cache_dir: Path) -> pd.DataFrame:
+def sentinel_plans(
+    sensor: str, start, end, session, cache_dir: Path, missing: list | None = None
+) -> pd.DataFrame:
+    """Datatakes from every current plan file. A listed file that is a 404 is
+    skipped, and its URL appended to ``missing`` (when given)."""
     html = get(session, ESA_PAGES[sensor]).text
     files = [f for f in esa_plan_files(sensor, html) if f.end > start and f.start < end]
     if not files:
@@ -240,6 +244,8 @@ def sentinel_plans(sensor: str, start, end, session, cache_dir: Path) -> pd.Data
             LOGGER.warning(
                 "%s %s: skipping listed plan file: %s", sensor, f.platform, exc
             )
+            if missing is not None:
+                missing.append(f.url)
             continue
         by_platform.setdefault(f.platform, []).append((f, parse_esa_kml(path)))
     if not by_platform:
@@ -264,11 +270,13 @@ def sentinel_plans(sensor: str, start, end, session, cache_dir: Path) -> pd.Data
     return pd.concat(out, ignore_index=True)
 
 
-def sentinel_schedule(sensor: str, start, end, session, cache_dir: Path):
+def sentinel_schedule(
+    sensor: str, start, end, session, cache_dir: Path, missing: list | None = None
+):
     import geopandas as gpd
     from shapely.geometry import Polygon
 
-    df = sentinel_plans(sensor, start, end, session, cache_dir)
+    df = sentinel_plans(sensor, start, end, session, cache_dir, missing)
     s1 = sensor == "sentinel-1"
     num = lambda c: pd.to_numeric(df.get(c), errors="coerce")  # noqa: E731
     out = pd.DataFrame(

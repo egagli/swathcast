@@ -371,11 +371,16 @@ def build(output: Path, days: int = 12, sensors: list[str] | None = None) -> Pat
     elements = orbital_elements()
     sats = plans.satrecs(elements)
     parts, fixes, sources = [], {}, {}
+    missing_plan_files: list[str] = []  # listed by ESA but a 404
 
     for sensor in ("sentinel-1", "sentinel-2"):
         if sensor in sensors:
             back = start - pd.Timedelta(days=LOOKBACK_DAYS[sensor])
-            parts.append(plans.sentinel_schedule(sensor, back, end, session, cache))
+            parts.append(
+                plans.sentinel_schedule(
+                    sensor, back, end, session, cache, missing_plan_files
+                )
+            )
             sources[sensor] = plans.ESA_PAGES[sensor]
     if "nisar" in sensors:
         try:
@@ -510,6 +515,7 @@ def build(output: Path, days: int = 12, sensors: list[str] | None = None) -> Pat
         "orbital_elements": sorted(elements),
         "postprocessing": fixes,
         "requested_sensors": sensors,
+        "missing_plan_files": missing_plan_files,
     }
     output.with_suffix(".meta.json").write_text(json.dumps(meta, indent=2) + "\n")
     LOGGER.info("schedule: %s passes -> %s (%s)", len(gdf), output, fixes)
