@@ -114,6 +114,10 @@ def true_polarization(code) -> str | None:
     return POLARIZATIONS.get(code, code or None)
 
 
+class NotFound(RuntimeError):
+    """The server answered 404: retrying within this run will not help."""
+
+
 def get(session, url, *, attempts: int = 4, timeout: int = 120, **kw):
     last = None
     for i in range(attempts):
@@ -122,6 +126,8 @@ def get(session, url, *, attempts: int = 4, timeout: int = 120, **kw):
             r.raise_for_status()
             return r
         except OSError as exc:  # requests errors are OSErrors
+            if getattr(getattr(exc, "response", None), "status_code", None) == 404:
+                raise NotFound(f"{url}: {exc}") from exc
             last = exc
             time.sleep(2 ** (i + 1))
     raise RuntimeError(f"{url}: {last}")
@@ -225,8 +231,21 @@ def sentinel_plans(sensor: str, start, end, session, cache_dir: Path) -> pd.Data
         raise RuntimeError(f"{sensor}: no current plan files on {ESA_PAGES[sensor]}")
     by_platform: dict[str, list] = {}
     for f in files:
-        path = cached(session, f.url, cache_dir / "esa", f"{f.name}.kml")
+        # ESA can list a plan file days before the document exists (S2B
+        # 20261022-20261109 was a 404 from 2026-10-22 to 10-27). Skip it: the
+        # same platform's older files still cover most of its window.
+        try:
+            path = cached(session, f.url, cache_dir / "esa", f"{f.name}.kml")
+        except NotFound as exc:
+            LOGGER.warning(
+                "%s %s: skipping listed plan file: %s", sensor, f.platform, exc
+            )
+            continue
         by_platform.setdefault(f.platform, []).append((f, parse_esa_kml(path)))
+    if not by_platform:
+        raise RuntimeError(
+            f"{sensor}: none of the current plan files could be downloaded"
+        )
     out = []
     for platform, parts in by_platform.items():
         merged = newest_wins(parts)

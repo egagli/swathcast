@@ -1,6 +1,8 @@
 name: schedule
 
 # Daily: regenerate the upcoming-pass schedule from the ESA/USGS/NASA plans.
+# A failed scheduled run opens (or comments on) a schedule-failed issue at
+# once, rather than waiting for the weekly watchdog; a success closes it.
 on:
   schedule:
     - cron: "41 3 * * *"
@@ -8,6 +10,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: data-branch
@@ -43,3 +46,26 @@ jobs:
       - uses: ./.github/actions/push-data
         with:
           message: "data: schedule ${{ github.run_id }}"
+      - name: Open or update the schedule-failed issue
+        if: failure() && github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          body="The daily schedule run failed: $RUN_URL. The site's pass schedule is not being refreshed until a run succeeds; this issue closes itself then."
+          gh label create schedule-failed --color d93f0b --description "Opened by the schedule workflow" --repo "$GITHUB_REPOSITORY" 2>/dev/null || true
+          existing=$(gh issue list --repo "$GITHUB_REPOSITORY" --label schedule-failed --state open --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" --body "Failed again: $RUN_URL"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "Schedule workflow is failing" --label schedule-failed --body "$body"
+          fi
+      - name: Close the schedule-failed issue on recovery
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          for n in $(gh issue list --repo "$GITHUB_REPOSITORY" --label schedule-failed --state open --json number --jq '.[].number'); do
+            gh issue close "$n" --repo "$GITHUB_REPOSITORY" --reason completed --comment "Schedule succeeded again: $RUN_URL"
+          done
