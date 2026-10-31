@@ -1,0 +1,79 @@
+{
+  "generated_at": "2026-10-31T21:26:55Z",
+  "sources": {
+    "laads_modis_l1b": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 0
+      },
+      "failing_since_utc": null,
+      "granules_found": 0,
+      "granules_polled": 357,
+      "last_attempt_utc": "2026-10-31T21:26:55Z",
+      "last_error": "RetryError: HTTPSConnectionPool(host='cmr.earthdata.nasa.gov', port=443): Max retries exceeded with url: /search/granules.umm_json (Caused by ResponseError('too many 500 error responses'))",
+      "last_error_utc": "2026-10-20T12:48:48Z",
+      "last_success_utc": "2026-10-31T21:26:55Z"
+    },
+    "laads_modis_l1b_c7": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 0
+      },
+      "failing_since_utc": null,
+      "granules_found": 0,
+      "granules_polled": 335,
+      "last_attempt_utc": "2026-10-31T21:26:55Z",
+      "last_error": "SourceError: CMR HTTP 400: {\"errors\":[\"Elasticsearch reported a bad request error: [{:type \\\"illegal_argument_exception\\\", :reason \\\"Fielddata is disabled on [provider-id-lowercase-doc-values] in [1_small_collections_700_shards]. Text fields are not optimised for operations that require per-document field data like aggregatio",
+      "last_error_utc": "2026-10-20T19:35:07Z",
+      "last_success_utc": "2026-10-31T21:26:55Z"
+    },
+    "lance_modis": {
+      "consecutive_failures": 0,
+      "details": {
+        "skipped_too_old": 0,
+        "window_end": "2026-10-31T21:26:55Z",
+        "window_start": "2026-10-31T17:28:01Z"
+      },
+      "failing_since_utc": null,
+      "granules_found": 17,
+      "granules_polled": 102,
+      "last_attempt_utc": "2026-10-31T21:26:55Z",
+      "last_error": "RetryError: HTTPSConnectionPool(host='cmr.earthdata.nasa.gov', port=443): Max retries exceeded with url: /search/granules.umm_json (Caused by ResponseError('too many 500 error responses'))",
+      "last_error_utc": "2026-10-20T20:41:26Z",
+      "last_success_utc": "2026-10-31T21:26:55Z"
+    },
+    "lance_modis_snow": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 9
+      },
+      "failing_since_utc": null,
+      "granules_found": 9,
+      "granules_polled": 1289,
+      "last_attempt_utc": "2026-10-31T21:26:55Z",
+      "last_error": "SourceError: CMR HTTP 400: {\"errors\":[\"Elasticsearch reported a bad request error: [{:type \\\"illegal_argument_exception\\\", :reason \\\"Fielddata is disabled on [provider-id-lowercase-doc-values] in [1_small_collections_700_shards]. Text fields are not optimised for operations that require per-document field data like aggregatio",
+      "last_error_utc": "2026-10-20T19:35:07Z",
+      "last_success_utc": "2026-10-31T21:26:55Z"
+    },
+    "nsidc_modis_snow": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 0
+      },
+      "failing_since_utc": null,
+      "granules_found": 0,
+      "granules_polled": 2765,
+      "last_attempt_utc": "2026-10-31T21:26:55Z",
+      "last_error": "RetryError: HTTPSConnectionPool(host='cmr.earthdata.nasa.gov', port=443): Max retries exceeded with url: /search/granules.umm_json (Caused by ResponseError('too many 500 error responses'))",
+      "last_error_utc": "2026-10-20T12:48:48Z",
+      "last_success_utc": "2026-10-31T21:26:55Z"
+    }
+  },
+  "this_run": {
+    "laads_modis_l1b": "ok",
+    "laads_modis_l1b_c7": "ok",
+    "lance_modis": "ok",
+    "lance_modis_snow": "ok",
+    "nsidc_modis_snow": "ok"
+  }
+}

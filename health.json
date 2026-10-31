@@ -1,0 +1,111 @@
+{
+  "generated_at": "2026-10-31T21:25:00Z",
+  "sources": {
+    "asf_grd": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 46
+      },
+      "failing_since_utc": null,
+      "granules_found": 46,
+      "granules_polled": 1581,
+      "last_attempt_utc": "2026-10-31T21:25:00Z",
+      "last_error": "SourceError: CMR HTTP 400: {\"errors\":[\"Elasticsearch reported a bad request error: []\"]}",
+      "last_error_utc": "2026-10-20T20:33:22Z",
+      "last_success_utc": "2026-10-31T21:25:00Z"
+    },
+    "asf_slc": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 52
+      },
+      "failing_since_utc": null,
+      "granules_found": 52,
+      "granules_polled": 973,
+      "last_attempt_utc": "2026-10-31T21:25:00Z",
+      "last_error": "SourceError: CMR HTTP 400: {\"errors\":[\"Elasticsearch reported a bad request error: []\"]}",
+      "last_error_utc": "2026-10-20T20:33:22Z",
+      "last_success_utc": "2026-10-31T21:25:00Z"
+    },
+    "cdse": {
+      "consecutive_failures": 0,
+      "details": {
+        "skipped_too_old": 0,
+        "window_end": "2026-10-31T21:25:00Z",
+        "window_start": "2026-10-31T17:25:03Z"
+      },
+      "failing_since_utc": null,
+      "granules_found": 40,
+      "granules_polled": 410,
+      "last_attempt_utc": "2026-10-31T21:25:00Z",
+      "last_error": "SourceError: CDSE OData count HTTP 403: {\"status\":\"error\",\"data\":{\"message\":\"This request was rejected due to a violation. Please consult with your administrator, and provide this reference ID:  9047016163023790971\"}}",
+      "last_error_utc": "2026-10-30T19:24:55Z",
+      "last_success_utc": "2026-10-31T21:25:00Z"
+    },
+    "opera_cslc": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 4,
+        "stream_items": 360,
+        "unmatched_items": 0
+      },
+      "failing_since_utc": null,
+      "granules_found": 13,
+      "granules_polled": 11387,
+      "last_attempt_utc": "2026-10-31T21:25:00Z",
+      "last_error": "RetryError: HTTPSConnectionPool(host='cmr.earthdata.nasa.gov', port=443): Max retries exceeded with url: /search/granules.umm_json (Caused by ResponseError('too many 500 error responses'))",
+      "last_error_utc": "2026-10-20T12:43:37Z",
+      "last_success_utc": "2026-10-31T21:25:00Z"
+    },
+    "opera_rtc": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 33,
+        "stream_items": 3780,
+        "unmatched_items": 0
+      },
+      "failing_since_utc": null,
+      "granules_found": 138,
+      "granules_polled": 2702,
+      "last_attempt_utc": "2026-10-31T21:25:00Z",
+      "last_error": "RetryError: HTTPSConnectionPool(host='cmr.earthdata.nasa.gov', port=443): Max retries exceeded with url: /search/granules.umm_json (Caused by ResponseError('too many 500 error responses'))",
+      "last_error_utc": "2026-10-20T12:43:37Z",
+      "last_success_utc": "2026-10-31T21:25:00Z"
+    },
+    "pc_grd": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 0
+      },
+      "failing_since_utc": null,
+      "granules_found": 0,
+      "granules_polled": 148,
+      "last_attempt_utc": "2026-10-31T21:25:00Z",
+      "last_error": "RetryError: HTTPSConnectionPool(host='planetarycomputer.microsoft.com', port=443): Max retries exceeded with url: /api/stac/v1/search (Caused by ResponseError('too many 504 error responses'))",
+      "last_error_utc": "2026-10-12T23:32:19Z",
+      "last_success_utc": "2026-10-31T21:25:00Z"
+    },
+    "pc_rtc": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 0
+      },
+      "failing_since_utc": null,
+      "granules_found": 0,
+      "granules_polled": 556,
+      "last_attempt_utc": "2026-10-31T21:25:00Z",
+      "last_error": null,
+      "last_error_utc": null,
+      "last_success_utc": "2026-10-31T21:25:00Z"
+    }
+  },
+  "this_run": {
+    "asf_grd": "ok",
+    "asf_slc": "ok",
+    "cdse": "ok",
+    "opera_cslc": "ok",
+    "opera_rtc": "ok",
+    "pc_grd": "ok",
+    "pc_rtc": "ok"
+  }
+}

@@ -1,0 +1,104 @@
+{
+  "generated_at": "2026-10-31T03:48:36+00:00",
+  "days": 30,
+  "window": [
+    "2026-10-31T00:00:00+00:00",
+    "2026-11-30T00:00:00+00:00"
+  ],
+  "lookback_days": {
+    "sentinel-1": 2,
+    "sentinel-2": 2,
+    "nisar": 3,
+    "landsat": 11,
+    "modis": 2,
+    "viirs": 2,
+    "sentinel-3": 2
+  },
+  "n_passes": 47785,
+  "sensors": {
+    "nisar": 43488,
+    "sentinel-1": 3074,
+    "sentinel-2": 1223
+  },
+  "platforms": {
+    "NISAR": 43488,
+    "S1C": 1737,
+    "S1D": 1337,
+    "S2B": 662,
+    "S2A": 330,
+    "S2C": 231
+  },
+  "sources": {
+    "sentinel-1": "https://sentinels.copernicus.eu/web/sentinel/copernicus/sentinel-1/acquisition-plans",
+    "sentinel-2": "https://sentinels.copernicus.eu/web/sentinel/copernicus/sentinel-2/acquisition-plans",
+    "nisar": "https://assets.science.nasa.gov/content/dam/science/missions/nisar/kmz/NISAR_ROP358_TFDB_ObservationPlan_CY2026-20260305.kmz",
+    "landsat": "https://landsat.usgs.gov/sites/default/files/landsat_acq/assets/json"
+  },
+  "orbital_elements": [
+    "Aqua",
+    "L8",
+    "L9",
+    "N20",
+    "N21",
+    "NISAR",
+    "S1A",
+    "S1C",
+    "S1D",
+    "S2A",
+    "S2B",
+    "S2C",
+    "S3A",
+    "S3B",
+    "SNPP",
+    "Terra"
+  ],
+  "postprocessing": {
+    "nisar_observed_outlines": 20771,
+    "s1_direction_from_orbit": 3074,
+    "s1_direction_filled": 0,
+    "s1_direction_left_blank": 0,
+    "geometry_fixed_or_split": 595,
+    "geometry_fix_failed": 0,
+    "landsat_observed_outlines": 12281,
+    "landsat_scenes": 95789,
+    "landsat_timing": {
+      "orbit": 95676,
+      "formula": 113
+    },
+    "sin_tiles": 460,
+    "modis_tile_passes": {
+      "Terra": 42989,
+      "Aqua": 42781
+    },
+    "viirs_tile_passes": {
+      "SNPP": 54051,
+      "N20": 53282,
+      "N21": 52995
+    },
+    "sentinel-3_tile_passes": {
+      "S3A": 26967,
+      "S3B": 26962
+    },
+    "non_s1_simplified_deg": 0.01,
+    "s2_tiles": 56686,
+    "s2_tile_passes": 137726,
+    "s2_tile_timing": {
+      "orbit": 137726
+    },
+    "nisar_frames": 43488,
+    "nisar_timing": {
+      "orbit": 43263,
+      "formula": 225
+    }
+  },
+  "requested_sensors": [
+    "sentinel-1",
+    "sentinel-2",
+    "landsat",
+    "nisar",
+    "modis",
+    "viirs",
+    "sentinel-3"
+  ],
+  "missing_plan_files": []
+}
