@@ -80,7 +80,10 @@ class MapOptionsControl {
     sel.title = "Basemap";
     Object.entries(BASEMAPS).forEach(([k, b]) => sel.append(Object.assign(document.createElement("option"), { value: k, textContent: b.label, title: b.title || "" })));
     sel.value = this.view.basemap;
-    sel.addEventListener("change", () => this.view.setBasemap(sel.value));
+    sel.addEventListener("change", () => {
+      try { if (typeof window.gtag === "function") window.gtag("event", "map_basemap_change", { basemap: sel.value }); } catch { /* analytics unavailable */ }
+      this.view.setBasemap(sel.value);
+    });
     this.view.onBasemap.push((k) => { sel.value = k; });
     row.append(Object.assign(document.createElement("span"), { textContent: "Basemap" }), sel);
     this.view.optionsEl = Object.assign(document.createElement("div"), { className: "mo-checks" });
