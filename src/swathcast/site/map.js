@@ -12,7 +12,7 @@ import { parquetReadObjects } from "https://cdn.jsdelivr.net/npm/hyparquet@1.16.
 import { compressors } from "https://cdn.jsdelivr.net/npm/hyparquet-compressors@1.1.1/+esm";
 import {
   css, getJSON, showFreshness, failingSources, fmtWhen, fmtBoth, whenCell, fmtHours, roundUp10,
-  expectedAvailability, tzReady, sunElevation, utcText, rel, dayLabel, forgetSettings, localTime,
+  expectedAvailability, tzReady, sunElevation, utcText, rel, dayLabel, forgetSettings, localTime, track,
 } from "./common.js";
 import { aoiBBox, aoiCenter as centreOfAOI, aoiFromParam, aoiParam, parseAOI, checkAOI } from "./aoi.js";
 import {
@@ -1928,7 +1928,7 @@ view.extraHit = (lngLat) => {
   if (!overlay.proj || !overlay.proj.globe || Math.abs(lngLat.lat) <= DRAW_MAX_LAT) return null;
   const it = polarCaps.pick(lngLat.lng, lngLat.lat);
   if (!it) return null;
-  return { tooltip: () => cellTip(it.cell), onClick: () => selectCell(it.cell) };
+  return { tooltip: () => cellTip(it.cell), onClick: () => { track("map_footprint_open", { mission: it.cell.mission }); selectCell(it.cell); } };
 };
 
 // Redraws the given missions' layers (default: all) from state.cells.
@@ -1946,7 +1946,7 @@ function drawMission(key, cells) {
     const next = c.visible.length ? (c.visible[0].when - now) / 3.6e6 : null;
     if (c.drawGeo === undefined) c.drawGeo = drawable(c.geojson, c.bbox);
     if (!c.drawGeo) return;
-    c.layer = layer.add({ geojson: c.drawGeo, style: cellStyle(c), onClick: () => selectCell(c) });
+    c.layer = layer.add({ geojson: c.drawGeo, style: cellStyle(c), onClick: () => { track("map_footprint_open", { mission: c.mission }); selectCell(c); } });
     c.layer.tooltip = () => cellTip(c, next);
   });
 }
@@ -2194,9 +2194,10 @@ function renderTimeline() {
     + marks + "</svg>";
   const mks = [...tlBox.querySelectorAll(".mk")];
   mks.forEach((el, i) => {
-    el.addEventListener("click", () => pickItem(tlItems[Number(el.dataset.i)]));
+    const pick = () => { const it = tlItems[Number(el.dataset.i)]; if (it) track("map_timeline_pick", { mission: it.mission, kind: it.kind }); pickItem(it); };
+    el.addEventListener("click", pick);
     el.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pickItem(tlItems[Number(el.dataset.i)]); }
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); }
       if (e.key === "ArrowRight" || e.key === "ArrowLeft") { e.preventDefault(); const n = mks[i + (e.key === "ArrowRight" ? 1 : -1)]; if (n) n.focus(); }
     });
   });
@@ -2673,6 +2674,7 @@ function buildControls() {
     row.className = "mission-row";
     const main = checkbox(m.label, state.missions.has(m.key), (on) => {
       on ? state.missions.add(m.key) : state.missions.delete(m.key);
+      track("map_layer_change", { mission: m.key, on });
       wrap.dataset.on = on ? "1" : "";
       updateFilterSummaries();
       refresh();
@@ -2776,6 +2778,7 @@ function legend() {
   if (s.value > en.value) [s.value, en.value] = [en.value, s.value];
   state.start = s.value;
   state.end = en.value;
+  track("map_time_change", { which: id === "date-start" ? "start" : "end" });
   refresh();
 }));
 document.getElementById("grid-palette").addEventListener("change", (e) => {
@@ -3042,7 +3045,7 @@ function startDraw(kind, btn) {
     polygon: "Click the vertices; click the first one, double-click or press Enter to finish (Esc cancels).",
   }[kind];
   view.draw(kind, (g) => {
-    try { setAOI(g, { fly: kind === "point" }); } catch (err) { document.getElementById("draw-hint").textContent = `Could not use that shape: ${err.message}.`; }
+    try { setAOI(g, { fly: kind === "point" }); track("map_aoi_set", { method: kind }); } catch (err) { document.getElementById("draw-hint").textContent = `Could not use that shape: ${err.message}.`; }
   }, drawLayer);
 }
 document.getElementById("paste").addEventListener("click", () => {
@@ -3055,6 +3058,7 @@ document.getElementById("paste-apply").addEventListener("click", () => {
   try {
     const { geometry, note } = parseAOI(document.getElementById("paste-text").value);
     setAOI(geometry, { fly: true });
+    track("map_aoi_set", { method: "paste" });
     document.getElementById("paste-box").classList.remove("show");
     document.getElementById("draw-hint").textContent = note ? `AOI ${note}.` : "";
   } catch (ex) {

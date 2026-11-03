@@ -271,7 +271,13 @@ def stub(route):
         )
     if "tile" in url or "arcgisonline" in url:
         return route.fulfill(status=200, content_type="image/png", body=PNG)
-    if "fonts.g" in url or "celestrak" in url:
+    # Google Analytics too: the tests must not send hits to the live property
+    if (
+        "fonts.g" in url
+        or "celestrak" in url
+        or "google-analytics" in url
+        or "googletagmanager" in url
+    ):
         return route.abort()
     # the libraries: fetched here (Python honours a proxy the browser may not
     # be told about), once per run

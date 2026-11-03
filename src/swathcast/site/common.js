@@ -1,5 +1,15 @@
 // Shared helpers: data loading, freshness banner, latency formatting.
 
+// A GA4 event (the tag is in each page's <head>); never throws, and does
+// nothing where the tag is blocked or absent (the tests), nor for a click the
+// tour makes (tour.js sets window.__tourActing around it).
+export function track(name, params = {}) {
+  try {
+    if (typeof window.gtag !== "function" || window.__tourActing) return;
+    window.gtag("event", name, params);
+  } catch { /* analytics unavailable */ }
+}
+
 export const SCHEDULE_CADENCE_H = 24; // schedule.yml runs daily
 export const LATENCY_CADENCE_H = 1; // poll.yml runs hourly
 

@@ -99,8 +99,12 @@ export class Tour {
     if (!(await this.pointAt(el, say))) return false;
     this.ripple();
     await sleep(250);
-    if (typeof el.click === "function") el.click();
-    else el.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    // flagged, so the page's analytics (common.js track) do not count it as the user's
+    window.__tourActing = true;
+    try {
+      if (typeof el.click === "function") el.click();
+      else el.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    } finally { window.__tourActing = false; }
     flash(el);
     await sleep(500);
     return true;
@@ -110,7 +114,8 @@ export class Tour {
     await this.pointAt(xy, say);
     this.ripple();
     await sleep(250);
-    fire();
+    window.__tourActing = true;
+    try { fire(); } finally { window.__tourActing = false; }
     await sleep(500);
   }
   ripple() {

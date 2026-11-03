@@ -3,6 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Google tag (gtag.js) — GA4 property shared with egagli.github.io.
+     Inside egagli.github.io/maps/*.html the wrapper page already counted this
+     visit, so skip the page view there and mark events as embedded. -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-M59931E34K"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  var gaEmbedded = window.self !== window.top;
+  gtag('set', { embedded: gaEmbedded });
+  gtag('config', 'G-M59931E34K', { send_page_view: !gaEmbedded });
+</script>
 <title>swathcast · Passes</title>
 <meta name="description" content="swathcast: when will Sentinel-1, Sentinel-2, Landsat, NISAR, MODIS, VIIRS or Sentinel-3 next image my area, and when can I download it? Planned passes from the agencies' own plans (or the orbit, for the sensors that image every orbit), plus measured delivery latency.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23101a2c'/%3E%3Cpath d='M6 22C11 14 18 10 26 9' fill='none' stroke='%238b84f6' stroke-width='6' stroke-linecap='round'/%3E%3Ccircle cx='26' cy='9' r='3' fill='white'/%3E%3C/svg%3E">
