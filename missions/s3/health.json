@@ -1,0 +1,121 @@
+{
+  "generated_at": "2026-11-07T13:26:50Z",
+  "sources": {
+    "cdse_s3": {
+      "consecutive_failures": 0,
+      "details": {
+        "skipped_too_old": 0,
+        "window_end": "2026-11-07T13:26:50Z",
+        "window_start": "2026-11-07T09:28:45Z"
+      },
+      "failing_since_utc": null,
+      "granules_found": 94,
+      "granules_polled": 332,
+      "last_attempt_utc": "2026-11-07T13:26:50Z",
+      "last_error": "SourceError: CDSE OData count HTTP 403: {\"status\":\"error\",\"data\":{\"message\":\"This request was rejected due to a violation. Please consult with your administrator, and provide this reference ID:  9047016162993392433\"}}",
+      "last_error_utc": "2026-10-30T19:26:56Z",
+      "last_success_utc": "2026-11-07T13:26:50Z"
+    },
+    "cdse_s3_efr_ntc": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 16
+      },
+      "failing_since_utc": null,
+      "granules_found": 16,
+      "granules_polled": 463,
+      "last_attempt_utc": "2026-11-07T13:26:50Z",
+      "last_error": "SourceError: CDSE OData HTTP 403: {\"status\":\"error\",\"data\":{\"message\":\"This request was rejected due to a violation. Please consult with your administrator, and provide this reference ID:  9047016163014933992\"}}",
+      "last_error_utc": "2026-10-30T19:26:56Z",
+      "last_success_utc": "2026-11-07T13:26:50Z"
+    },
+    "cdse_s3_lfr": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 30
+      },
+      "failing_since_utc": null,
+      "granules_found": 30,
+      "granules_polled": 30,
+      "last_attempt_utc": "2026-11-07T13:26:50Z",
+      "last_error": "InvalidIndexError: S3B_OL_1_EFR_20261016T113640_125_365_3420    17630\nS3B_OL_1_EFR_20261016T113640_125_365_3420    17631\ndtype: int64",
+      "last_error_utc": "2026-10-16T23:31:57Z",
+      "last_success_utc": "2026-11-07T13:26:50Z"
+    },
+    "cdse_s3_lst": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 66
+      },
+      "failing_since_utc": null,
+      "granules_found": 66,
+      "granules_polled": 69,
+      "last_attempt_utc": "2026-11-07T13:26:50Z",
+      "last_error": "SourceError: CDSE OData HTTP 403: {\"status\":\"error\",\"data\":{\"message\":\"This request was rejected due to a violation. Please consult with your administrator, and provide this reference ID:  9047016162989012932\"}}",
+      "last_error_utc": "2026-10-30T19:26:56Z",
+      "last_success_utc": "2026-11-07T13:26:50Z"
+    },
+    "cdse_s3_rbt_ntc": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 0
+      },
+      "failing_since_utc": null,
+      "granules_found": 0,
+      "granules_polled": 1506,
+      "last_attempt_utc": "2026-11-07T13:26:50Z",
+      "last_error": "SourceError: CDSE OData HTTP 403: {\"status\":\"error\",\"data\":{\"message\":\"This request was rejected due to a violation. Please consult with your administrator, and provide this reference ID:  9047016163022268391\"}}",
+      "last_error_utc": "2026-10-30T19:26:56Z",
+      "last_success_utc": "2026-11-07T13:26:50Z"
+    },
+    "eumetsat_s3_efr": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 28
+      },
+      "failing_since_utc": null,
+      "granules_found": 28,
+      "granules_polled": 28,
+      "last_attempt_utc": "2026-11-07T13:26:50Z",
+      "last_error": "JSONDecodeError: Unterminated string starting at: line 46794 column 26 (char 3747771)",
+      "last_error_utc": "2026-11-03T13:28:32Z",
+      "last_success_utc": "2026-11-07T13:26:50Z"
+    },
+    "pc_s3_lfr": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 464
+      },
+      "failing_since_utc": null,
+      "granules_found": 464,
+      "granules_polled": 943,
+      "last_attempt_utc": "2026-11-07T13:26:50Z",
+      "last_error": "InvalidIndexError: S3B_OL_1_EFR_20261016T113640_125_365_3420    17634\nS3B_OL_1_EFR_20261016T113640_125_365_3420    17635\ndtype: int64",
+      "last_error_utc": "2026-10-16T23:31:57Z",
+      "last_success_utc": "2026-11-07T13:26:50Z"
+    },
+    "pc_s3_lst": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 1029
+      },
+      "failing_since_utc": null,
+      "granules_found": 1029,
+      "granules_polled": 2576,
+      "last_attempt_utc": "2026-11-07T13:26:50Z",
+      "last_error": "InvalidIndexError: S3B_SL_1_RBT_20261016T131739_125_366_3420    18101\nS3B_SL_1_RBT_20261016T131739_125_366_3420    18102\ndtype: int64",
+      "last_error_utc": "2026-10-16T23:31:57Z",
+      "last_success_utc": "2026-11-07T13:26:50Z"
+    }
+  },
+  "this_run": {
+    "cdse_s3": "ok",
+    "cdse_s3_efr_ntc": "ok",
+    "cdse_s3_lfr": "ok",
+    "cdse_s3_lst": "ok",
+    "cdse_s3_rbt_ntc": "ok",
+    "eumetsat_s3_efr": "ok",
+    "pc_s3_lfr": "ok",
+    "pc_s3_lst": "ok"
+  }
+}
