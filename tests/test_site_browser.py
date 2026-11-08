@@ -277,9 +277,49 @@ ASF_BROWSE = {
 }
 
 
+# Planetary Computer's Sentinel-1 GRD item at a pass (history.js BROWSE.s1:
+# its search by point, limit 5), so a preview opens with its channels
+# (colour, VV, VH); the preview images: a 1x1 PNG
+PC_S1_ITEM = {
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "id": "S1D_EW_GRDM_1SDV_TEST",
+            "bbox": [-124.5, 46.5, -121.0, 49.0],
+            "geometry": None,
+            "properties": {"sar:polarizations": ["VV", "VH"]},
+            "assets": {
+                "vv": {},
+                "vh": {},
+                "rendered_preview": {
+                    "href": "https://planetarycomputer.microsoft.com/api/data/v1/item/preview.png?collection=sentinel-1-grd&item=S1D_EW_GRDM_1SDV_TEST"
+                },
+            },
+        }
+    ],
+}
+
+
 def stub(route):
     url = route.request.url
     host = url.split("/")[2]
+    if host == "planetarycomputer.microsoft.com":
+        body = route.request.post_data or ""
+        if "preview.png" in url:
+            return route.fulfill(
+                status=200,
+                content_type="image/png",
+                headers={"access-control-allow-origin": "*"},
+                body=PNG,
+            )
+        if '"sentinel-1-grd"' in body and '"limit":5' in body:
+            return route.fulfill(
+                status=200,
+                content_type="application/json",
+                headers={"access-control-allow-origin": "*"},
+                body=json.dumps(PC_S1_ITEM),
+            )
     if host == "api.daac.asf.alaska.edu" and "processingLevel=GRD_HD" in url:
         return route.fulfill(
             status=200,
@@ -712,6 +752,20 @@ def test_share_this_view(browser, server):
     )
     params = js(page, "Object.fromEntries(new URLSearchParams(location.hash.slice(1)))")
     assert params["fp"] == fp and params["pv"] == key and "sel" not in params
+    # its settings: opacity 60 % and the VH channel, written after the
+    # slider rests (only what is not the default)
+    row = "#browse-queue tbody tr"
+    page.wait_for_selector(f"{row} select.bq-band", timeout=10000)
+    assert js(
+        page,
+        f"[...document.querySelectorAll('{row} select.bq-band option')].map(o => o.textContent)",
+    ) == ["VV+VH", "VV", "VH"]
+    page.select_option(f"{row} select.bq-band", label="VH")
+    page.locator(f"{row} input[type=range]").fill("60")
+    pv = key + "~o=0.6~ch=vh"
+    page.wait_for_function(f"location.hash.includes('{pv.replace('|', '%7C')}')")
+    params = js(page, "Object.fromEntries(new URLSearchParams(location.hash.slice(1)))")
+    assert params["pv"] == pv
     hash_ = js(page, "location.hash")
     assert page.errors == []
     page.close()
@@ -725,6 +779,15 @@ def test_share_this_view(browser, server):
         "window.__state.sel && window.__state.sel.kind === 'cell'", timeout=10000
     )
     assert js(page, "window.__state.sel.key") == fp
+    # the preview with its settings: VH at 60 %
+    page.wait_for_selector(f"{row} select.bq-band", timeout=10000)
+    assert js(
+        page,
+        f"""(() => {{ const r = document.querySelector('{row}');
+          const s = r.querySelector('select.bq-band');
+          return [s.options[s.selectedIndex].textContent, r.querySelector('input[type=range]').value,
+                  window.__map.getPaintProperty(r.dataset.id, 'raster-opacity')]; }})()""",
+    ) == ["VH", "60", 0.6]
     assert js(page, "!!document.querySelector('.maplibregl-popup .hist')")
     # the same link (the camera aside: the popup keeps itself in view)
     restored = js(
@@ -737,16 +800,17 @@ def test_share_this_view(browser, server):
     js(page, f"{PASS_6H_AGO}.click()")
     page.wait_for_function("location.hash.includes('sel=')", timeout=5000)
     params = js(page, "Object.fromEntries(new URLSearchParams(location.hash.slice(1)))")
-    assert params["sel"] == key and "fp" not in params and params["pv"] == key
+    assert params["sel"] == key and "fp" not in params and params["pv"] == pv
     page.close()
     # a link with an acquisition and a footprint that are gone: dropped, the
-    # rest of the view kept
+    # rest of the view kept (and a preview's invalid settings: the defaults)
     gone = "r|s1|S1D|1"
     page = open_page(
         browser,
         server,
         f"aoi=-122.3,47.6&sel={gone.replace('|', '%7C')}"
-        f"&pv={gone.replace('|', '%7C')};s1%7Cnope@1;{key.replace('|', '%7C')}",
+        f"&pv={gone.replace('|', '%7C')};s1%7Cnope@1;{key.replace('|', '%7C')}"
+        "~o=7~ch=V%2BH",  # settings out of range or malformed: ignored
     )
     page.wait_for_function(
         "document.querySelectorAll('#browse-queue tbody tr').length === 1",

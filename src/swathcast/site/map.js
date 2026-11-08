@@ -1630,9 +1630,10 @@ function togglePreview(btn) {
   else openPreview(it);
 }
 // A browse item's image draped on the map, on top of the others. quiet (a
-// link's preview, opened again): one with no image now is dropped, unsaid.
-async function openPreview(it, { quiet = false } = {}) {
-  const q = { id: `browse-${++queueSeq}`, key: it.key, meta: it.meta, status: "loading", b: null, opacity: QUEUE_OPACITY, note: "" };
+// link's preview, opened again): one with no image now is dropped, unsaid;
+// opacity and channel (a band's slug, bandSlug): the link's settings.
+async function openPreview(it, { quiet = false, opacity = null, channel = null } = {}) {
+  const q = { id: `browse-${++queueSeq}`, key: it.key, meta: it.meta, status: "loading", b: null, opacity: opacity ?? QUEUE_OPACITY, note: "" };
   queue.unshift(q); // newest on top
   renderQueue();
   try {
@@ -1647,7 +1648,9 @@ async function openPreview(it, { quiet = false } = {}) {
     if ((!b || !b.thumb) && quiet) { removePreview(q); return; }
     if (!b || !b.thumb) { q.status = "none"; q.note = (b && b.note) || "No browse image found."; renderQueue(); return; }
     if (!b.georef) { q.status = "unplaced"; q.note = b.note || "Not georeferenced: not placed on the map."; renderQueue(); return; }
-    const img = await drapedImage(b.georef);
+    const band = channel && b.bands ? b.bands.findIndex((x) => bandSlug(x.label) === channel) : -1;
+    if (band > 0) q.band = band; // not the first (colour): the link's channel
+    const img = await drapedImage(band > 0 ? { ...b.georef, url: b.bands[band].url, urls: null } : b.georef);
     if (!queue.includes(q)) return;
     q.corners = img.corners;
     q.canvas = img.canvas; // Web Mercator, north up (previewCovers)
@@ -1758,7 +1761,7 @@ function renderQueue() {
     const sel = tr.querySelector(".bq-band");
     if (sel) sel.addEventListener("change", () => switchBand(q, Number(sel.value)));
     const range = tr.querySelector("input[type=range]");
-    if (range) range.addEventListener("input", () => { q.opacity = Number(range.value) / 100; if (map.getLayer(q.id)) map.setPaintProperty(q.id, "raster-opacity", q.opacity); });
+    if (range) range.addEventListener("input", () => { q.opacity = Number(range.value) / 100; if (map.getLayer(q.id)) map.setPaintProperty(q.id, "raster-opacity", q.opacity); writeHashSoon(); });
     const handle = tr.querySelector(".bq-handle");
     handle.addEventListener("pointerdown", (e) => dragRow(e, tr));
     // keyboard: arrow up/down on the handle moves the row (and its image)
@@ -2880,12 +2883,13 @@ try {
 // ---------------------------------------------------------------- shareable URL
 // The page's state lives in the URL hash, so a reload keeps it and a link
 // shares it: #aoi=-121.735,46.786&m=s1,s2&to=2026-10-20&s1.dir=descending&tab=past
-// &sel=r|s1|S1D|29876543&pv=r|s1|S1D|29876543;s2|tile+10TET@1793000000
+// &sel=r|s1|S1D|29876543&pv=r|s1|S1D|29876543~o=0.6~ch=vh;s2|tile+10TET@1793000000
 // &map=-121.7357,46.7861,6.6&bm=imagery&flat=1&sats=off.
 // The selection: sel, a pass or acquisition of the AOI's list (its key), or
 // fp, a footprint whose popup is open (mission|title). pv: the previews on
 // the map, top first, each the list acquisition it was opened from, or a
-// footprint and its acquisition's time (mission|title@unix seconds).
+// footprint and its acquisition's time (mission|title@unix seconds), then
+// its settings when not the default (~o=opacity~ch=channel, previewRef).
 // Only what differs from the defaults is written. An AOI is a point
 // ("lon,lat"), a polygon ring ("lon,lat;lon,lat;…") or GeoJSON; the map's
 // camera is lon,lat,zoom, with bearing,pitch when it is turned or tilted.
@@ -2944,7 +2948,7 @@ function writeHash() {
   if (view.basemap !== DEFAULT_BASEMAP) q.set("bm", view.basemap);
   if (!globeBox.checked) q.set("flat", "1");
   if (!satsBox.checked) q.set("sats", "off");
-  const hash = q.toString().replace(/%2C/g, ",").replace(/%3B/g, ";");
+  const hash = q.toString().replace(/%2C/g, ",").replace(/%3B/g, ";").replace(/%7E/g, "~").replace(/%3D/g, "=");
   if (hash === lastHash) return;
   lastHash = hash;
   history.replaceState(null, "", hash ? `#${hash}` : location.pathname + location.search);
@@ -2960,11 +2964,32 @@ function tellParent() {
 }
 // A preview's place in the link: its acquisition in the AOI's list, else its
 // footprint and time (see above); null for neither.
+// Its settings follow, each only when not the default: ~o=0.6 (opacity,
+// 0 to 1) and ~ch=vh (the channel: the band's label as a slug, e.g. vv, vh,
+// thermalband31; the first band, colour, is the default).
 function previewRef(q) {
   const m = q.meta;
-  if (m.item && state.aoi && listItems().some((x) => x.key === m.item)) return m.item;
-  return m.cell ? `${m.cell}@${Math.round(m.when.getTime() / 1000)}` : null;
+  const ref = m.item && state.aoi && listItems().some((x) => x.key === m.item) ? m.item
+    : m.cell ? `${m.cell}@${Math.round(m.when.getTime() / 1000)}` : null;
+  if (!ref) return null;
+  const o = Math.abs(q.opacity - QUEUE_OPACITY) > 1e-3 ? `~o=${Number(q.opacity.toFixed(2))}` : "";
+  const band = q.band && q.b && q.b.bands && q.b.bands[q.band];
+  return `${ref}${o}${band ? `~ch=${bandSlug(band.label)}` : ""}`;
 }
+const bandSlug = (label) => String(label).toLowerCase().replace(/[^a-z0-9]+/g, "");
+// A link's preview entry: its reference, and its settings (invalid ones ignored).
+function parsePreviewEntry(entry) {
+  const [ref, ...parts] = entry.split("~");
+  const out = { ref, opacity: null, channel: null };
+  parts.forEach((p) => {
+    const [k, v = ""] = p.split("=");
+    if (k === "o" && v !== "" && Number.isFinite(Number(v)) && Number(v) >= 0 && Number(v) <= 1) out.opacity = Number(v);
+    if (k === "ch" && /^[a-z0-9]+$/.test(v)) out.channel = v;
+  });
+  return out;
+}
+// The opacity slider moves continuously: the URL follows once it rests.
+function writeHashSoon() { clearTimeout(cameraTimer); cameraTimer = setTimeout(writeHash, 300); }
 // What a link had selected and open, waiting for what it refers to: the
 // footprints built, the AOI's passes, the catalogues' answers. Until then
 // it stays in the URL as it was. What no longer exists (a pass gone by, an
@@ -2990,14 +3015,18 @@ async function restoreLink() {
     link.sel = null;
     if (it) select(it.kind, it.key, { fit: !linkCamera, scroll: true });
   }
-  const keys = [];
-  for (const ref of link.pv) {
-    try { keys.push(await previewKey(ref)); } catch { keys.push(null); }
+  const found = [];
+  for (const entry of link.pv) {
+    const e = parsePreviewEntry(entry);
+    try { found.push({ ...e, key: await previewKey(e.ref) }); } catch { found.push({ key: null }); }
     if (!current()) return;
   }
   link.pv = [];
   // bottom first, each on top of the last: the link's order
-  keys.reverse().forEach((k) => { const it = k && browseItems.get(k); if (it && !queued(k)) openPreview(it, { quiet: true }); });
+  found.reverse().forEach(({ key, opacity, channel }) => {
+    const it = key && browseItems.get(key);
+    if (it && !queued(key)) openPreview(it, { quiet: true, opacity, channel });
+  });
   done();
 }
 // A link's preview reference made a browse item again (null: gone).
