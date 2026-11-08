@@ -259,9 +259,34 @@ def browser():
         b.close()
 
 
+# ASF's GRD browse search (history.js BROWSE.s1, the last resort after
+# Planetary Computer and OPERA): one scene with a browse image, so a Sentinel-1
+# preview opens (listed, not placed: ASF's browse is in radar geometry)
+ASF_BROWSE = {
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "geometry": None,
+            "properties": {
+                "sceneName": "S1D_EW_GRDM_1SDH_TEST",
+                "browse": ["https://datapool.asf.alaska.edu/BROWSE/SD/test.png"],
+            },
+        }
+    ],
+}
+
+
 def stub(route):
     url = route.request.url
     host = url.split("/")[2]
+    if host == "api.daac.asf.alaska.edu" and "processingLevel=GRD_HD" in url:
+        return route.fulfill(
+            status=200,
+            content_type="application/json",
+            headers={"access-control-allow-origin": "*"},
+            body=json.dumps(ASF_BROWSE),
+        )
     if host in STUBS:
         return route.fulfill(
             status=200,
@@ -548,12 +573,15 @@ def test_direction_pills_and_reset(browser, server):
 
 
 SHARE_BASE = "https://egagli.github.io/maps/swathcast.html"
+# the AOI list's first past pass: the synthetic S1D pass 6 h ago
+PASS_6H_AGO = "[...document.querySelectorAll('table.pass-list tr.item.past')][0]"
 
 
 def test_share_this_view(browser, server):
     """The view in the link (map camera, list tab, projection, satellites, as
     well as the AOI and filters), restored from it; "Share this view" copies
-    the link to the site's wrapper page, or shows it to copy by hand."""
+    the link to the site's wrapper page, or shows it to copy by hand; and what
+    is selected and open (a footprint's popup, a pass, the previews)."""
     origin = server.rsplit("/", 1)[0]
     context = browser.new_context(
         viewport={"width": 1400, "height": 850},
@@ -662,6 +690,78 @@ def test_share_this_view(browser, server):
     )
     page.close()
     context.close()
+    # What is selected and open is in the link too: a footprint and its popup
+    # (fp), a pass of the AOI's list (sel), the previews on the map (pv); a
+    # reload opens them again, and what no longer exists is dropped quietly.
+    page = open_page(browser, server, "aoi=-122.3,47.6&tab=past")
+    page.wait_for_function(f"{PASS_6H_AGO}?.querySelector('.row-prev')")
+    # a footprint picked on the map: its popup open, and in the link
+    # (the map is zoomed in on the AOI: the swath fills it; clear of the panels)
+    page.mouse.click(1000, 300)
+    page.wait_for_function("location.hash.includes('fp=')", timeout=5000)
+    fp = js(page, "new URLSearchParams(location.hash.slice(1)).get('fp')")
+    assert fp.startswith("s1|")
+    assert js(page, "window.__state.sel.kind") == "cell"
+    # the 6-hour-old pass's preview, from its row: listed, and in the link
+    key = js(page, f"{PASS_6H_AGO}.dataset.key")
+    assert key.startswith("r|s1|S1D|")
+    js(page, f"{PASS_6H_AGO}.querySelector('.row-prev').click()")
+    page.wait_for_selector("#browse-queue tbody tr", timeout=10000)
+    page.wait_for_function(
+        "!document.querySelector('#browse-queue tbody tr .bq-ph')", timeout=10000
+    )
+    params = js(page, "Object.fromEntries(new URLSearchParams(location.hash.slice(1)))")
+    assert params["fp"] == fp and params["pv"] == key and "sel" not in params
+    hash_ = js(page, "location.hash")
+    assert page.errors == []
+    page.close()
+    # reopened: the footprint's popup and the preview
+    page = open_page(browser, server, hash_.lstrip("#"))
+    page.wait_for_function(
+        "document.querySelectorAll('#browse-queue tbody tr').length === 1",
+        timeout=30000,
+    )
+    page.wait_for_function(
+        "window.__state.sel && window.__state.sel.kind === 'cell'", timeout=10000
+    )
+    assert js(page, "window.__state.sel.key") == fp
+    assert js(page, "!!document.querySelector('.maplibregl-popup .hist')")
+    # the same link (the camera aside: the popup keeps itself in view)
+    restored = js(
+        page, "Object.fromEntries(new URLSearchParams(location.hash.slice(1)))"
+    )
+    restored.pop("map")
+    params.pop("map")
+    assert restored == params
+    # a pass selected in the list: sel (one selection: the footprint's goes)
+    js(page, f"{PASS_6H_AGO}.click()")
+    page.wait_for_function("location.hash.includes('sel=')", timeout=5000)
+    params = js(page, "Object.fromEntries(new URLSearchParams(location.hash.slice(1)))")
+    assert params["sel"] == key and "fp" not in params and params["pv"] == key
+    page.close()
+    # a link with an acquisition and a footprint that are gone: dropped, the
+    # rest of the view kept
+    gone = "r|s1|S1D|1"
+    page = open_page(
+        browser,
+        server,
+        f"aoi=-122.3,47.6&sel={gone.replace('|', '%7C')}"
+        f"&pv={gone.replace('|', '%7C')};s1%7Cnope@1;{key.replace('|', '%7C')}",
+    )
+    page.wait_for_function(
+        "document.querySelectorAll('#browse-queue tbody tr').length === 1",
+        timeout=30000,
+    )
+    page.wait_for_function(
+        "!new URLSearchParams(location.hash.slice(1)).get('pv')?.includes(';')",
+        timeout=30000,
+    )
+    params = js(page, "Object.fromEntries(new URLSearchParams(location.hash.slice(1)))")
+    assert params["pv"] == key and "sel" not in params
+    assert params["aoi"] == "-122.3,47.6"
+    assert js(page, "window.__state.sel") is None
+    assert page.errors == []
+    page.close()
 
 
 def test_first_visit_tour(browser, server):
