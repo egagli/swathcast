@@ -65,6 +65,8 @@ label.check.off input { cursor: not-allowed; }
 .panel-scroll { overflow-y: auto; flex: 1; min-height: 0; }
 .panel-top { display: flex; align-items: center; gap: 8px; padding: 10px 12px 8px 16px; border-bottom: 1px solid var(--hairline); }
 .panel-top .title { font-weight: 600; font-size: 13px; color: var(--ink-2); flex: 1; }
+.share-box { display: block; width: calc(100% - 24px); margin: 6px 12px 0; padding: 4px 6px; font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ink); background: var(--surface-2); border: 1px solid var(--hairline); border-radius: 6px; }
+.share-box[hidden] { display: none; }
 .icon-btn { border: 0; background: transparent; padding: 4px 6px; border-radius: 6px; color: var(--ink-2); font-size: 16px; line-height: 1; }
 .icon-btn:hover { background: var(--surface-2); }
 #panel-open {
@@ -443,7 +445,8 @@ table.pass-list tr.now-row td .nm { color: var(--ink-2); font-weight: 400; }
   <div id="map"></div>
   <button id="panel-open" aria-controls="sidebar">☰ Filters &amp; passes</button>
   <aside id="sidebar" aria-label="Filters and passes">
-    <div class="panel-top"><span class="title">Plan around the next pass</span><button class="text-btn" id="tour-btn" title="A short tour of the map, an AOI's passes and the Delivery page">Tour</button><button class="text-btn" id="share" title="Copy a link to this view: AOI, missions, filters and dates">Copy link</button><button class="text-btn" id="reset" title="Start over: clear the AOI, missions, filters, dates and saved map settings">Reset</button><button class="icon-btn" id="panel-close" title="Hide the panel" aria-label="Hide the panel">⟨</button></div>
+    <div class="panel-top"><span class="title">Plan around the next pass</span><button class="text-btn" id="tour-btn" title="A short tour of the map, an AOI's passes and the Delivery page">Tour</button><button class="text-btn" id="share" title="Copy a link to this view: AOI, missions, filters, dates and the map">Share this view</button><button class="text-btn" id="reset" title="Start over: clear the AOI, missions, filters, dates and saved map settings">Reset</button><button class="icon-btn" id="panel-close" title="Hide the panel" aria-label="Hide the panel">⟨</button></div>
+    <input type="text" id="share-box" class="share-box" readonly hidden aria-label="Link to this view: copy it">
     <div class="panel-fixed">
     <section id="sec-missions">
       <h2>Missions <span class="nm">each with its own filters</span></h2>

@@ -315,8 +315,12 @@ def fetch_library(url, attempts=4):
             time.sleep(2 * (i + 1))
 
 
-def open_page(browser, server, hash_="", width=1400, height=850):
-    page = browser.new_page(viewport={"width": width, "height": height})
+def open_page(browser, server, hash_="", width=1400, height=850, context=None):
+    page = (
+        context.new_page()
+        if context
+        else browser.new_page(viewport={"width": width, "height": height})
+    )
     errors = []
     page.on("pageerror", lambda e: errors.append(str(e)))
     page.route(lambda u: not u.startswith("http://127.0.0.1"), stub)
@@ -543,6 +547,123 @@ def test_direction_pills_and_reset(browser, server):
     page.close()
 
 
+SHARE_BASE = "https://egagli.github.io/maps/swathcast.html"
+
+
+def test_share_this_view(browser, server):
+    """The view in the link (map camera, list tab, projection, satellites, as
+    well as the AOI and filters), restored from it; "Share this view" copies
+    the link to the site's wrapper page, or shows it to copy by hand."""
+    origin = server.rsplit("/", 1)[0]
+    context = browser.new_context(
+        viewport={"width": 1400, "height": 850},
+        permissions=["clipboard-read", "clipboard-write"],
+    )
+    page = open_page(browser, server, "aoi=-122.3,47.6", context=context)
+    assert page.errors == []
+    # an old link (no camera) frames its AOI, and writes where the map is
+    page.wait_for_function("location.hash.includes('map=')", timeout=10000)
+    js(page, "window.__map.jumpTo({center: [-120.5, 45.25], zoom: 5.5})")
+    page.wait_for_function(
+        "location.hash.includes('map=-120.5,45.25,5.5')", timeout=5000
+    )
+    js(page, "document.querySelector('#list-tabs [data-tab=\"past\"]').click()")
+    js(page, "document.getElementById('opt-sats').click()")
+    js(page, "document.getElementById('opt-globe').click()")
+    page.wait_for_timeout(500)
+    hash_ = js(page, "location.hash")
+    for part in (
+        "aoi=-122.3,47.6",
+        "tab=past",
+        "map=-120.5,45.25,5.5",
+        "flat=1",
+        "sats=off",
+    ):
+        assert part in hash_, (part, hash_)
+    # the button: the wrapper page's URL, with this view
+    page.click("#share")
+    page.wait_for_function(
+        "document.getElementById('share').textContent === 'Link copied'",
+        timeout=4000,
+    )
+    assert js(page, "navigator.clipboard.readText()") == SHARE_BASE + hash_
+    page.wait_for_function(
+        "document.getElementById('share').textContent === 'Share this view'",
+        timeout=4000,
+    )
+    # the clipboard refused: the link is shown, selected, to copy by hand
+    js(
+        page,
+        "void (navigator.clipboard.writeText = () => Promise.reject(new Error('denied')))",
+    )
+    page.click("#share")
+    page.wait_for_function("!document.getElementById('share-box').hidden")
+    box = js(
+        page,
+        """(() => { const b = document.getElementById('share-box');
+          return {hidden: b.hidden, value: b.value, readOnly: b.readOnly,
+                  focused: document.activeElement === b,
+                  selected: b.selectionStart === 0 && b.selectionEnd === b.value.length}; })()""",
+    )
+    assert box == {
+        "hidden": False,
+        "value": SHARE_BASE + hash_,
+        "readOnly": True,
+        "focused": True,
+        "selected": True,
+    }
+    assert page.errors == []
+    page.close()
+    # the link reopens that view: camera, tab, projection, satellites
+    page = open_page(browser, server, hash_.lstrip("#"), context=context)
+    page.wait_for_timeout(1000)
+    got = js(
+        page,
+        """({c: window.__map.getCenter().toArray(), z: window.__map.getZoom(),
+            tab: window.__state.listTab, aoi: window.__state.aoi.coordinates,
+            globe: document.getElementById('opt-globe').checked,
+            sats: document.getElementById('opt-sats').checked})""",
+    )
+    assert got["c"] == pytest.approx([-120.5, 45.25], abs=1e-4)
+    assert got["z"] == pytest.approx(5.5, abs=0.01)
+    assert got["tab"] == "past"
+    assert got["aoi"] == pytest.approx([-122.3, 47.6])
+    assert got["globe"] is False and got["sats"] is False
+    assert js(page, "location.hash") == hash_
+    assert page.errors == []
+    page.close()
+    # embedded in the site's wrapper page: the view is posted to it on load
+    # and on each change (the wrapper stubbed: same origin here, so its
+    # postMessage can be recorded)
+    page = context.new_page()
+    page.route(lambda u: not u.startswith("http://127.0.0.1"), stub)
+    page.route(
+        f"{origin}/wrapper.html",
+        lambda route: route.fulfill(
+            status=200,
+            content_type="text/html",
+            body="<!doctype html><script>window.posted = [];"
+            "window.postMessage = (data, target) => window.posted.push({data, target});"
+            f"</script><iframe id=app src='{server}#aoi=-122.3,47.6' "
+            "style='width:1200px;height:800px'></iframe>",
+        ),
+    )
+    page.goto(f"{origin}/wrapper.html")
+    page.wait_for_function("window.posted.length >= 1", timeout=120000)
+    first = js(page, "window.posted[0]")
+    assert first["target"] == "https://egagli.github.io"
+    assert first["data"]["type"] == "egagli-map-state"
+    assert first["data"]["hash"].startswith("#aoi=-122.3,47.6")
+    assert first["data"]["search"] == ""
+    frame = page.frame_locator("#app")
+    frame.locator("#opt-sats").click()
+    page.wait_for_function(
+        "window.posted.some(p => p.data.hash.includes('sats=off'))", timeout=5000
+    )
+    page.close()
+    context.close()
+
+
 def test_first_visit_tour(browser, server):
     # a first visit (no link state): the tour opens on its own, once
     page = open_page(browser, server)
@@ -572,8 +693,9 @@ def test_first_visit_tour(browser, server):
     page.click(".tour-next")  # 5: its passes, the next one opened
     page.wait_for_selector("table.pass-list tr.item.sel", timeout=30000)
     assert js(page, "document.getElementById('aoi-timeline').hidden") is False
-    # 6, on the Delivery page
-    with page.expect_navigation():
+    # 6, on the Delivery page (not the map's own URL updates, which count as
+    # navigations too)
+    with page.expect_navigation(url="**/dashboard.html"):
         page.click(".tour-next")
     page.wait_for_selector(".tour:not([hidden])", timeout=15000)
     assert "6 of 6" in js(page, "document.querySelector('.tour-n').textContent")
