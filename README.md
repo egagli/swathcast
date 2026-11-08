@@ -57,8 +57,9 @@ snowmelt, for example), field campaigns, and coordination between missions.
   its plan ends. The globe draws footprints up to the poles; the flat map stops at 85°. Basemaps are
   Esri Gray Canvas (the default), Esri World Imagery (with or without labels), Esri World Topographic
   and OpenStreetMap.
-- **Share and export**: the page's state (AOI, missions, filters, dates, the list's tab, the map's
-  position, basemap, projection and live satellites) lives in the URL, so **Share this view** copies
+- **Share and export**: the page's state (AOI, missions, filters, dates, the list's tab, the selected
+  pass or footprint, the previews on the map, the map's position, basemap, projection and live
+  satellites) lives in the URL, so **Share this view** copies
   a link that reopens it (on the [live site](https://egagli.github.io/maps/swathcast.html)); an AOI's passes can be saved as CSV or as a calendar (`.ics`, one event per
   pass with its likely download time). Optical passes show the sun's elevation at the AOI. Times are
   shown in UTC and in local time at the AOI. A source whose poller is failing is marked ⚠; **Reset**

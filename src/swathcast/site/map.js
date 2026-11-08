@@ -319,6 +319,7 @@ async function load() {
   if (restored.aoi) setAOI(restored.aoi, { fly: !linkCamera, refresh: false });
   if (restored.aoi && restored.tab === "past") state.listTab = "past";
   await refresh();
+  restoreLink(); // in the background: the selection and previews, once what they refer to is in
   // NISAR's file in the background, so selecting NISAR does not wait for it
   if (idx && idx.sensors.nisar) setTimeout(() => download(idx.sensors.nisar.file).catch(() => {}), 1500);
 }
@@ -1501,7 +1502,7 @@ function acqRow(c, x, planned, now) {
   if (!planned) {
     product = (x.links || []).map((l) => `<a href="${esc(l.href)}" target="_blank" rel="noopener" title="${esc(l.title || "")}">${esc(l.text)} ↗</a>`).join("<br>") || dash;
     if (x.browse) {
-      const k = browseItem(x.browse, { mission: c.mission, when: x.when, platform: x.platform, direction: x.direction || c.direction || "", track: track ?? "", frame, center: c.center });
+      const k = historyBrowse(c, x, track, frame);
       preview = `<button type="button" class="link-btn" data-browse="${esc(k)}">${queued(k) ? "Remove from map" : "Preview on map"}</button>`;
     }
   }
@@ -1509,13 +1510,23 @@ function acqRow(c, x, planned, now) {
     + `<td>${x.platform}</td>${rowTrack(c) ? `<td>${track != null ? track : dash}</td>` : ""}`
     + `<td>${detail || dash}</td><td class="prod">${preview}</td><td class="prod">${product}</td></tr>`;
 }
+// A footprint's past acquisition's browse item (the popup's rows; a link's
+// preview opened from one: cellKey(c) and its time).
+const cellKey = (c) => `${c.mission}|${c.title}`;
+function historyBrowse(c, x, track = x.track ?? c.track, frame = frameOf(c)) {
+  return browseItem(x.browse, { mission: c.mission, when: x.when, platform: x.platform, direction: x.direction || c.direction || "", track: track ?? "", frame, center: c.center, cell: cellKey(c) });
+}
 // The browse requests of the popup's rows, by index (data-browse).
 // keyed by the request itself, so a button stays right whatever else is shown
 const browseItems = new Map();
 function browseItem(req, meta) {
   const key = JSON.stringify(req);
   if (!browseItems.has(key)) browseItems.set(key, { req, key, meta });
-  else if (meta.item && !browseItems.get(key).meta.item) browseItems.get(key).meta.item = meta.item; // its pass in the AOI's list
+  else {
+    const have = browseItems.get(key).meta;
+    if (meta.item && !have.item) have.item = meta.item; // its pass in the AOI's list
+    if (meta.cell && !have.cell) have.cell = meta.cell; // its footprint
+  }
   return key;
 }
 
@@ -1611,25 +1622,35 @@ function syncPreviewButtons() {
   });
 }
 
-async function togglePreview(btn) {
+function togglePreview(btn) {
   const it = browseItems.get(btn.dataset.browse);
   if (!it) return;
   const have = queue.find((q) => q.key === it.key);
-  if (have) { removePreview(have); return; }
-  const q = { id: `browse-${++queueSeq}`, key: it.key, meta: it.meta, status: "loading", b: null, opacity: QUEUE_OPACITY, note: "" };
+  if (have) removePreview(have);
+  else openPreview(it);
+}
+// A browse item's image draped on the map, on top of the others. quiet (a
+// link's preview, opened again): one with no image now is dropped, unsaid;
+// opacity and channel (a band's slug, bandSlug): the link's settings.
+async function openPreview(it, { quiet = false, opacity = null, channel = null } = {}) {
+  const q = { id: `browse-${++queueSeq}`, key: it.key, meta: it.meta, status: "loading", b: null, opacity: opacity ?? QUEUE_OPACITY, note: "" };
   queue.unshift(q); // newest on top
   renderQueue();
   try {
     const { req, split, atPoint } = await withSplit(it.req);
+    if (split === "none" && quiet) { removePreview(q); return; }
     if (split === "none") { q.status = "none"; q.note = `${SPLIT_NOTE}; this pass is nowhere the nearest, so Worldview has no image of it.`; renderQueue(); return; }
     const b = await fetchBrowse(req);
     if (!queue.includes(q)) return;
     q.b = b;
     q.split = split;
     q.splitAway = split === true && !atPoint;
+    if ((!b || !b.thumb) && quiet) { removePreview(q); return; }
     if (!b || !b.thumb) { q.status = "none"; q.note = (b && b.note) || "No browse image found."; renderQueue(); return; }
     if (!b.georef) { q.status = "unplaced"; q.note = b.note || "Not georeferenced: not placed on the map."; renderQueue(); return; }
-    const img = await drapedImage(b.georef);
+    const band = channel && b.bands ? b.bands.findIndex((x) => bandSlug(x.label) === channel) : -1;
+    if (band > 0) q.band = band; // not the first (colour): the link's channel
+    const img = await drapedImage(band > 0 ? { ...b.georef, url: b.bands[band].url, urls: null } : b.georef);
     if (!queue.includes(q)) return;
     q.corners = img.corners;
     q.canvas = img.canvas; // Web Mercator, north up (previewCovers)
@@ -1643,6 +1664,7 @@ async function togglePreview(btn) {
     orderPreviewLayers();
   } catch (err) {
     if (!queue.includes(q)) return;
+    if (quiet) { removePreview(q); return; }
     q.status = "error";
     q.note = `Could not load it: ${err.message}`;
   }
@@ -1703,6 +1725,7 @@ const queueBox = document.getElementById("browse-queue");
 let queueShowing = false;
 function renderQueue() {
   syncPreviewButtons();
+  writeHash(); // the previews are in the link
   const showing = queue.some((q) => q.status === "ok");
   if (showing !== queueShowing) { queueShowing = showing; drawCells(); } // footprints fade under previews
   queueBox.hidden = !queue.length;
@@ -1738,7 +1761,7 @@ function renderQueue() {
     const sel = tr.querySelector(".bq-band");
     if (sel) sel.addEventListener("change", () => switchBand(q, Number(sel.value)));
     const range = tr.querySelector("input[type=range]");
-    if (range) range.addEventListener("input", () => { q.opacity = Number(range.value) / 100; if (map.getLayer(q.id)) map.setPaintProperty(q.id, "raster-opacity", q.opacity); });
+    if (range) range.addEventListener("input", () => { q.opacity = Number(range.value) / 100; if (map.getLayer(q.id)) map.setPaintProperty(q.id, "raster-opacity", q.opacity); writeHashSoon(); });
     const handle = tr.querySelector(".bq-handle");
     handle.addEventListener("pointerdown", (e) => dragRow(e, tr));
     // keyboard: arrow up/down on the handle moves the row (and its image)
@@ -1804,6 +1827,7 @@ function dragRow(e, tr) {
     const order = [...body.children].map((r) => r.dataset.id);
     queue.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
     orderPreviewLayers();
+    writeHash();
   };
   window.addEventListener("pointermove", move);
   window.addEventListener("pointerup", up);
@@ -2003,6 +2027,7 @@ function highlight(shapes, mission, { fill = true } = {}) {
 }
 const selected = (it) => Boolean(state.sel && it && state.sel.key === it.key);
 function select(kind, key = null, { fit = true, scroll = false } = {}) {
+  if (pendingLink) pendingLink.sel = pendingLink.fp = null; // a choice made here: the link's is not restored over it
   state.sel = kind ? { kind, key } : null;
   pickedPreview = null;
   view.closePopup();
@@ -2023,6 +2048,7 @@ function select(kind, key = null, { fit = true, scroll = false } = {}) {
   }
   renderList();
   syncPreviewSelection();
+  writeHash();
   if (scroll) requestAnimationFrame(() => { const row = document.querySelector("#results tr.sel"); if (row) row.scrollIntoView({ block: "center", behavior: "smooth" }); });
 }
 
@@ -2042,16 +2068,21 @@ function popupBeside(bbox, at, html, opts) {
 }
 
 // A footprint picked on the map: its popup (history and plan).
+let openCellPopup = null; // the selected footprint's popup, while open (the link's fp)
 function selectCell(c) {
-  state.sel = { kind: "cell", key: `${c.mission}|${c.title}` };
+  if (pendingLink) pendingLink.sel = pendingLink.fp = null;
+  state.sel = { kind: "cell", key: cellKey(c) };
   pickedPreview = null;
   syncPreviewSelection();
   view.closePopup();
   const outline = highlight([c.drawGeo || drawable(c.geojson, c.bbox) || c.geojson], c.mission, { fill: false });
   const pop = popupBeside(outline && outline.bbox, c.center, cellPopup(c), { maxWidth: "820px" });
+  openCellPopup = pop;
+  pop.on("close", () => { if (openCellPopup === pop) { openCellPopup = null; writeHash(); } });
   requestAnimationFrame(() => keepPopupInView(pop)); // the map moves, the frame and its popup together
   fillHistory(c, pop);
   renderList(); // the list's selection, if any, is cleared
+  writeHash();
 }
 
 // A recent acquisition over the AOI (catalogue products, or a planned pass
@@ -2142,6 +2173,8 @@ function recentBrowse(a) {
   return null;
 }
 // ---------------------------------------------------------------- the AOI's list
+// A recent acquisition's browse item's meta (its row's Preview).
+const listBrowseMeta = (it) => ({ mission: it.mission, when: it.ref.shown, platform: it.ref.platform || MISSION[it.mission].label, direction: it.direction || "", track: it.track ?? "", frame: "", center: aoiCenter(), item: it.key });
 // One list, nearest to now first on each side: the planned passes ahead (as
 // filtered), soonest first, a "Now" line, then the acquisitions of the last
 // RECENT_DAYS, newest first (catalogue products, and planned passes no
@@ -2346,7 +2379,7 @@ function renderList() {
       status = e ? `~${utcText(roundUp10(e.exp.median_at), it.when)}${failingMark(e.failing)}<div class="nm">${localText(roundUp10(e.exp.median_at), ll)} · ${e.label}</div>` : `<span class="nm">${latencyLoading(it.mission) ? "loading latency…" : "delivery not measured"}</span>`;
     } else status = selected(it) ? '<span class="nm">details below ▾</span>' : recentSummary(it.ref);
     const req = it.kind === "recent" ? recentBrowse(it.ref) : null;
-    const k = req && browseItem(req, { mission: it.mission, when: it.ref.shown, platform: it.ref.platform || MISSION[it.mission].label, direction: it.direction || "", track: it.track ?? "", frame: "", center: ll, item: it.key });
+    const k = req && browseItem(req, listBrowseMeta(it));
     const prev = k ? `<button type="button" class="link-btn row-prev" data-browse="${esc(k)}" title="Drape its browse image on the map">${queued(k) ? "Remove" : "Preview"}</button>` : "";
     tr.innerHTML = `<td class="when">${whenCell(it.when, ll, it.kind === "pass" && it.ref.estimated, rel(it.when))}</td><td>${sat}</td><td class="status">${status}</td><td class="prev">${prev}</td>`;
     tr.querySelector(".row-prev")?.addEventListener("click", (e) => { e.stopPropagation(); togglePreview(e.currentTarget); });
@@ -2850,7 +2883,13 @@ try {
 // ---------------------------------------------------------------- shareable URL
 // The page's state lives in the URL hash, so a reload keeps it and a link
 // shares it: #aoi=-121.735,46.786&m=s1,s2&to=2026-10-20&s1.dir=descending&tab=past
+// &sel=r|s1|S1D|29876543&pv=r|s1|S1D|29876543~o=0.6~ch=vh;s2|tile+10TET@1793000000
 // &map=-121.7357,46.7861,6.6&bm=imagery&flat=1&sats=off.
+// The selection: sel, a pass or acquisition of the AOI's list (its key), or
+// fp, a footprint whose popup is open (mission|title). pv: the previews on
+// the map, top first, each the list acquisition it was opened from, or a
+// footprint and its acquisition's time (mission|title@unix seconds), then
+// its settings when not the default (~o=opacity~ch=channel, previewRef).
 // Only what differs from the defaults is written. An AOI is a point
 // ("lon,lat"), a polygon ring ("lon,lat;lon,lat;…") or GeoJSON; the map's
 // camera is lon,lat,zoom, with bearing,pitch when it is turned or tilted.
@@ -2897,12 +2936,19 @@ function writeHash() {
     if (mf.vzaText.trim()) q.set(`${key}.vza`, mf.vzaText.trim());
   });
   if (state.aoi && state.listTab === "past") q.set("tab", "past");
+  const link = pendingLink || {};
+  const sel = state.sel && state.sel.kind !== "cell" ? state.sel.key : link.sel;
+  const fp = state.sel && state.sel.kind === "cell" ? (openCellPopup ? state.sel.key : null) : link.fp;
+  if (sel) q.set("sel", sel);
+  else if (fp) q.set("fp", fp);
+  const pv = [...queue.map(previewRef), ...(link.pv || [])].filter(Boolean);
+  if (pv.length) q.set("pv", [...new Set(pv)].join(";"));
   const cam = cameraParam(map);
   if (cam) q.set("map", cam);
   if (view.basemap !== DEFAULT_BASEMAP) q.set("bm", view.basemap);
   if (!globeBox.checked) q.set("flat", "1");
   if (!satsBox.checked) q.set("sats", "off");
-  const hash = q.toString().replace(/%2C/g, ",").replace(/%3B/g, ";");
+  const hash = q.toString().replace(/%2C/g, ",").replace(/%3B/g, ";").replace(/%7E/g, "~").replace(/%3D/g, "=");
   if (hash === lastHash) return;
   lastHash = hash;
   history.replaceState(null, "", hash ? `#${hash}` : location.pathname + location.search);
@@ -2916,6 +2962,89 @@ function tellParent() {
     window.parent.postMessage({ type: "egagli-map-state", search: location.search, hash: location.hash }, PARENT_ORIGIN);
   } catch { /* the wrapper is not on that origin: nothing to tell */ }
 }
+// A preview's place in the link: its acquisition in the AOI's list, else its
+// footprint and time (see above); null for neither.
+// Its settings follow, each only when not the default: ~o=0.6 (opacity,
+// 0 to 1) and ~ch=vh (the channel: the band's label as a slug, e.g. vv, vh,
+// thermalband31; the first band, colour, is the default).
+function previewRef(q) {
+  const m = q.meta;
+  const ref = m.item && state.aoi && listItems().some((x) => x.key === m.item) ? m.item
+    : m.cell ? `${m.cell}@${Math.round(m.when.getTime() / 1000)}` : null;
+  if (!ref) return null;
+  const o = Math.abs(q.opacity - QUEUE_OPACITY) > 1e-3 ? `~o=${Number(q.opacity.toFixed(2))}` : "";
+  const band = q.band && q.b && q.b.bands && q.b.bands[q.band];
+  return `${ref}${o}${band ? `~ch=${bandSlug(band.label)}` : ""}`;
+}
+const bandSlug = (label) => String(label).toLowerCase().replace(/[^a-z0-9]+/g, "");
+// A link's preview entry: its reference, and its settings (invalid ones ignored).
+function parsePreviewEntry(entry) {
+  const [ref, ...parts] = entry.split("~");
+  const out = { ref, opacity: null, channel: null };
+  parts.forEach((p) => {
+    const [k, v = ""] = p.split("=");
+    if (k === "o" && v !== "" && Number.isFinite(Number(v)) && Number(v) >= 0 && Number(v) <= 1) out.opacity = Number(v);
+    if (k === "ch" && /^[a-z0-9]+$/.test(v)) out.channel = v;
+  });
+  return out;
+}
+// The opacity slider moves continuously: the URL follows once it rests.
+function writeHashSoon() { clearTimeout(cameraTimer); cameraTimer = setTimeout(writeHash, 300); }
+// What a link had selected and open, waiting for what it refers to: the
+// footprints built, the AOI's passes, the catalogues' answers. Until then
+// it stays in the URL as it was. What no longer exists (a pass gone by, an
+// acquisition no catalogue lists now) is dropped without a word.
+let pendingLink = null; // {sel, fp, pv: [refs, top first]}
+async function restoreLink() {
+  const link = pendingLink;
+  if (!link) return;
+  const current = () => pendingLink === link; // not started over, nor replaced by a choice made here
+  const done = () => { if (current()) { pendingLink = null; writeHash(); } };
+  await waitFor(settled, 60000);
+  if (!current()) return;
+  if (link.fp) {
+    const c = state.cells.find((x) => cellKey(x) === link.fp);
+    link.fp = null;
+    if (c) selectCell(c);
+  }
+  const fromList = (r) => r && r.startsWith("r|");
+  if (state.aoi && (fromList(link.sel) || link.pv.some(fromList))) await waitFor(() => searched() || !state.recent, 90000);
+  if (!current()) return;
+  if (link.sel) {
+    const it = listItems().find((x) => x.key === link.sel);
+    link.sel = null;
+    if (it) select(it.kind, it.key, { fit: !linkCamera, scroll: true });
+  }
+  const found = [];
+  for (const entry of link.pv) {
+    const e = parsePreviewEntry(entry);
+    try { found.push({ ...e, key: await previewKey(e.ref) }); } catch { found.push({ key: null }); }
+    if (!current()) return;
+  }
+  link.pv = [];
+  // bottom first, each on top of the last: the link's order
+  found.reverse().forEach(({ key, opacity, channel }) => {
+    const it = key && browseItems.get(key);
+    if (it && !queued(key)) openPreview(it, { quiet: true, opacity, channel });
+  });
+  done();
+}
+// A link's preview reference made a browse item again (null: gone).
+async function previewKey(ref) {
+  if (ref.startsWith("r|")) {
+    const it = listItems().find((x) => x.key === ref && x.kind === "recent");
+    const req = it && recentBrowse(it.ref);
+    return req ? browseItem(req, listBrowseMeta(it)) : null;
+  }
+  const at = ref.lastIndexOf("@"), t = Number(ref.slice(at + 1)) * 1000;
+  const c = at > 0 && Number.isFinite(t) ? state.cells.find((x) => cellKey(x) === ref.slice(0, at)) : null;
+  if (!c) return null;
+  let { items } = await fetchHistory(c);
+  if (!items) return null;
+  if (isWide(c.mission)) items = await wideDetails(c, items);
+  const x = items.find((y) => y.browse && Math.abs(y.when.getTime() - t) < 1000);
+  return x ? historyBrowse(c, x) : null;
+}
 // The camera is written as the map settles (not on every frame of a move).
 let cameraTimer = null;
 map.on("moveend", () => { clearTimeout(cameraTimer); cameraTimer = setTimeout(writeHash, 300); });
@@ -2923,6 +3052,7 @@ map.on("moveend", () => { clearTimeout(cameraTimer); cameraTimer = setTimeout(wr
 function readHash() {
   const q = new URLSearchParams(location.hash.slice(1));
   const out = { aoi: null, tab: q.get("tab") };
+  if (q.has("sel") || q.has("fp") || q.has("pv")) pendingLink = { sel: q.get("sel"), fp: q.get("sel") ? null : q.get("fp"), pv: (q.get("pv") || "").split(";").filter(Boolean) };
   if (q.has("m")) state.missions = new Set(q.get("m").split(",").filter((k) => MISSION[k]));
   const iso = /^\d{4}-\d{2}-\d{2}$/;
   const s = document.getElementById("date-start"), e = document.getElementById("date-end");
