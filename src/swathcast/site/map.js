@@ -29,6 +29,13 @@ import { Tour, flash, handOver, markTourSeen, pendingStep, sleep, tourSeen, wait
 import { ALTITUDE_KM, S3_OLCI_KM, WIDE_SWATH_KM, closestApproach, destination, nodeSolarTimes, position, scanHeadingAt, scanTime, sensorOf, swathImageModel, viewZenith } from "./swathgeom.js";
 import { RECENT_DAYS, SOURCES as SEARCHABLE, NOT_SEARCHABLE, PORTAL, registerSource, searchSources, groupAcquisitions } from "./recent.js";
 
+// "Share this view" links open the map on egagli.github.io's wrapper page,
+// which hands its query and hash on to this page in its iframe.
+const SHARE_BASE = "https://egagli.github.io/maps/swathcast.html";
+// Embedded there, each change of this page's URL is posted to the wrapper,
+// which copies it into its own address bar.
+const PARENT_ORIGIN = "https://egagli.github.io";
+
 // Zoom levels are MapLibre's. minZoom: below it the footprints in view are too
 // many to draw (without an AOI); Sentinel-1/2 then draw their planned
 // datatake swaths instead (overview), the others ask to zoom in.
@@ -91,13 +98,34 @@ const missionColor = (key) => css((MISSION[key] || { cssVar: "--muted" }).cssVar
 // satellites and chips: sensor keys (landsat-8/-9 keep their own colours)
 const sensorColor = (sensor) => css({ "sentinel-1": "--s1", "sentinel-2": "--s2", "landsat-8": "--l8", "landsat-9": "--l9", nisar: "--nisar", modis: "--m6", viirs: "--m7", "sentinel-3": "--m8" }[sensor] || "--muted");
 
+// The map's camera, as a link holds it (#map=lon,lat,zoom[,bearing,pitch]),
+// or null; and as one is written (only once it has left the starting view).
+const DEFAULT_CAMERA = { center: [-40, 25], zoom: 3 };
+function cameraFromParam(v) {
+  const n = String(v || "").split(",").map(Number);
+  if (n.length < 3 || n.slice(0, 3).some((x) => !Number.isFinite(x)) || Math.abs(n[1]) > 90) return null;
+  return { center: [((((n[0] + 180) % 360) + 360) % 360) - 180, n[1]], zoom: n[2], bearing: Number.isFinite(n[3]) ? n[3] : 0, pitch: Number.isFinite(n[4]) ? n[4] : 0 };
+}
+function cameraParam(m) {
+  const c = m.getCenter().wrap(), z = m.getZoom(), b = m.getBearing(), p = m.getPitch();
+  const r = (v, d) => Number(v.toFixed(d));
+  const out = [r(c.lng, 4), r(c.lat, 4), r(z, 2)];
+  if (Math.abs(b) >= 0.1 || Math.abs(p) >= 0.1) out.push(r(b, 1), r(p, 1));
+  if (out.length === 3 && out[0] === DEFAULT_CAMERA.center[0] && out[1] === DEFAULT_CAMERA.center[1] && out[2] === DEFAULT_CAMERA.zoom) return "";
+  return out.join(",");
+}
+const linkParams = new URLSearchParams(location.hash.slice(1));
+const linkCamera = cameraFromParam(linkParams.get("map"));
 let globeOn = true;
 try { globeOn = localStorage.getItem("s1lat.globe") !== "flat"; } catch { /* storage unavailable */ }
+// the link's projection (#flat=1) wins over the one remembered here
+if (linkParams.has("flat")) globeOn = linkParams.get("flat") !== "1";
 // The basemap: the link's (#bm=imagery), else the last one picked here.
-let basemap = new URLSearchParams(location.hash.slice(1)).get("bm");
+let basemap = linkParams.get("bm");
 if (!BASEMAPS[basemap]) { try { basemap = localStorage.getItem("swathcast.basemap"); } catch { /* storage unavailable */ } }
 const view = new MapView("map", {
   globe: globeOn, basemap: BASEMAPS[basemap] ? basemap : DEFAULT_BASEMAP,
+  ...(linkCamera ? { center: linkCamera.center, zoom: linkCamera.zoom } : DEFAULT_CAMERA),
   attribution: 'plans: <a href="https://sentinels.copernicus.eu/" target="_blank" rel="noopener">ESA</a>, <a href="https://landsat.usgs.gov/" target="_blank" rel="noopener">USGS</a>, <a href="https://science.nasa.gov/mission/nisar/" target="_blank" rel="noopener">NASA</a> · bursts: <a href="https://asf.alaska.edu/" target="_blank" rel="noopener">ASF</a> · orbits: <a href="https://celestrak.org/" target="_blank" rel="noopener">CelesTrak</a> · previews: <a href="https://worldview.earthdata.nasa.gov/" target="_blank" rel="noopener">NASA Worldview</a>',
 });
 const map = view.map;
@@ -105,6 +133,7 @@ view.onBasemap.push((k) => {
   try { localStorage.setItem("swathcast.basemap", k); } catch { /* storage unavailable */ }
   writeHash();
 });
+if (linkCamera && (linkCamera.bearing || linkCamera.pitch)) map.jumpTo({ bearing: linkCamera.bearing, pitch: linkCamera.pitch });
 window.__map = map; // for debugging and the browser tests
 window.__view = view;
 
@@ -286,7 +315,9 @@ async function load() {
   const restored = readHash();
   buildControls();
   if (!Object.keys(state.models).length) state.notes.push("Orbit timing unavailable: Sentinel-1 bursts cannot be timed.");
-  if (restored.aoi) setAOI(restored.aoi, { fly: true, refresh: false });
+  // the link's camera, if it has one, rather than framing its AOI
+  if (restored.aoi) setAOI(restored.aoi, { fly: !linkCamera, refresh: false });
+  if (restored.aoi && restored.tab === "past") state.listTab = "past";
   await refresh();
   // NISAR's file in the background, so selecting NISAR does not wait for it
   if (idx && idx.sensors.nisar) setTimeout(() => download(idx.sensors.nisar.file).catch(() => {}), 1500);
@@ -2267,6 +2298,7 @@ function renderList() {
     state.listTab = b.dataset.tab;
     document.querySelector(".panel-scroll").scrollTop = 0;
     renderList();
+    writeHash();
   }));
   box.dataset.tab = tab;
   const head = document.createElement("div");
@@ -2817,9 +2849,11 @@ try {
 
 // ---------------------------------------------------------------- shareable URL
 // The page's state lives in the URL hash, so a reload keeps it and a link
-// shares it: #aoi=-121.735,46.786&m=s1,s2&to=2026-10-20&s1.dir=descending&tab=recent&bm=imagery.
+// shares it: #aoi=-121.735,46.786&m=s1,s2&to=2026-10-20&s1.dir=descending&tab=past
+// &map=-121.7357,46.7861,6.6&bm=imagery&flat=1&sats=off.
 // Only what differs from the defaults is written. An AOI is a point
-// ("lon,lat"), a polygon ring ("lon,lat;lon,lat;…") or GeoJSON.
+// ("lon,lat"), a polygon ring ("lon,lat;lon,lat;…") or GeoJSON; the map's
+// camera is lon,lat,zoom, with bearing,pitch when it is turned or tilted.
 const SET_FIELDS = [["plat", "platforms"], ["dir", "dirs"], ["mode", "modes"], ["pol", "pols"], ["light", "lights"]];
 const r5 = (v) => Math.round(v * 1e5) / 1e5;
 // Every value a mission's set filter can take (null: no such filter).
@@ -2862,16 +2896,33 @@ function writeHash() {
     if (mf.frameText.trim()) q.set(`${key}.frame`, mf.frameText.trim());
     if (mf.vzaText.trim()) q.set(`${key}.vza`, mf.vzaText.trim());
   });
+  if (state.aoi && state.listTab === "past") q.set("tab", "past");
+  const cam = cameraParam(map);
+  if (cam) q.set("map", cam);
   if (view.basemap !== DEFAULT_BASEMAP) q.set("bm", view.basemap);
+  if (!globeBox.checked) q.set("flat", "1");
+  if (!satsBox.checked) q.set("sats", "off");
   const hash = q.toString().replace(/%2C/g, ",").replace(/%3B/g, ";");
   if (hash === lastHash) return;
   lastHash = hash;
   history.replaceState(null, "", hash ? `#${hash}` : location.pathname + location.search);
+  tellParent();
 }
-// Applies the hash to state (after load() set the defaults); returns {aoi}.
+// Embedded in the site's wrapper page: tell it this page's URL, so its own
+// address bar can be shared too.
+function tellParent() {
+  if (window.parent === window) return;
+  try {
+    window.parent.postMessage({ type: "egagli-map-state", search: location.search, hash: location.hash }, PARENT_ORIGIN);
+  } catch { /* the wrapper is not on that origin: nothing to tell */ }
+}
+// The camera is written as the map settles (not on every frame of a move).
+let cameraTimer = null;
+map.on("moveend", () => { clearTimeout(cameraTimer); cameraTimer = setTimeout(writeHash, 300); });
+// Applies the hash to state (after load() set the defaults); returns {aoi, tab}.
 function readHash() {
   const q = new URLSearchParams(location.hash.slice(1));
-  const out = { aoi: null };
+  const out = { aoi: null, tab: q.get("tab") };
   if (q.has("m")) state.missions = new Set(q.get("m").split(",").filter((k) => MISSION[k]));
   const iso = /^\d{4}-\d{2}-\d{2}$/;
   const s = document.getElementById("date-start"), e = document.getElementById("date-end");
@@ -2900,12 +2951,28 @@ function readHash() {
 }
 // A link pasted into this tab changes only the hash: start over from it.
 window.addEventListener("hashchange", () => { if (location.hash.slice(1) !== lastHash) location.reload(); });
+// "Share this view": a link to the map on the site's wrapper page, with this
+// view; where the clipboard is refused, the link is shown, selected, to copy.
+const shareBox = document.getElementById("share-box");
 document.getElementById("share").addEventListener("click", async (ev) => {
-  const btn = ev.currentTarget, label = btn.textContent;
+  const btn = ev.currentTarget, label = btn.dataset.label ||= btn.textContent;
+  clearTimeout(cameraTimer);
   writeHash();
-  try { await navigator.clipboard.writeText(location.href); btn.textContent = "Link copied"; } catch { btn.textContent = "Copy the address bar"; }
-  setTimeout(() => { btn.textContent = label; }, 1800);
+  const url = SHARE_BASE + location.search + location.hash;
+  try {
+    await navigator.clipboard.writeText(url);
+    shareBox.hidden = true;
+    btn.textContent = "Link copied";
+    setTimeout(() => { btn.textContent = label; }, 2000);
+  } catch {
+    shareBox.value = url;
+    shareBox.hidden = false;
+    shareBox.focus();
+    shareBox.select();
+  }
 });
+shareBox.addEventListener("blur", () => { shareBox.hidden = true; });
+shareBox.addEventListener("keydown", (e) => { if (e.key === "Escape") shareBox.blur(); });
 
 // Start over: no AOI, the default missions, filters and dates, and the map
 // settings this browser remembered (basemap, opacity, palette, globe...).
@@ -3116,6 +3183,7 @@ const sats = new LiveSatellites(view, overlay, { colorOf: sensorColor, labelOf: 
 window.__sats = sats; // for debugging and the browser tests
 let satsOn = true;
 try { satsOn = localStorage.getItem("s1lat.sats") !== "off"; } catch { /* storage unavailable */ }
+if (linkParams.has("sats")) satsOn = linkParams.get("sats") !== "off"; // the link's, over the one remembered here
 // Globe and live satellites: toggles in the map options widget, by the basemap.
 function optionPill(id, label, title) {
   const l = Object.assign(document.createElement("label"), { className: "check pill", title });
@@ -3131,10 +3199,12 @@ globeBox.addEventListener("change", () => {
   view.setGlobe(globeBox.checked);
   overlay.redraw();
   try { localStorage.setItem("s1lat.globe", globeBox.checked ? "globe" : "flat"); } catch { /* ignore */ }
+  writeHash();
 });
 satsBox.addEventListener("change", () => {
   if (satsBox.checked) { syncSatellites(); sats.start(); } else sats.stop();
   try { localStorage.setItem("s1lat.sats", satsBox.checked ? "on" : "off"); } catch { /* ignore */ }
+  writeHash();
 });
 // Satellites follow the selection: selected missions' ticked platforms.
 function syncSatellites() {
@@ -3404,6 +3474,7 @@ document.getElementById("tour-btn").addEventListener("click", () => startTour(1)
 legend();
 tzReady.then(async () => { await view.ready; await load(); })
   .then(() => {
+    tellParent(); // the wrapper page learns the restored view once, even if the URL did not change
     const step = pendingStep();
     if (step) { tour.dirty = true; startTour(Math.min(step, 5)); }
     else if (!tourSeen() && location.hash.length <= 1) startTour(1);
