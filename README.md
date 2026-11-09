@@ -54,7 +54,9 @@ snowmelt, for example), field campaigns, and coordination between missions.
   altitude, with its orbit and the strip of ground its instrument sees (side-looking for the radars),
   filled while the plan has it imaging. Zoomed out, Sentinel-1/2 show their planned datatake swaths,
   and the legend says, per mission, what is shown, from which zoom its footprints appear and where
-  its plan ends. The globe draws footprints up to the poles; the flat map stops at 85°. Basemaps are
+  its plan ends. Past the end of its plan, Landsat 8/9 is *projected* for a year (USGS's 16-day
+  calendar repeated, checked against a year of acquired scenes) and labelled projected everywhere
+  ([methodology](docs/methodology.md#projection-past-a-plans-end)). The globe draws footprints up to the poles; the flat map stops at 85°. Basemaps are
   Esri Gray Canvas (the default), Esri World Imagery (with or without labels), Esri World Topographic
   and OpenStreetMap.
 - **Share and export**: the page's state (AOI, missions, filters, dates, the list's tab, the selected

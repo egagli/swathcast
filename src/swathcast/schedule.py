@@ -20,7 +20,8 @@ applies documented post-processing:
 
 Beside ``upcoming_passes.parquet`` it writes the footprint grids the map loads
 lazily: ``wrs2_grid.parquet`` + ``landsat_scenes.parquet`` (per planned scene,
-timed from the orbit), ``s2_grid.parquet`` + ``s2_tile_passes.parquet``, and,
+timed from the orbit; the map carries its last 16-day cycle past the window,
+see :func:`landsat_projection`), ``s2_grid.parquet`` + ``s2_tile_passes.parquet``, and,
 for the wide-swath sensors that have no plan (:mod:`swathcast.wideswath`),
 ``sin_grid.parquet`` + ``modis_tile_passes.parquet`` / ``viirs_tile_passes.parquet``
 / ``s3_tile_passes.parquet``.
@@ -352,6 +353,36 @@ def build_wideswath(out_dir: Path, sensors, sats: dict, start, end, days: int) -
     return fixes
 
 
+def landsat_projection(scenes, start, end) -> dict | None:
+    """How the map carries USGS's calendar past the window
+    (:mod:`swathcast.projection`): the planned scenes of the window's last
+    16-day cycle, ``[end - 16 d, end)``, repeated by whole cycles up to
+    ``PROJECTION_DAYS["landsat"]`` days after ``start``. The calendar repeats
+    every 16 days, so the dates are the calendar's; the times keep the planned
+    (orbit-timed) time of day. Those scenes are already in
+    ``landsat_scenes.parquet``, so the projection is published as this
+    definition (in the sidecar and ``passes_index.json``), not as rows: about
+    420,000 of them for six months, 3 MB the map would otherwise download.
+    None when Landsat is not projected or the window already reaches that far."""
+    import pandas as pd
+
+    from swathcast import projection
+
+    days = projection.PROJECTION_DAYS.get("landsat")
+    until = start + pd.Timedelta(days=days) if days else None
+    if until is None or until <= end or scenes.empty:
+        return None
+    repeat = projection.repeat_of("landsat", "L8")
+    base = projection.base_cycle(scenes, end, repeat, "time")
+    return {
+        "from": end.isoformat(),
+        "to": until.isoformat(),
+        "repeat_days": int(repeat.days),
+        "base_from": (end - repeat).isoformat(),
+        "base_scenes": int(len(base)),
+    }
+
+
 def build(output: Path, days: int = 12, sensors: list[str] | None = None) -> Path:
     """Fetch the plans and write ``output`` (+ ``.meta.json`` sidecar and grids)."""
     import geopandas as gpd
@@ -466,6 +497,9 @@ def build(output: Path, days: int = 12, sensors: list[str] | None = None) -> Pat
                 compression="zstd",
             )
             fixes["landsat_scenes"] = int(len(scenes))
+            projected = landsat_projection(scenes, start, end)
+            if projected is not None:
+                fixes["landsat_projected"] = projected
             fixes["landsat_timing"] = {
                 str(k): int(v) for k, v in scenes["timing"].value_counts().items()
             }

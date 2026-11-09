@@ -337,8 +337,31 @@ def split_schedule(out_dir: Path) -> dict:
         }
     if table.num_rows:
         index["schedule_end"] = to_iso(pc.max(begin).as_py())
+    index["projections"] = projections_index(out_dir)
     (out_dir / SCHEDULE_INDEX).write_text(_dumps(index))
     return index
+
+
+def projections_index(out_dir: Path) -> dict:
+    """For each projected mission (projection.py), from the schedule's
+    sidecar: where the projection starts (the plan's end) and ends, its
+    repeat, and its base cycle. The map extends its date picker to ``to`` when
+    the mission is selected, and repeats the base cycle's planned scenes past
+    ``from`` only when the dates run past it."""
+    meta = Path(out_dir) / "upcoming_passes.meta.json"
+    if not meta.exists():
+        return {}
+    fixes = json.loads(meta.read_text()).get("postprocessing", {})
+    out = {}
+    spec = fixes.get("landsat_projected")
+    if spec and (Path(out_dir) / "landsat_scenes.parquet").exists():
+        out["landsat"] = {
+            "from": to_iso(parse_utc(spec["from"])),
+            "to": to_iso(parse_utc(spec["to"])),
+            "repeat_days": int(spec["repeat_days"]),
+            "base_from": to_iso(parse_utc(spec["base_from"])),
+        }
+    return out
 
 
 #: Lazily loaded footprint grids written next to the schedule.
@@ -488,6 +511,7 @@ def check_site(site_dir: Path) -> list[str]:
 
     problems += _check_s2(data)
     problems += _check_landsat(data)
+    problems += _check_landsat_projected(data)
     problems += _check_landsat_l1(data)
     problems += _check_nisar_s(data)
     problems += _check_wideswath(data)
@@ -572,6 +596,41 @@ def _check_landsat(data: Path) -> list[str]:
         if unknown
         else []
     )
+
+
+def _check_landsat_projected(data: Path) -> list[str]:
+    """passes_index.json's Landsat projection (optional): it starts where the
+    planned scenes end, after a whole cycle of them, and ends after it starts."""
+    import pyarrow.parquet as pq
+
+    index = data / SCHEDULE_INDEX
+    if not index.exists():
+        return []
+    spec = json.loads(index.read_text()).get("projections", {}).get("landsat")
+    if not spec:
+        return []
+    try:
+        start, stop = parse_utc(spec["from"]), parse_utc(spec["to"])
+        base = parse_utc(spec["base_from"])
+        repeat = int(spec["repeat_days"])
+    except (KeyError, TypeError, ValueError):
+        return ["passes_index.json landsat projection is malformed"]
+    problems = []
+    if stop <= start:
+        problems.append("passes_index.json landsat projection ends before it starts")
+    if start - base != timedelta(days=repeat):
+        problems.append("passes_index.json landsat projection's base is not one cycle")
+    scenes = data / "landsat_scenes.parquet"
+    if not scenes.exists():
+        return problems + [
+            "landsat projection published without landsat_scenes.parquet"
+        ]
+    t = pq.read_table(scenes, columns=["time"]).to_pandas()["time"]
+    if len(t) and (t.min() > base or t.max() < start - timedelta(days=1)):
+        problems.append(
+            "landsat_scenes.parquet does not cover the projection's base cycle"
+        )
+    return problems
 
 
 def _check_landsat_l1(data: Path) -> list[str]:

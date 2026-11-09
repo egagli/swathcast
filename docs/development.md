@@ -28,6 +28,8 @@ in Google Earth and compare with a box drawn over the same area on the map.
 src/swathcast/
   plans.py         the agencies' plans: ESA KMLs (newest wins), USGS Landsat calendar, NISAR plan
   schedule.py      assembles the schedule and the footprint grids (+ documented fixes)
+  projection.py    plans carried past their end by their repeat cycle (projected passes)
+  hindcast.py      how well that predicted what came next (swathcast hindcast)
   ephemeris.py     SGP4 sub-satellite points and closest-approach timing
   s2grid.py        ESA's Sentinel-2 tiling grid and per-tile times
   wideswath.py     MODIS/VIIRS/Sentinel-3: no plans; passes on the sinusoidal tiles from the orbit

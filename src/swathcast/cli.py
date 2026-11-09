@@ -1,4 +1,4 @@
-"""Command line: ``swathcast {schedule,poll,extents,tle,summarize,viewer,check-site,watchdog}``."""
+"""Command line: ``swathcast {schedule,poll,extents,tle,summarize,viewer,check-site,watchdog,hindcast}``."""
 
 from __future__ import annotations
 
@@ -15,6 +15,14 @@ def _cmd_schedule(args) -> int:
     from swathcast.schedule import build
 
     build(args.output, days=args.days, sensors=args.sensors)
+    return 0
+
+
+def _cmd_hindcast(args) -> int:
+    from swathcast.hindcast import run
+
+    run(args.out, sensors=args.sensors, since=args.since)
+    print((args.out / "hindcast.md").read_text())
     return 0
 
 
@@ -122,6 +130,21 @@ def main(argv: list[str] | None = None) -> int:
         help="default: sentinel-1 sentinel-2 landsat nisar modis viirs sentinel-3",
     )
     p.set_defaults(func=_cmd_schedule)
+
+    p = sub.add_parser(
+        "hindcast",
+        help="measure how well plans carried forward by their repeat cycle "
+        "predicted what came next (writes hindcast.json and hindcast.md)",
+    )
+    p.add_argument("--out", type=Path, default=Path("hindcast"))
+    p.add_argument(
+        "--sensors",
+        nargs="+",
+        default=["landsat", "sentinel-1", "sentinel-2"],
+        choices=["landsat", "sentinel-1", "sentinel-2"],
+    )
+    p.add_argument("--since", help="ESA plan files issued from this date (ISO)")
+    p.set_defaults(func=_cmd_hindcast)
 
     p = sub.add_parser(
         "poll", help="run one latency-poller pass over the data directory"

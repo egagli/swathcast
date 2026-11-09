@@ -241,3 +241,30 @@ export function forgetSettings() {
     Object.keys(localStorage).filter((k) => k.startsWith("swathcast.") || k.startsWith("s1lat.")).forEach((k) => localStorage.removeItem(k));
   } catch { /* storage unavailable */ }
 }
+
+// ---------------------------------------------------------------- projection
+// A plan carried past its end by its repeat cycle (projection.py): the
+// passes_index.json "projections" entries, as ms ({from, to, baseFrom,
+// repeatMs}); a malformed entry is left out.
+export function parseProjections(idx) {
+  const out = {};
+  Object.entries((idx && idx.projections) || {}).forEach(([key, p]) => {
+    const from = Date.parse(p.from), to = Date.parse(p.to), baseFrom = Date.parse(p.base_from);
+    if ([from, to, baseFrom].every(Number.isFinite) && to > from && p.repeat_days > 0) out[key] = { from, to, baseFrom, repeatMs: p.repeat_days * 864e5 };
+  });
+  return out;
+}
+// Each of base's acquisitions ({when: Date, ...}) repeated by whole cycles
+// into [pr.from, min(t1, pr.to)), soonest first: {src, when, cycles}.
+export function repeatCycle(base, pr, t1) {
+  const stop = Math.min(t1, pr.to), out = [];
+  if (stop <= pr.from) return out;
+  base.forEach((src) => {
+    for (let k = 1; ; k++) {
+      const w = src.when.getTime() + k * pr.repeatMs;
+      if (w >= stop) break;
+      if (w >= pr.from) out.push({ src, when: new Date(w), cycles: k });
+    }
+  });
+  return out.sort((a, b) => a.when - b.when);
+}

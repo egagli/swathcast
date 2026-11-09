@@ -273,3 +273,41 @@ out.hh = hi.singleBand("sentinel-1-grd", "S1A_Y", "HH");
     assert "assets=vh" in out["vh"] and "rescale=0,0.12" in out["vh"]
     assert "colormap_name=gray" in out["vh"]
     assert "assets=hh" in out["hh"] and "rescale=0,600" in out["hh"]
+
+
+def test_projection_helpers(tmp_path):
+    """A plan carried past its end (passes_index.json "projections"): parsed,
+    and each base acquisition repeated by whole cycles inside the window."""
+    out = run_node(
+        tmp_path,
+        """
+const idx = { projections: {
+  landsat: { from: "2026-12-09T00:00:00Z", to: "2027-01-20T00:00:00Z", repeat_days: 16, base_from: "2026-11-23T00:00:00Z" },
+  bad: { from: "x", to: "2027-01-01T00:00:00Z", repeat_days: 16, base_from: "2026-11-23T00:00:00Z" },
+  backwards: { from: "2027-01-01T00:00:00Z", to: "2026-01-01T00:00:00Z", repeat_days: 16, base_from: "2026-12-16T00:00:00Z" },
+} };
+const pr = c.parseProjections(idx);
+out.keys = Object.keys(pr);
+out.repeatDays = pr.landsat.repeatMs / 864e5;
+out.none = c.parseProjections(null);
+const base = [{ when: new Date("2026-11-25T18:00:00Z"), platform: "L8" }, { when: new Date("2026-12-03T18:00:00Z"), platform: "L9" }];
+const all = c.repeatCycle(base, pr.landsat, Date.parse("2027-12-31T00:00:00Z"));
+out.all = all.map((x) => [x.when.toISOString().slice(0, 10), x.src.platform, x.cycles]);
+out.cut = c.repeatCycle(base, pr.landsat, Date.parse("2026-12-20T00:00:00Z")).map((x) => x.when.toISOString().slice(0, 10));
+out.before = c.repeatCycle(base, pr.landsat, Date.parse("2026-12-01T00:00:00Z")).length;
+""",
+    )
+    assert out["keys"] == ["landsat"]
+    assert out["repeatDays"] == 16
+    assert out["none"] == {}
+    # up to the projection's end (Jan 20), from its start (Dec 9): never
+    # the base cycle itself, soonest first
+    assert out["all"] == [
+        ["2026-12-11", "L8", 1],
+        ["2026-12-19", "L9", 1],
+        ["2026-12-27", "L8", 2],
+        ["2027-01-04", "L9", 2],
+        ["2027-01-12", "L8", 3],
+    ]
+    assert out["cut"] == ["2026-12-11", "2026-12-19"]
+    assert out["before"] == 0

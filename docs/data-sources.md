@@ -5,8 +5,10 @@ Where every number on the site comes from. Three uses:
 - **Planned**: upcoming acquisitions (the map's colours, the "Upcoming" list in a footprint's popup).
   Built once a day by the `schedule` job (`plans.py`, `schedule.py`), up to 30 days ahead where the
   plan reaches that far: on 2026-10-01 Sentinel-1 to 21–22 Oct and Sentinel-2 to 12–19 Oct (ESA
-  publishes no further), Landsat and NISAR all 30 days. Nothing past a plan's end is extrapolated
-  ([methodology](methodology.md#horizon-and-gaps)). MODIS, VIIRS and Sentinel-3 have no plans (they
+  publishes no further), Landsat and NISAR all 30 days. Nothing past a plan's end is shown as
+  planned ([methodology](methodology.md#horizon-and-gaps)); Landsat alone is then *projected* for a
+  year, USGS's 16-day calendar repeated and labelled as projected
+  ([methodology](methodology.md#projection-past-a-plans-end)). MODIS, VIIRS and Sentinel-3 have no plans (they
   image on every orbit): their passes are predicted from the orbit for all 30 days
   ([methodology](methodology.md#modis-viirs-and-sentinel-3-timing)).
 - **History**: a footprint's recent acquisitions (the popup's "Recent acquisitions", last 90 days).

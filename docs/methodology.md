@@ -268,18 +268,82 @@ reaches only as far as each agency publishes. As of 2026-10-01:
 |---|---|---|---|
 | Sentinel-1C/1D | ESA, a new KML most days, each ~20–22 days long | 22 Oct (S1C), 21 Oct (S1D) | ESA plans ~3 weeks ahead. One S1D file is named for 15 Sep–5 Dec (`s1d_mp_user_20260915t185252_20261205t204800`) but its datatakes end on 9 Oct, so it adds nothing |
 | Sentinel-2A/2B/2C | ESA, a KML per platform every 2 weeks, each 18 days long | 19 Oct (S2A, S2C), 12 Oct (S2B) | S2B's newest file was issued 24 Sep; the next one extends it |
-| Landsat 8/9 | USGS acquisition calendar (paths per day, a fixed 16-day cycle) | all 30 days | |
+| Landsat 8/9 | USGS acquisition calendar (paths per day, a fixed 16-day cycle) | all 30 days, then **projected** for a year ([Projection](#projection-past-a-plans-end)) | |
 | NISAR | NASA observation plan (KMZ) | all 30 days | the plan covers the whole of 2026 |
 | MODIS, VIIRS, Sentinel-3 | no plan: predicted from the orbit | all 30 days | elements propagated up to 30 days; the schedule is rebuilt daily |
 
-Nothing past a plan's end is filled in: extending a 12-day (S1) or 5-day (S2) repeat would be a
-guess, since ESA re-plans datatakes in every file. The daily schedule job picks up each new file, so
+Nothing past a plan's end is shown as *planned*. For Sentinel-1/2 nothing past it is shown at all:
+ESA re-plans datatakes in every file, and the hindcast below measures how much that costs a
+projection. Landsat alone is *projected* past the window, labelled as such
+([Projection](#projection-past-a-plans-end)). The daily schedule job picks up each new file, so
 the Sentinel horizon rolls forward by itself. A footprint's popup says where each platform's plan
 ends, so "nothing planned" after that date is not read as "no pass". Its timeline writes the gap
 (Δ) between consecutive acquisitions, recent ones from the catalogue and upcoming ones from the plan
 (the gap across "now" runs from the last real one to the first planned one). Where they do not all
 fit (Sentinel-2 tiles see a pass every 1–2 days), the longest gaps are labelled first and every
 dot's tooltip carries its gap.
+
+### Projection past a plan's end
+
+A *projected* acquisition is a planned one carried forward by whole repeat cycles past the end of
+its plan: the plan's last cycle, repeated (`projection.py`). It is a fourth kind of pass beside
+observed (in a catalogue), planned (in an agency's plan) and predicted (from the orbit, for the
+missions without a plan), and the map never shows it as planned: the popups and the AOI list tag it
+*projected*, the timeline draws it dotted, a footprint whose next pass is projected is drawn half as
+opaque and outlined dashed, and the CSV has a `basis` column (`planned`, `predicted`,
+`projected`) and the calendar export says so in each event. The date picker reaches the furthest
+plan or projection among the selected missions.
+
+Which missions are projected, and how far, is set from a **hindcast** (`swathcast hindcast`,
+`hindcast.py`): old plans projected forward and scored against what came next. Results of
+2026-11-09:
+
+**Landsat 8/9: projected for a year** (`PROJECTION_DAYS`). USGS's calendar is a fixed 16-day
+cycle, so repeating the window's last cycle gives exactly the calendar's later dates (a unit test
+checks this). Against USGS Level-1 STAC (`landsat-c2l1`) for 40 randomly drawn daytime WRS-2
+path/rows over a year (2025-11-09 to 2026-11-08, 1,777 scenes):
+
+- every acquired scene fell on a calendar date, and 97.1 % of calendar dates were acquired
+  (L8 95.4 %, L9 98.8 %);
+- **times**: shifting a scene by whole 16-day cycles predicts the later scene's time to within
+  5 s (median) one cycle ahead and at most 36 s (median) / 72 s (p99) at any lead up to a year: the
+  orbit is held on its ground track, so the error stays bounded;
+- SGP4 with the newest elements, by contrast, is 0.3 s off within 15 days of the elements' epoch,
+  11 s at 15–30 days, 51 s at 30–60 days, 2 min at 60–120 days, and beyond 120 days does not find
+  the pass at all (propagated *back* from today's elements, as a stand-in for ahead). So the
+  projection keeps the time of day of the plan's last (orbit-timed) cycle instead of propagating.
+
+The map builds the projected scenes itself from `landsat_scenes.parquet`'s last cycle (the
+definition is in `passes_index.json` → `projections.landsat`: `from`, `to`, `repeat_days`,
+`base_from`): a year of rows would be ~0.8 M scenes and several MB to download. The sun is
+recomputed for each projected date, so the Day/Night filter still applies. What the hindcast
+cannot see: USGS changing its calendar (Landsat 8 is past its design life).
+
+**Sentinel-1 and Sentinel-2: measured, not projected.** ESA keeps months of old plan files
+online (S1 from 2026-02-10, S2 from 2025-04-16). Each old file (S1: one per platform per week, 72
+files; S2: all 133) was projected past its own end and compared with what ESA *later* planned
+for those days. Scores are time-weighted (on a repeat orbit, time along a pass is position
+along the ground track): *precision* is the share of projected acquisition time that was later
+planned; *recall* the share of later-planned time the projection covered. Sentinel-1 "same mode"
+also asks for the same mode and polarization (wave mode excluded); Sentinel-2 is NOBS datatakes.
+
+| Platform (repeat) | 0–30 d | 30–60 d | 60–90 d | 90–120 d |
+|---|---|---|---|---|
+| S1C (12 d), precision / recall, same mode | 87 % / 77 % | 73 % / 65 % | 56 % / 49 % | 33 % / 27 % |
+| S1D (12 d), same mode | 91 % / 84 % | 83 % / 78 % | 74 % / 72 % | 70 % / 68 % |
+| S2B (10 d) | 94 % / 95 % | 90 % / 91 % | 87 % / 88 % | 84 % / 85 % |
+| S2C (10 d) | 96 % / 94 % | 93 % / 92 % | 89 % / 89 % | 87 % / 87 % |
+| S2A (20 d) | 87 % / 76 % | 78 % / 67 % | 70 % / 60 % | 62 % / 53 % |
+
+The spread between base files is wide for Sentinel-1 (the worst 10 % of S1C bases: 48 % precision
+at 0–30 days, 17–18 % beyond) and for S2A. S2A, in an extended campaign since S2C took its place,
+follows a **20-day** pattern, not its 10-day orbit repeat: on a 10-day repeat, one cycle ahead,
+46 % of its projected time was later planned, on a 20-day repeat 90 % (`PLATFORM_REPEAT_DAYS`).
+S2B/S2C would project well; Sentinel-1 (S1C above all) would not past a month. Neither is
+projected yet: that decision, and the map work for their tile and burst timing, are left open.
+
+The full tables: `swathcast hindcast --out <dir>` writes `hindcast.md` and `hindcast.json` (ESA
+plans are cached under `$SWATHCAST_CACHE`; the first run downloads ~300 MB).
 
 ### ISRO's NISAR ROP
 
