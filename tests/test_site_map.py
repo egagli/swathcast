@@ -276,38 +276,53 @@ out.hh = hi.singleBand("sentinel-1-grd", "S1A_Y", "HH");
 
 
 def test_projection_helpers(tmp_path):
-    """A plan carried past its end (passes_index.json "projections"): parsed,
-    and each base acquisition repeated by whole cycles inside the window."""
+    """A plan carried past its end (passes_index.json "projections"): parsed
+    per platform, the base cycle picked, and each base acquisition repeated
+    by whole cycles of its own platform inside the window."""
     out = run_node(
         tmp_path,
         """
+const P = (from, base, days) => ({ from, base_from: base, repeat_days: days });
 const idx = { projections: {
-  landsat: { from: "2026-12-09T00:00:00Z", to: "2027-01-20T00:00:00Z", repeat_days: 16, base_from: "2026-11-23T00:00:00Z" },
-  bad: { from: "x", to: "2027-01-01T00:00:00Z", repeat_days: 16, base_from: "2026-11-23T00:00:00Z" },
-  backwards: { from: "2027-01-01T00:00:00Z", to: "2026-01-01T00:00:00Z", repeat_days: 16, base_from: "2026-12-16T00:00:00Z" },
+  s2: { to: "2027-01-20T00:00:00Z", not_projected: { X: "why" }, platforms: {
+    S2B: P("2026-12-09T00:00:00Z", "2026-11-29T00:00:00Z", 10),
+    S2A: P("2026-12-15T00:00:00Z", "2026-11-25T00:00:00Z", 20),
+    BAD: P("2026-12-15T00:00:00Z", "2026-11-25T00:00:00Z", 10),
+  } },
+  broken: { to: "x", platforms: {} },
 } };
 const pr = c.parseProjections(idx);
 out.keys = Object.keys(pr);
-out.repeatDays = pr.landsat.repeatMs / 864e5;
+out.platforms = Object.keys(pr.s2.platforms).sort();
+out.notProjected = pr.s2.notProjected;
 out.none = c.parseProjections(null);
-const base = [{ when: new Date("2026-11-25T18:00:00Z"), platform: "L8" }, { when: new Date("2026-12-03T18:00:00Z"), platform: "L9" }];
-const all = c.repeatCycle(base, pr.landsat, Date.parse("2027-12-31T00:00:00Z"));
-out.all = all.map((x) => [x.when.toISOString().slice(0, 10), x.src.platform, x.cycles]);
-out.cut = c.repeatCycle(base, pr.landsat, Date.parse("2026-12-20T00:00:00Z")).map((x) => x.when.toISOString().slice(0, 10));
-out.before = c.repeatCycle(base, pr.landsat, Date.parse("2026-12-01T00:00:00Z")).length;
+const times = [
+  { when: new Date("2026-11-30T10:00:00Z"), platform: "S2B" },
+  { when: new Date("2026-12-10T10:00:00Z"), platform: "S2B" },
+  { when: new Date("2026-12-01T11:00:00Z"), platform: "S2A" },
+  { when: new Date("2026-12-01T12:00:00Z"), platform: "S2C" },
+];
+const base = c.baseOf(times, pr.s2);
+out.base = base.map((t) => t.platform + " " + t.when.toISOString().slice(0, 10));
+const rep = c.repeatCycle(base, pr.s2, Date.parse("2027-12-31T00:00:00Z"));
+out.rep = rep.map((x) => [x.when.toISOString().slice(0, 10), x.src.platform, x.cycles, x.shiftMs / 864e5]);
+out.cut = c.repeatCycle(base, pr.s2, Date.parse("2026-12-25T00:00:00Z")).length;
 """,
     )
-    assert out["keys"] == ["landsat"]
-    assert out["repeatDays"] == 16
+    assert out["keys"] == ["s2"]
+    # a platform whose base is not one cycle is left out
+    assert out["platforms"] == ["S2A", "S2B"]
+    assert out["notProjected"] == {"X": "why"}
     assert out["none"] == {}
-    # up to the projection's end (Jan 20), from its start (Dec 9): never
-    # the base cycle itself, soonest first
-    assert out["all"] == [
-        ["2026-12-11", "L8", 1],
-        ["2026-12-19", "L9", 1],
-        ["2026-12-27", "L8", 2],
-        ["2027-01-04", "L9", 2],
-        ["2027-01-12", "L8", 3],
+    # S2B's base is [Nov 29, Dec 9), S2A's [Nov 25, Dec 15); S2C is not projected
+    assert out["base"] == ["S2B 2026-11-30", "S2A 2026-12-01"]
+    assert out["rep"] == [
+        ["2026-12-10", "S2B", 1, 10],
+        ["2026-12-20", "S2B", 2, 20],
+        ["2026-12-21", "S2A", 1, 20],
+        ["2026-12-30", "S2B", 3, 30],
+        ["2027-01-09", "S2B", 4, 40],
+        ["2027-01-10", "S2A", 2, 40],
+        ["2027-01-19", "S2B", 5, 50],
     ]
-    assert out["cut"] == ["2026-12-11", "2026-12-19"]
-    assert out["before"] == 0
+    assert out["cut"] == 3

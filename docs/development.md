@@ -7,6 +7,7 @@
 | [`schedule.yml`](../.github/workflows/schedule.yml) | daily | plans for the next 30 days, as far as each is published (ESA, USGS, NASA), orbit-predicted MODIS/VIIRS/Sentinel-3 passes, footprint grids and orbit timing → `data` branch |
 | [`poll.yml`](../.github/workflows/poll.yml) | hourly | latency poller → `data` branch; fails if every source failed or one has failed > 24 h |
 | [`pages.yml`](../.github/workflows/pages.yml) | after each poll/schedule, and on code changes | summarise, check the data contract, deploy Pages |
+| [`hindcast.yml`](../.github/workflows/hindcast.yml) | monthly | how well each projection (a plan carried past its end) predicted what came next → `data` branch `hindcast/`, the site's `hindcast.json`; opens a `hindcast-failed` issue on failure |
 | [`watchdog.yml`](../.github/workflows/watchdog.yml) | weekly | opens/updates a `stale-data` issue if data is stale or a source is failing; closes it on recovery |
 | [`ci.yml`](../.github/workflows/ci.yml) | push / PR | ruff, pytest (offline, recorded fixtures), site data-contract check |
 

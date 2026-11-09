@@ -8,7 +8,7 @@ on:
       - "src/swathcast/**"
       - ".github/workflows/pages.yml"
   workflow_run:
-    workflows: [poll, schedule]
+    workflows: [poll, schedule, hindcast]
     types: [completed]
   workflow_dispatch:
 

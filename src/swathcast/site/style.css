@@ -209,3 +209,6 @@ tr.projected td.when, .pass-list tr.item.projected td.when { font-style: italic;
 .pass-list tr.item.projected td:not(.status) { color: var(--ink-2, var(--muted)); }
 .proj-ink { color: var(--ink-2, var(--muted)); font-style: italic; }
 .sub.proj { border-bottom: 1px dashed var(--muted); }
+.detail-card .dc-basis { margin: 4px 0 2px; font-size: 12px; line-height: 1.4; }
+.detail-card .dc-basis.proj { padding: 6px 8px; border: 1px dashed var(--muted); border-radius: 6px; color: var(--ink-2, var(--ink)); background: var(--surface-2, transparent); }
+.hist-table a.proj { font-style: italic; border-bottom: 1px dashed var(--muted); text-decoration: none; }

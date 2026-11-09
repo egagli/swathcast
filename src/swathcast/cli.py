@@ -19,9 +19,9 @@ def _cmd_schedule(args) -> int:
 
 
 def _cmd_hindcast(args) -> int:
-    from swathcast.hindcast import run
+    from swathcast.hindcast import ALL, run
 
-    run(args.out, sensors=args.sensors, since=args.since)
+    run(args.out, sensors=args.sensors or ALL, since=args.since)
     print((args.out / "hindcast.md").read_text())
     return 0
 
@@ -140,8 +140,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument(
         "--sensors",
         nargs="+",
-        default=["landsat", "sentinel-1", "sentinel-2"],
-        choices=["landsat", "sentinel-1", "sentinel-2"],
+        default=None,
+        help="default: landsat sentinel-1 sentinel-2 nisar modis viirs sentinel-3",
     )
     p.add_argument("--since", help="ESA plan files issued from this date (ISO)")
     p.set_defaults(func=_cmd_hindcast)

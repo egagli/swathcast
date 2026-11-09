@@ -421,10 +421,268 @@ def summarize_landsat(act, cal, shift, sg) -> dict:
     return out
 
 
+# ---------------------------------------------------------------------- NISAR
+NISAR_BASES_EVERY_DAYS = 30
+
+
+def nisar_hindcast(
+    session, cache: Path, max_lead_days: int = MAX_LEAD_DAYS
+) -> pd.DataFrame:
+    """NASA's plan against itself: does it repeat every 12 days? For a base
+    date every month of the plan, the 12 days before it are repeated forward
+    and compared, as (day, track, frame, direction) [+ mode], with what the
+    plan has on those days. One row per (base, cycles), like esa_hindcast,
+    counting frames instead of seconds. (Only one plan version is published,
+    so it is the plan's own consistency, not a later re-plan.)"""
+    plan, _ = plans.nisar_plan(session, cache)
+    key = ["track", "frame", "direction"]
+    plan = plan[key + ["day", "mode"]].drop_duplicates(key + ["day"])
+    repeat = pd.Timedelta(days=12)
+    first, last = plan["day"].min() + repeat, plan["day"].max()
+    rows = []
+    t = first
+    while t + repeat <= last:
+        base = plan[(plan["day"] >= t - repeat) & (plan["day"] < t)]
+        n = int(min(max_lead_days, (last - t).days + 1) // 12)
+        for k in range(1, n + 1):
+            lo, hi = t + (k - 1) * repeat, t + k * repeat
+            proj = base.assign(day=base["day"] + k * repeat)
+            truth = plan[(plan["day"] >= lo) & (plan["day"] < hi)]
+            hit = proj.merge(truth, on=key + ["day"], suffixes=("", "_t"))
+            rows.append(
+                {
+                    "sensor": "nisar",
+                    "platform": "NISAR",
+                    "base_file": str(t.date()),
+                    "base_end": t,
+                    "cycles": k,
+                    "lead_days": (k - 0.5) * 12,
+                    "projected_s": float(len(proj)),
+                    "planned_s": float(len(truth)),
+                    "hit_any_s": float(len(hit)),
+                    "caught_any_s": float(len(hit)),
+                    "hit_mode_s": float((hit["mode"] == hit["mode_t"]).sum()),
+                    "caught_mode_s": float((hit["mode"] == hit["mode_t"]).sum()),
+                }
+            )
+        t += pd.Timedelta(days=NISAR_BASES_EVERY_DAYS)
+    return pd.DataFrame(rows)
+
+
+# ----------------------------------------------------------- MODIS, VIIRS, S3
+#: Archive Level-1B collections (CMR): granules on a fixed UTC grid (MODIS
+#: 5 min, VIIRS 6 min), so the same granule start one repeat later images the
+#: same ground if the orbit repeats.
+WIDE_COLLECTIONS = {
+    "Terra": ("modis", "C1378227407-LAADS"),
+    "Aqua": ("modis", "C1379758607-LAADS"),
+    "SNPP": ("viirs", "C2105087643-LAADS"),
+    "N20": ("viirs", "C2103811746-LAADS"),
+    "N21": ("viirs", "C3478403600-LAADS"),
+}
+CMR_GRANULES = "https://cmr.earthdata.nasa.gov/search/granules.umm_json"
+CDSE_ODATA = "https://catalogue.dataspace.copernicus.eu/odata/v1/Products"
+#: ground speed of the sub-satellite point (km/s), to turn an along-track
+#: offset into seconds
+GROUND_KM_S = {"modis": 6.75, "viirs": 6.6}
+
+
+def _unit(lon, lat):
+    lon, lat = np.radians(lon), np.radians(lat)
+    return np.array([np.cos(lat) * np.cos(lon), np.cos(lat) * np.sin(lon), np.sin(lat)])
+
+
+def _centroid(points) -> np.ndarray:
+    v = np.mean([_unit(p["Longitude"], p["Latitude"]) for p in points], axis=0)
+    return v / np.linalg.norm(v)
+
+
+def _cmr_granules(session, collection: str, start, end) -> dict:
+    """{begin time of day (s): footprint centroid (unit vector)} in [start, end)."""
+    r = session.get(
+        CMR_GRANULES,
+        params={
+            "collection_concept_id": collection,
+            "temporal": f"{pd.Timestamp(start).isoformat()},{pd.Timestamp(end).isoformat()}",
+            "page_size": 100,
+        },
+        timeout=120,
+    )
+    r.raise_for_status()
+    out = {}
+    for it in r.json().get("items", []):
+        u = it["umm"]
+        b = pd.Timestamp(u["TemporalExtent"]["RangeDateTime"]["BeginningDateTime"])
+        if b < pd.Timestamp(start) or b >= pd.Timestamp(end):
+            continue
+        try:
+            pts = u["SpatialExtent"]["HorizontalSpatialDomain"]["Geometry"][
+                "GPolygons"
+            ][0]["Boundary"]["Points"]
+        except (KeyError, IndexError, TypeError):
+            continue
+        out[(b - b.floor("D")).total_seconds()] = _centroid(pts)
+    return out
+
+
+def wide_hindcast(
+    session, days: int = 368, hours: float = 1.0, now=None
+) -> pd.DataFrame:
+    """MODIS and VIIRS: the same granule start (UTC time of day) every 16 days
+    for a year; between every pair of those days, how far the footprint moved,
+    split along track (as seconds) and across. One row per (platform, pair)."""
+    now = pd.Timestamp(now or datetime.now(UTC)).floor("D") - pd.Timedelta(days=3)
+    rows = []
+    for platform, (mission, coll) in WIDE_COLLECTIONS.items():
+        rep = pd.Timedelta(days=16)
+        n = int(days // 16)
+        d0 = now - n * rep
+        got = []
+        for k in range(n + 1):
+            day = d0 + k * rep + pd.Timedelta(hours=12)
+            try:
+                got.append(
+                    _cmr_granules(session, coll, day, day + pd.Timedelta(hours=hours))
+                )
+            except (OSError, ValueError) as exc:
+                LOGGER.warning("%s %s: %s", platform, day.date(), exc)
+                got.append({})
+        for i in range(len(got)):
+            for j in range(i + 1, len(got)):
+                for tod, a in got[i].items():
+                    b = got[j].get(tod)
+                    nxt = got[i].get(min((x for x in got[i] if x > tod), default=-1))
+                    if b is None or nxt is None:
+                        continue
+                    along = nxt - a
+                    along -= np.dot(along, a) * a
+                    along /= np.linalg.norm(along)
+                    d = b - a
+                    d -= np.dot(d, a) * a  # in the tangent plane at a
+                    along_km = float(np.dot(d, along) * 6371.0)
+                    cross_km = float(
+                        np.linalg.norm(d - np.dot(d, along) * along) * 6371.0
+                    )
+                    rows.append(
+                        {
+                            "mission": mission,
+                            "platform": platform,
+                            "lead_days": (j - i) * 16,
+                            "along_s": along_km / GROUND_KM_S[mission],
+                            "cross_km": cross_km,
+                        }
+                    )
+    return pd.DataFrame(rows)
+
+
+def _s3_frames(session, platform: str, start, end) -> dict:
+    """{(relative orbit, frame): sensing start} of SLSTR RBT frames from CDSE."""
+    flt = (
+        f"startswith(Name,'{platform}_SL_1_RBT') "
+        f"and ContentDate/Start ge {pd.Timestamp(start).strftime('%Y-%m-%dT%H:%M:%S.000Z')} "
+        f"and ContentDate/Start lt {pd.Timestamp(end).strftime('%Y-%m-%dT%H:%M:%S.000Z')}"
+    )
+    r = session.get(CDSE_ODATA, params={"$filter": flt, "$top": 200}, timeout=120)
+    r.raise_for_status()
+    out = {}
+    for p in r.json().get("value", []):
+        tok = [t for t in p["Name"].removesuffix(".SEN3").split("_") if t]
+        try:
+            rel, frame = int(tok[9]), int(tok[10])
+            t = pd.Timestamp(tok[4], tz="UTC")
+        except (IndexError, ValueError):
+            continue
+        out.setdefault((rel, frame), t)
+    return out
+
+
+def s3_hindcast(session, days: int = 351, hours: float = 1.0, now=None) -> pd.DataFrame:
+    """Sentinel-3: the same frame (relative orbit, seconds after the node) every
+    27 days for a year; the error of its sensing start shifted by whole cycles."""
+    now = pd.Timestamp(now or datetime.now(UTC)).floor("D") - pd.Timedelta(days=3)
+    rows = []
+    for platform in ("S3A", "S3B"):
+        rep = pd.Timedelta(days=27)
+        n = int(days // 27)
+        d0 = now - n * rep
+        got = []
+        for k in range(n + 1):
+            day = d0 + k * rep + pd.Timedelta(hours=12)
+            try:
+                got.append(
+                    _s3_frames(session, platform, day, day + pd.Timedelta(hours=hours))
+                )
+            except (OSError, ValueError) as exc:
+                LOGGER.warning("%s %s: %s", platform, day.date(), exc)
+                got.append({})
+        for i in range(len(got)):
+            for j in range(i + 1, len(got)):
+                for key, t in got[i].items():
+                    u = got[j].get(key)
+                    if u is None:
+                        continue
+                    err = (u - t - (j - i) * rep).total_seconds()
+                    if abs(err) < 600:
+                        rows.append(
+                            {
+                                "mission": "sentinel-3",
+                                "platform": platform,
+                                "lead_days": (j - i) * 27,
+                                "along_s": err,
+                                "cross_km": np.nan,
+                            }
+                        )
+    return pd.DataFrame(rows)
+
+
+WIDE_BINS = [0, 30, 60, 120, 240, 400]
+
+
+def summarize_wide(df: pd.DataFrame) -> list[dict]:
+    if df.empty:
+        return []
+    df = df.assign(lead=pd.cut(df["lead_days"], WIDE_BINS).astype(str))
+    out = []
+    for (platform, lead), g in df.groupby(["platform", "lead"], sort=False):
+        out.append(
+            {
+                "mission": g["mission"].iloc[0],
+                "platform": platform,
+                "lead": lead,
+                "n": int(len(g)),
+                "median_abs_s": _q(g["along_s"], 0.5),
+                "p90_abs_s": _q(g["along_s"], 0.9),
+                "median_cross_km": _q(g["cross_km"], 0.5),
+                "p90_cross_km": _q(g["cross_km"], 0.9),
+            }
+        )
+    order = list(WIDE_COLLECTIONS) + ["S3A", "S3B"]
+    return sorted(
+        out,
+        key=lambda r: (
+            order.index(r["platform"]) if r["platform"] in order else 99,
+            WIDE_BINS.index(int(float(r["lead"].split(",")[0][1:]))),
+        ),
+    )
+
+
 # --------------------------------------------------------------------- driver
-def run(
-    out_dir: Path, sensors=("landsat", "sentinel-1", "sentinel-2"), since=None
-) -> dict:
+def _finite(x):
+    """NaN and infinities as null: hindcast.json is read by browsers, whose
+    JSON has no NaN (one would make the whole file unreadable)."""
+    if isinstance(x, float) and not np.isfinite(x):
+        return None
+    if isinstance(x, dict):
+        return {k: _finite(v) for k, v in x.items()}
+    if isinstance(x, list | tuple):
+        return [_finite(v) for v in x]
+    return x
+
+
+ALL = ("landsat", "sentinel-1", "sentinel-2", "nisar", "modis", "viirs", "sentinel-3")
+
+
+def run(out_dir: Path, sensors=ALL, since=None) -> dict:
     import requests
 
     from swathcast.schedule import cache_dir
@@ -438,6 +696,8 @@ def run(
     for sensor in ("sentinel-1", "sentinel-2"):
         if sensor in sensors:
             esa.append(esa_hindcast(sensor, session, cache_dir(), since))
+    if "nisar" in sensors:
+        esa.append(nisar_hindcast(session, cache_dir()))
     if esa:
         detail = pd.concat(esa, ignore_index=True)
         detail.to_parquet(out_dir / "hindcast_esa_detail.parquet", index=False)
@@ -450,8 +710,18 @@ def run(
     if "landsat" in sensors:
         act, cal, shift, sg = landsat_hindcast(session, cache=cache_dir() / "hindcast")
         result["landsat"] = summarize_landsat(act, cal, shift, sg)
+    wide = []
+    if "modis" in sensors or "viirs" in sensors:
+        w = wide_hindcast(session)
+        wide.append(
+            w[w["mission"].isin([m for m in ("modis", "viirs") if m in sensors])]
+        )
+    if "sentinel-3" in sensors:
+        wide.append(s3_hindcast(session))
+    if wide:
+        result["wide"] = summarize_wide(pd.concat(wide, ignore_index=True))
     (out_dir / "hindcast.json").write_text(
-        json.dumps(result, indent=2, default=str) + "\n"
+        json.dumps(_finite(result), indent=2, default=str, allow_nan=False) + "\n"
     )
     (out_dir / "hindcast.md").write_text(markdown(result))
     return result
@@ -463,7 +733,7 @@ def markdown(result: dict) -> str:
         if key not in result:
             continue
         lines += [
-            f"## Sentinel-1 / Sentinel-2, {title}: projected vs later planned (time-weighted)",
+            f"## Sentinel-1 / Sentinel-2 / NISAR, {title}: projected vs later planned (S1/S2 time-weighted; NISAR frames, the plan against itself)",
             "",
             "Lead: days after the base plan's end. Same mode: also the same mode (S1: and polarization).",
             "",
@@ -475,6 +745,21 @@ def markdown(result: dict) -> str:
                 f"| {r['sensor']} | {r.get('platform', 'all')} | {r['lead']} | {r['bases']} | "
                 f"{r['precision']:.1%} | {r['recall']:.1%} | {r['precision_same_mode']:.1%} | "
                 f"{r['recall_same_mode']:.1%} | {r['precision_same_mode_p10']:.1%} |"
+            )
+        lines.append("")
+    if result.get("wide"):
+        lines += [
+            "## MODIS, VIIRS, Sentinel-3: the same granule or frame whole repeats later",
+            "",
+            "MODIS/VIIRS: granules start on a fixed UTC grid, so the same start 16 k days later images the same ground if the orbit repeats; the footprint's shift, along track as seconds and across track in km. Sentinel-3: the same frame (relative orbit, seconds after the node) 27 k days later; its sensing start's error.",
+            "",
+            "| platform | lead (d) | n | along track, median abs (s) | p90 (s) | across track, median (km) | p90 (km) |",
+            "|---|---|---|---|---|---|---|",
+        ]
+        for r in result["wide"]:
+            lines.append(
+                f"| {r['platform']} | {r['lead']} | {r['n']} | {r['median_abs_s']:.1f} | {r['p90_abs_s']:.1f} | "
+                f"{r['median_cross_km']:.1f} | {r['p90_cross_km']:.1f} |"
             )
         lines.append("")
     if "landsat" in result:

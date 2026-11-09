@@ -157,25 +157,108 @@ def test_repeating_the_last_cycle_reproduces_the_usgs_calendar():
     assert got == want
 
 
-def test_landsat_projection_spec():
-    t = pd.date_range(T("2026-10-29"), T("2026-12-08T23:00"), freq="6h")
-    scenes = pd.DataFrame({"platform": "L8", "path": 1, "row": 1, "time": t})
+def test_spec_per_platform_with_one_horizon():
+    start = T("2026-11-09")
+    out = projection.spec(
+        "sentinel-2",
+        {"S2A": T("2026-11-16"), "S2B": T("2026-11-10"), "S2C": T("2028-01-01")},
+        start,
+    )
+    assert out["to"] == (start + projection.HORIZON_DAYS * DAY).isoformat()
+    # S2C's plan reaches past the horizon: nothing to project
+    assert set(out["platforms"]) == {"S2A", "S2B"}
+    a = out["platforms"]["S2A"]
+    assert a["repeat_days"] == 20 and a["from"] == T("2026-11-16").isoformat()
+    assert a["base_from"] == T("2026-10-27").isoformat()
+    assert out["platforms"]["S2B"]["repeat_days"] == 10
+    assert projection.spec("not-a-mission", {"X": start}, start) is None
+
+
+def test_spec_leaves_out_platforms_that_do_not_repeat():
+    end = T("2026-12-09")
+    out = projection.spec("modis", {"Terra": end, "Aqua": end}, T("2026-11-09"))
+    # neither repeats: nothing projected, but why is kept
+    assert out["platforms"] == {} and set(out["not_projected"]) == {"Terra", "Aqua"}
+    out = projection.spec("viirs", {"SNPP": end, "N20": end}, T("2026-11-09"))
+    assert set(out["platforms"]) == {"SNPP", "N20"} and "not_projected" not in out
+    mixed = projection.spec("modis", {"Terra": end, "X": end}, T("2026-11-09"))
+    assert set(mixed["platforms"]) == {"X"} and "Terra" in mixed["not_projected"]
+
+
+def test_schedule_projections_and_trim():
+    gpd = pytest.importorskip("geopandas")
     start, end = T("2026-11-09"), T("2026-12-09")
-    spec = schedule.landsat_projection(scenes, start, end)
-    days = projection.PROJECTION_DAYS["landsat"]
-    assert spec["from"] == end.isoformat()
-    assert spec["to"] == (start + days * DAY).isoformat()
-    assert spec["repeat_days"] == 16
-    assert spec["base_from"] == (end - 16 * DAY).isoformat()
-    assert spec["base_scenes"] == 16 * 4
-    # nothing to project: the window already reaches the horizon, or no scenes
-    assert schedule.landsat_projection(scenes, start, start + (days + 1) * DAY) is None
-    assert schedule.landsat_projection(scenes.iloc[0:0], start, end) is None
+    rows = pd.DataFrame(
+        {
+            "sensor": ["sentinel-1"] * 3 + ["nisar"] * 2,
+            "platform": ["S1C", "S1C", "S1D", "NISAR", "NISAR"],
+            "begin_time": pd.to_datetime(
+                [
+                    "2026-11-01T10:00Z",
+                    "2026-11-27T10:00Z",
+                    "2026-11-20T09:00Z",
+                    "2026-12-20T06:00Z",
+                    "2026-12-31T18:00Z",
+                ],
+                utc=True,
+            ),
+        }
+    )
+    rows["end_time"] = rows["begin_time"] + pd.Timedelta(minutes=2)
+    gdf = gpd.GeoDataFrame(rows, geometry=[None] * len(rows))
+    out = schedule.projections(
+        gdf, start, end, ["sentinel-1", "nisar", "landsat"], {"landsat": {"L8": end}}
+    )
+    s1c = out["sentinel-1"]["platforms"]["S1C"]
+    assert s1c["from"] == T("2026-11-27T10:02Z").isoformat()
+    assert out["nisar"]["platforms"]["NISAR"]["from"] == T("2027-01-01").isoformat()
+    assert out["landsat"]["platforms"]["L8"]["from"] == end.isoformat()
+    # the extra lookback is dropped, but each platform's base cycle is kept
+    kept = schedule.trim_to_base(
+        gdf[gdf["sensor"] == "sentinel-1"],
+        {"S1C": T("2026-11-15"), "S1D": T("2026-11-08")},
+        T("2026-11-07"),
+    )
+    assert list(kept["platform"]) == ["S1C", "S1D"]
 
 
-def _site(tmp_path, spec, scene_times):
+def test_repeat_times_shift_the_same_frame_by_whole_cycles():
+    base = pd.DataFrame(
+        {
+            "track": [1, 1, 2],
+            "frame": [10, 10, 20],
+            "direction": ["ascending"] * 3,
+            "day": pd.to_datetime(["2026-11-10", "2026-11-22", "2026-11-12"], utc=True),
+            "time": pd.to_datetime(
+                ["2026-11-10T06:01Z", "2026-11-22T06:02Z", "2026-11-12T06:30Z"],
+                utc=True,
+            ),
+        }
+    )
+    later = pd.DataFrame(
+        {
+            "track": [1, 2, 3],
+            "frame": [10, 20, 30],
+            "direction": ["ascending"] * 3,
+            "day": pd.to_datetime(["2026-12-16", "2026-12-13", "2026-12-16"], utc=True),
+        }
+    )
+    t = plans.repeat_times(
+        later, base, ["track", "frame", "direction"], pd.Timedelta(days=12)
+    )
+    assert t.iloc[0] == T("2026-12-16T06:02Z")  # from the latest, Nov 22 + 2 cycles
+    assert pd.isna(t.iloc[1])  # Dec 13 is not a whole number of cycles after Nov 12
+    assert pd.isna(t.iloc[2])  # a frame the window does not image
+
+
+def _site(
+    tmp_path,
+    specs,
+    scene_times,
+    window=("2026-11-09T00:00:00+00:00", "2026-12-09T00:00:00+00:00"),
+):
     d = tmp_path / "site"
-    d.mkdir()
+    d.mkdir(exist_ok=True)
     pd.DataFrame(
         {
             "platform": "L8",
@@ -187,20 +270,42 @@ def _site(tmp_path, spec, scene_times):
         }
     ).to_parquet(d / "landsat_scenes.parquet")
     (d / "upcoming_passes.meta.json").write_text(
-        json.dumps({"postprocessing": {"landsat_projected": spec} if spec else {}})
+        json.dumps(
+            {
+                "window": list(window),
+                "plan_pages": {"landsat": "https://landsat.usgs.gov/landsat_acq"},
+                "postprocessing": {"projections": specs or {}},
+            }
+        )
     )
     (d / publish.SCHEDULE_INDEX).write_text(
-        json.dumps({"projections": publish.projections_index(d)})
+        json.dumps({"projections": publish.projections_index(d), "sensors": {}})
     )
     return d
 
 
 SPEC = {
-    "from": "2026-12-09T00:00:00+00:00",
-    "to": "2027-11-09T00:00:00+00:00",
-    "repeat_days": 16,
-    "base_from": "2026-11-23T00:00:00+00:00",
-    "base_scenes": 2,
+    "landsat": {
+        "to": "2027-11-09T00:00:00+00:00",
+        "platforms": {
+            "L8": {
+                "from": "2026-12-09T00:00:00+00:00",
+                "base_from": "2026-11-23T00:00:00+00:00",
+                "repeat_days": 16,
+            },
+        },
+    },
+    "sentinel-3": {
+        "to": "2027-11-09T00:00:00+00:00",
+        "platforms": {
+            "S3A": {
+                "from": "2026-12-09T00:00:00+00:00",
+                "base_from": "2026-11-12T00:00:00+00:00",
+                "repeat_days": 27,
+            },
+        },
+        "not_projected": {"S3X": "why"},
+    },
 }
 
 
@@ -208,35 +313,99 @@ def test_projection_index_and_contract(tmp_path):
     d = _site(tmp_path, SPEC, ["2026-10-29T18:00Z", "2026-12-08T18:00Z"])
     idx = json.loads((d / publish.SCHEDULE_INDEX).read_text())
     assert idx["projections"]["landsat"] == {
-        "from": "2026-12-09T00:00:00Z",
         "to": "2027-11-09T00:00:00Z",
-        "repeat_days": 16,
-        "base_from": "2026-11-23T00:00:00Z",
+        "platforms": {
+            "L8": {
+                "from": "2026-12-09T00:00:00Z",
+                "base_from": "2026-11-23T00:00:00Z",
+                "repeat_days": 16,
+            }
+        },
     }
-    assert publish._check_landsat_projected(d) == []
-    # no projection: no entry, nothing to check
+    # by the map's mission key, with what is not projected and why
+    assert idx["projections"]["s3"]["not_projected"] == {"S3X": "why"}
+    assert publish.plan_pages_index(d) == {
+        "landsat": "https://landsat.usgs.gov/landsat_acq"
+    }
+    assert publish._check_projections(d) == []
     (tmp_path / "b").mkdir()
     d2 = _site(tmp_path / "b", None, ["2026-12-08T18:00Z"])
     assert json.loads((d2 / publish.SCHEDULE_INDEX).read_text())["projections"] == {}
-    assert publish._check_landsat_projected(d2) == []
+    assert publish._check_projections(d2) == []
 
 
 @pytest.mark.parametrize(
-    "change, scenes, problem",
+    "change, problem",
     [
-        ({"to": "2026-12-01T00:00:00+00:00"}, None, "ends before it starts"),
-        ({"base_from": "2026-11-20T00:00:00+00:00"}, None, "base is not one cycle"),
-        ({}, ["2026-12-01T18:00Z"], "does not cover"),
+        ({"base_from": "2026-11-20T00:00:00+00:00"}, "base is not one cycle"),
+        (
+            {
+                "from": "2028-01-01T00:00:00+00:00",
+                "base_from": "2027-12-16T00:00:00+00:00",
+            },
+            "after the horizon",
+        ),
     ],
 )
-def test_projection_contract_catches_problems(tmp_path, change, scenes, problem):
-    d = _site(
-        tmp_path,
-        {**SPEC, **change},
-        scenes or ["2026-10-29T18:00Z", "2026-12-08T18:00Z"],
-    )
-    problems = publish._check_landsat_projected(d)
+def test_projection_contract_catches_problems(tmp_path, change, problem):
+    spec = json.loads(json.dumps(SPEC))
+    spec["landsat"]["platforms"]["L8"].update(change)
+    d = _site(tmp_path, spec, ["2026-10-29T18:00Z", "2026-12-08T18:00Z"])
+    problems = publish._check_projections(d)
     assert any(problem in p for p in problems), problems
+
+
+def test_contract_wants_one_horizon(tmp_path):
+    spec = json.loads(json.dumps(SPEC))
+    spec["sentinel-3"]["to"] = "2027-06-01T00:00:00+00:00"
+    d = _site(tmp_path, spec, ["2026-12-08T18:00Z"])
+    assert any("more than one horizon" in p for p in publish._check_projections(d))
+
+
+def test_split_schedule_puts_rows_past_the_window_in_monthly_files(tmp_path):
+    gpd = pytest.importorskip("geopandas")
+    from shapely.geometry import box
+
+    d = _site(tmp_path, SPEC, ["2026-12-08T18:00Z"])
+    t = pd.to_datetime(
+        [
+            "2026-11-20T06:00Z",
+            "2026-12-08T06:00Z",
+            "2026-12-15T06:00Z",
+            "2027-01-02T06:00Z",
+            "2026-11-21T07:00Z",
+        ],
+        utc=True,
+    )
+    gdf = gpd.GeoDataFrame(
+        {
+            "sensor": ["nisar"] * 4 + ["sentinel-1"],
+            "platform": ["NISAR"] * 4 + ["S1C"],
+            "track": [1, 1, 1, 1, 5],
+            "frame": [10, 10, 10, 10, None],
+            "begin_time": t,
+            "end_time": t,
+            "polarization": ["HH"] * 5,
+            "plan_url": ["https://x/plan.kmz"] * 4 + ["https://esa/s1c.kml"],
+        },
+        geometry=[box(0, 0, 1, 1)] * 5,
+        crs="EPSG:4326",
+    )
+    gdf.to_parquet(d / "upcoming_passes.parquet")
+    idx = publish.split_schedule(d)
+    nisar = idx["sensors"]["nisar"]
+    assert nisar["rows"] == 2
+    assert [c["file"] for c in nisar["later"]] == [
+        "passes_nisar_2026-12.parquet",
+        "passes_nisar_2027-01.parquet",
+    ]
+    assert all((d / c["file"]).exists() for c in nisar["later"])
+    # the plan's end counts every row; the schedule's end only the window's
+    assert nisar["plan_ends"]["NISAR"] == "2027-01-02T06:00:00Z"
+    assert idx["schedule_end"] == "2026-12-08T06:00:00Z"
+    assert "later" not in idx["sensors"]["sentinel-1"]
+    assert idx["plan_pages"] == {"landsat": "https://landsat.usgs.gov/landsat_acq"}
+    assert publish._check_projections(d) == []
 
 
 # ---------------------------------------------------------------- hindcast
@@ -300,3 +469,59 @@ def test_summarize_landsat():
     far = next(r for r in out["sgp4"] if r["days_from_epoch"] == "(120, 240]")
     assert far["found"] == 0.0
     assert "Landsat 8/9" in hindcast.markdown({"generated_at": "x", "landsat": out})
+
+
+def test_summarize_wide_bins_by_lead():
+    df = pd.DataFrame(
+        {
+            "mission": "viirs",
+            "platform": "N21",
+            "lead_days": [16, 16, 32, 352],
+            "along_s": [3.0, -5.0, 8.0, 60.0],
+            "cross_km": [1.0, 1.0, 2.0, 9.0],
+        }
+    )
+    out = hindcast.summarize_wide(df)
+    assert [r["lead"] for r in out] == ["(0, 30]", "(30, 60]", "(240, 400]"]
+    assert out[0]["n"] == 2 and out[0]["median_abs_s"] == pytest.approx(4.0)
+    md = hindcast.markdown({"generated_at": "x", "wide": out})
+    assert "N21" in md
+
+
+def test_nisar_hindcast_scores_the_plan_against_itself(monkeypatch):
+    days = pd.date_range(T("2026-01-01"), T("2026-03-31"), freq="D")
+    rows = []
+    for d in days:
+        # frame 1 every 12 days from Jan 1; frame 2 once, never again
+        if (d - days[0]).days % 12 == 0:
+            rows.append((1, 10, "ascending", d, "L_DH"))
+    rows.append((2, 20, "ascending", T("2026-01-05"), "L_DH"))
+    plan = pd.DataFrame(rows, columns=["track", "frame", "direction", "day", "mode"])
+    monkeypatch.setattr(plans, "nisar_plan", lambda session, cache: (plan, "https://x"))
+    out = hindcast.nisar_hindcast(None, None, max_lead_days=36)
+    first = out[out["base_file"] == "2026-01-13"]
+    one = first[first["cycles"] == 1].iloc[0]
+    # the base (Jan 1-12) has frame 1 and frame 2; only frame 1 repeats
+    assert one["projected_s"] == 2 and one["hit_any_s"] == 1 and one["planned_s"] == 1
+    later = out[out["base_file"] == "2026-02-12"]
+    assert (later["hit_any_s"] == later["projected_s"]).all()
+
+
+def test_hindcast_json_has_no_nan(tmp_path, monkeypatch):
+    """Browsers cannot parse NaN: one would make the whole file unreadable."""
+    monkeypatch.setattr(
+        hindcast,
+        "s3_hindcast",
+        lambda session: pd.DataFrame(
+            {
+                "mission": ["sentinel-3"],
+                "platform": ["S3A"],
+                "lead_days": [27],
+                "along_s": [1.0],
+                "cross_km": [np.nan],
+            }
+        ),
+    )
+    hindcast.run(tmp_path, sensors=("sentinel-3",))
+    text = (tmp_path / "hindcast.json").read_text()
+    assert "NaN" not in text and json.loads(text)["wide"][0]["median_cross_km"] is None

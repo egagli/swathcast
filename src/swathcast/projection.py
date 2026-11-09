@@ -31,6 +31,9 @@ REPEAT_DAYS = {
     "sentinel-1": 12,  # 175 orbits
     "sentinel-2": 10,  # 143 orbits
     "nisar": 12,  # 173 orbits
+    "modis": 16,  # Terra, Aqua: 233 orbits
+    "viirs": 16,  # SNPP, NOAA-20, NOAA-21: 227 orbits
+    "sentinel-3": 27,  # 385 orbits
 }
 
 #: Platforms whose *acquisition plan* repeats on a longer period than their
@@ -45,12 +48,66 @@ def repeat_of(sensor: str, platform: str) -> pd.Timedelta:
     return pd.Timedelta(days=PLATFORM_REPEAT_DAYS.get(platform, REPEAT_DAYS[sensor]))
 
 
-#: How far ahead each mission is projected (days after the start of the
-#: schedule's window, like ``schedule --days``). Only missions listed here are
-#: projected; set from the hindcast (docs/methodology.md, "Projection").
-PROJECTION_DAYS = {
-    "landsat": 365,
+#: How far ahead every mission is projected: days after the start of the
+#: schedule's window (like ``schedule --days``). One horizon for all, so the
+#: map has one date filter; how well each mission's projection holds at each
+#: lead is measured by the hindcast and shown beside its projected passes
+#: (docs/methodology.md, "Projection").
+HORIZON_DAYS = 365
+
+#: The missions projected (schedule sensor names).
+PROJECTED = (
+    "sentinel-1",
+    "sentinel-2",
+    "landsat",
+    "nisar",
+    "modis",
+    "viirs",
+    "sentinel-3",
+)
+
+
+#: Platforms not projected, and why (shown on the map). Terra and Aqua left
+#: their constellations' maintained orbits (2022-23) and no longer repeat:
+#: hindcast 2026-11-09, the same MODIS granule start 16 k days later imaged
+#: ground 550-900 s along track and 230-780 km across from the first (median;
+#: VIIRS on NOAA-21: 7-40 s and 2-11 km).
+NOT_PROJECTED = {
+    "Terra": "no longer on a repeating orbit (the same granule 16 days later lands hundreds of km away), so it is predicted from the orbit for the 30-day window only",
+    "Aqua": "no longer on a repeating orbit (the same granule 16 days later lands hundreds of km away), so it is predicted from the orbit for the 30-day window only",
 }
+
+
+def spec(sensor: str, plan_ends: dict, start, horizon_days: int = HORIZON_DAYS):
+    """A mission's projection, as the map applies it: for each platform, from
+    the end of its plan (``plan_ends[platform]``), its last cycle
+    ``[from - repeat, from)`` repeated up to ``start + horizon_days``. None
+    when the mission is not projected or no plan ends before the horizon."""
+    if sensor not in PROJECTED:
+        return None
+    to = pd.Timestamp(start) + pd.Timedelta(days=horizon_days)
+    platforms = {}
+    skipped = {}
+    for platform, end in sorted(plan_ends.items()):
+        end = pd.Timestamp(end)
+        if platform in NOT_PROJECTED:
+            skipped[platform] = NOT_PROJECTED[platform]
+            continue
+        if end >= to:
+            continue
+        rep_ = repeat_of(sensor, platform)
+        platforms[platform] = {
+            "from": end.isoformat(),
+            "base_from": (end - rep_).isoformat(),
+            "repeat_days": int(rep_.days),
+        }
+    if not platforms and not skipped:
+        return None
+    # (a mission none of whose platforms is projected keeps its reasons)
+    out = {"to": to.isoformat(), "platforms": platforms}
+    if skipped:
+        out["not_projected"] = skipped
+    return out
 
 
 def base_cycle(df: pd.DataFrame, plan_end, repeat: pd.Timedelta, time_col="begin"):

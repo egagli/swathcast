@@ -13,7 +13,7 @@ import { compressors } from "https://cdn.jsdelivr.net/npm/hyparquet-compressors@
 import {
   css, getJSON, showFreshness, failingSources, fmtWhen, fmtBoth, whenCell, fmtHours, roundUp10,
   expectedAvailability, tzReady, sunElevation, utcText, rel, dayLabel, forgetSettings, localTime, track,
-  parseProjections, repeatCycle,
+  parseProjections, repeatCycle, baseOf,
 } from "./common.js";
 import { aoiBBox, aoiCenter as centreOfAOI, aoiFromParam, aoiParam, parseAOI, checkAOI } from "./aoi.js";
 import {
@@ -160,7 +160,7 @@ const state = window.__state = {
   aoi: null, start: null, end: null, scheduleEnd: null, health: {},
   // per mission, a plan carried past its end by its repeat cycle
   // (passes_index.json "projections"; projection.py): {from, to, repeatMs, baseFrom} as ms
-  projections: {},
+  projections: {}, planPages: {},
   cells: [], passes: [], notes: [], missionState: {},
   // the one selection: a pass or recent acquisition in the list ({kind, key})
   // or a footprint on the map ({kind: "cell", key: its title}); null: none
@@ -214,6 +214,7 @@ function toRow(r) {
     polarization: r.polarization || null, modeSource: r.mode_source || null, datatake: r.datatake_id || null,
     begin: toDate(r.begin_time), end: toDate(r.end_time ?? r.begin_time),
     estimated: Boolean(r.time_is_estimated), timing: r.timing || null, geojson, bbox: turf.bbox(geojson),
+    planUrl: r.plan_url || null,
   };
 }
 
@@ -302,6 +303,7 @@ async function load() {
   Object.entries(summary.ends).forEach(([p, t]) => { (state.planEnds[missionOf(p)] ||= {})[p] = t; });
   legend();
   state.projections = parseProjections(idx);
+  state.planPages = (idx && idx.plan_pages) || {};
   const s = document.getElementById("date-start"), e = document.getElementById("date-end");
   s.min = e.min = isoDay(new Date()); s.max = e.max = isoDay(hi);
   s.value = state.start = isoDay(new Date());
@@ -346,51 +348,139 @@ async function loadS2() {
   if (state.s2) return state.s2;
   const [grid, passes] = await Promise.all([parquet("s2_grid.parquet"), parquet("s2_tile_passes.parquet")]);
   const byTile = new Map();
+  // each tile pass's plan file: its datatake's
+  const planOf = new Map(state.rows.filter((r) => r.sensor === "sentinel-2").map((r) => [`${r.platform}|${r.begin.getTime()}`, r.planUrl]));
   passes.forEach((p) => {
-    const t = String(p.tile);
+    const t = String(p.tile), begin = toDate(p.begin), platform = String(p.platform);
     (byTile.get(t) || byTile.set(t, []).get(t)).push({
-      when: toDate(p.time), begin: toDate(p.begin), platform: String(p.platform),
+      when: toDate(p.time), begin, platform,
       track: Number(p.track), direction: String(p.direction), pol: null, estimated: true,
-      coverage: p.coverage == null ? null : Number(p.coverage),
+      coverage: p.coverage == null ? null : Number(p.coverage), planUrl: planOf.get(`${platform}|${begin.getTime()}`) || null,
     });
   });
-  state.s2 = { tiles: grid.map(s2Tile), byTile };
+  const base = new Map([...byTile].map(([t, list]) => [t, baseCycle(list, "s2")]));
+  state.s2 = { tiles: grid.map(s2Tile), byTile, base };
   return state.s2;
 }
 
 // ---------------------------------------------------------------- projection
-// Past the end of its plan, a mission's passes can be *projected*: the plan's
-// last repeat cycle carried forward by whole cycles (projection.py). Only
-// missions whose projection was measured against what happened next are
-// projected (the schedule's passes_index.json lists them; "hindcast" in
-// docs/methodology.md). A projected pass is never shown as planned: it is
-// labelled in the popups, the list, the timeline and the exports, and a
-// footprint whose next pass is projected is drawn fainter, outlined dashed.
-const PROJECTED_NOTE = {
-  landsat: "USGS's 16-day calendar carried past the schedule's window, at the time of day of the plan's last cycle. "
-    + "Checked against a year of acquired scenes (2025-11 to 2026-11): every scene fell on a calendar date, 97% of calendar dates were acquired, "
-    + "and times were within 72 s (99%). USGS can still change its plans.",
-};
-// A footprint's planned acquisitions in its mission's base cycle (the plan's last one).
-function baseCycle(times, key) {
-  const pr = state.projections[key];
-  return pr ? times.filter((t) => t.when.getTime() >= pr.baseFrom && t.when.getTime() < pr.from) : [];
+// Three kinds of upcoming pass, never mixed up on the page:
+// - planned: in an agency's published plan (ESA, USGS, NASA), linked to it;
+// - predicted: MODIS, VIIRS and Sentinel-3 have no plan; their passes are
+//   predicted from the orbit for the schedule's 30 days;
+// - projected: past the end of a plan (or of the 30-day prediction), the
+//   last repeat cycle carried forward by whole cycles (projection.py). In
+//   no published plan, so subject to change. Tagged "projected" in the
+//   popups, the list and the detail card, dotted on the timeline, drawn
+//   fainter and outlined dashed on the map, and said in the exports, with
+//   how well it held in the monthly hindcast (hindcast.json) when published.
+const PLAN_NAME = { s1: "ESA's Sentinel-1 plan", s2: "ESA's Sentinel-2 plan", landsat: "USGS's acquisition calendar", nisar: "NASA's NISAR plan", modis: "the orbit prediction", viirs: "the orbit prediction", s3: "the orbit prediction" };
+let hindcast = null;
+getJSON("./data/hindcast.json").then((j) => { hindcast = j; }).catch(() => {});
+let norad = {};
+getJSON("./data/tle.json").then((j) => { norad = Object.fromEntries(Object.entries(j.satellites || {}).map(([p, x]) => [p, x.omm && x.omm.NORAD_CAT_ID])); }).catch(() => {});
+const pct = (v) => `${Math.round(100 * v)}%`;
+const inBin = (bin, d) => { const m = /\((\d+), (\d+)\]/.exec(bin || ""); return m && d > Number(m[1]) && d <= Number(m[2]); };
+// How the projection held in the last hindcast, for this platform and lead
+// (days past its plan's end); "" when not measured or not published.
+function skillText(mission, platform, leadDays) {
+  if (!hindcast) return "";
+  const when = String(hindcast.generated_at || "").slice(0, 10);
+  if (mission === "s1" || mission === "s2" || mission === "nisar") {
+    const r = (hindcast.esa_by_platform || []).find((x) => x.sensor === MISSION[mission].sensor && x.platform === platform && inBin(x.lead, leadDays));
+    if (!r) return "";
+    const what = mission === "nisar" ? "frames were in NASA's plan for those days" : "acquisition time was later planned by ESA";
+    return `In the hindcast of ${when}, ${pct(r.precision_same_mode)} of ${platform}'s projected ${what}, ${r.lead.replace(/[(\]]/g, "").replace(", ", "–")} days past its plan's end.`;
+  }
+  if (mission === "landsat" && hindcast.landsat) {
+    const l = hindcast.landsat, p99 = Math.max(...(l.repeat_shift || []).map((r) => r.p99_abs_s));
+    return `In the hindcast of ${when}, every scene acquired in a year fell on a calendar date, ${pct(l.calendar_days_acquired)} of calendar dates were acquired, and times shifted by whole cycles were within ${Math.round(p99)} s (99%).`;
+  }
+  const r = (hindcast.wide || []).find((x) => x.platform === platform && inBin(x.lead, leadDays));
+  return r ? `In the hindcast of ${when}, ${platform} ${r.lead.replace(/[(\]]/g, "").replace(", ", "–")} days on was ${Math.round(r.median_abs_s)} s along track${Number.isFinite(r.median_cross_km) ? ` and ${Math.round(r.median_cross_km)} km across` : ""} from where its repeat put it (median).` : "";
 }
-// The footprint's projected acquisitions up to t1 (and the projection's end):
-// each of its base cycle's, repeated by whole cycles, lit by the sun of the new date.
-function projectedTimes(c, key, t1) {
-  const pr = state.projections[key];
-  if (!pr || !c.base || !c.base.length) return [];
-  return repeatCycle(c.base, pr, t1).map(({ src, when, cycles }) => ({ ...src, when, light: lightAt(when, c.lon, c.lat), projected: true, cycles }));
+// Where an upcoming pass comes from: {basis, href, text} (the plan file, the
+// plan's page, or the orbital elements).
+function sourceOf(mission, x) {
+  const basis = x.projected ? "projected" : isWide(mission) ? "predicted" : "planned";
+  if (isWide(mission)) {
+    const id = norad[x.platform];
+    return { basis, href: id ? `https://celestrak.org/NORAD/elements/gp.php?CATNR=${id}&FORMAT=json` : "https://celestrak.org/", text: `${x.platform} orbital elements (CelesTrak)` };
+  }
+  if (x.planUrl) return { basis, href: x.planUrl, text: x.planUrl.split("/").pop().split("?")[0] };
+  return { basis, href: state.planPages[mission] || null, text: PLAN_NAME[mission] };
+}
+const sourceLink = (src) => (src.href ? `<a href="${esc(src.href)}" target="_blank" rel="noopener">${esc(src.text)} ↗</a>` : esc(src.text));
+// The sentence that says what a projected pass is (and what it is not).
+function projectedNote(mission, x) {
+  const spec = state.projections[mission], ps = spec && spec.platforms[x.platform];
+  // the last day planned (a projection starts the instant after it)
+  const days = ps ? Math.round(ps.repeatMs / 864e5) : null, end = ps ? dayWithYear(new Date(ps.from - 1)) : "its end";
+  const lead = ps ? (x.when.getTime() - ps.from) / 864e5 : 0;
+  const what = isWide(mission) ? `the orbit prediction ends ${end}`
+    : mission === "landsat" ? `this site times USGS's calendar for 30 days, to ${end}` : `${PLAN_NAME[mission]} ends ${end}`;
+  return `Projected, not planned: no published plan covers this date (${what}). This is its last ${days}-day cycle (from ${sourceLink(sourceOf(mission, { ...x, projected: false }))}) repeated ${x.cycles || "?"}×, and is subject to change. ${skillText(mission, x.platform, lead)}`.trim();
 }
 // "Mon 8 Nov 2027": a projection's end is months away, so it carries its year
 // (when that is not this year).
 const dayWithYear = (d) => `${fmtWhen(d).split(" ").slice(0, 3).join(" ")}${d.getUTCFullYear() !== new Date().getUTCFullYear() ? ` ${d.getUTCFullYear()}` : ""}`;
-const projectedTag = (p) => `<span class="tag proj" title="${esc(PROJECTED_NOTE[p.mission] || "projected past the plan's end")}">projected</span>`;
-const basisOf = (p) => (p.projected ? "projected" : isWide(p.mission) ? "predicted" : "planned");
+const projectedTag = (mission, x) => `<span class="tag proj" title="${esc(plain(projectedNote(mission, x)))}">projected</span>`;
+const basisOf = (p) => sourceOf(p.mission, p).basis;
 function upcomingTitle(list) {
   const n = list.filter((t) => t.projected).length;
-  return n ? `Planned (${list.length - n}) · projected (${n})` : `Planned (${list.length})`;
+  return n ? `Planned (${list.length - n}) · projected (${n}): not in any plan, subject to change` : `Planned (${list.length})`;
+}
+// A footprint's acquisitions in its mission's base cycle (each platform's last one).
+const baseCycle = (times, key) => baseOf(times, state.projections[key]);
+// The footprint's projected acquisitions up to t1 (and the horizon): each of
+// its base cycle's, repeated by whole cycles, lit by the sun of the new date.
+function projectedTimes(c, key, t1) {
+  if (!c.base || !c.base.length) return [];
+  return repeatCycle(c.base, state.projections[key], t1).map(({ src, when, cycles, shiftMs }) => ({
+    ...src, when, projected: true, cycles, shiftMs,
+    ...(c.lon != null ? { light: lightAt(when, c.lon, c.lat) } : {}),
+    ...(src.node != null ? { node: src.node + shiftMs } : {}),
+    ...(src.begin ? { begin: new Date(src.begin.getTime() + shiftMs) } : {}),
+  }));
+}
+// Sentinel-1/2 datatakes projected up to t1: each platform's last cycle of
+// datatakes, repeated (Sentinel-1's bursts are timed against them, and both
+// missions' swaths are drawn from them). Kept until t1 or the rows change.
+let projected = { key: null, rows: [] };
+function projectedRows(t1) {
+  const key = `${t1}|${state.rows.length}`;
+  if (projected.key === key) return projected.rows;
+  const rows = [];
+  ["s1", "s2"].forEach((m) => {
+    const spec = state.projections[m];
+    if (!spec) return;
+    const mine = state.rows.filter((r) => r.sensor === MISSION[m].sensor).map((r) => ({ when: r.begin, platform: r.platform, row: r }));
+    repeatCycle(baseOf(mine, spec), spec, t1).forEach(({ src, when, cycles, shiftMs }) => {
+      rows.push({ ...src.row, begin: when, end: new Date(src.row.end.getTime() + shiftMs), projected: true, cycles, shiftMs });
+    });
+  });
+  projected = { key, rows };
+  state.plans = buildPlans([...state.rows, ...rows]);
+  return rows;
+}
+const rowsWithProjected = () => (projected.rows.length ? [...state.rows, ...projected.rows] : state.rows);
+// NISAR's plan past the schedule's window, one file a month (publish.py):
+// those the dates reach, and those holding the base cycle of its projection.
+const nisarLater = new Set();
+async function ensureNisarLater(t0, t1) {
+  const idx = await scheduleIndex, entry = idx && idx.sensors && idx.sensors.nisar;
+  if (!entry || !entry.later) return false;
+  const ps = state.projections.nisar && state.projections.nisar.platforms.NISAR;
+  const want = entry.later.filter((c) => {
+    const a = Date.parse(c.from), b = Date.parse(c.to);
+    return (a <= t1 && b >= t0) || (ps && t1 >= ps.from && a < ps.from && b >= ps.baseFrom);
+  }).filter((c) => !nisarLater.has(c.file));
+  if (!want.length) return false;
+  const got = await Promise.all(want.map((c) => parquet(c.file).then((raw) => raw.filter((r) => r.geometry).map(toRow))));
+  want.forEach((c) => nisarLater.add(c.file));
+  got.forEach((rows) => state.rows.push(...rows));
+  state.nisar = null;
+  return true;
 }
 
 async function loadLandsat() {
@@ -444,9 +534,9 @@ function nisarFrames() {
   state.rows.filter((r) => r.sensor === "nisar").forEach((r) => {
     const key = `${r.track}|${r.frame}|${r.direction}`;
     if (!frames.has(key)) frames.set(key, { track: r.track, frame: r.frame, direction: r.direction, geojson: r.geojson, bbox: r.bbox, times: [] });
-    frames.get(key).times.push({ when: r.begin, platform: "NISAR", track: r.track, direction: r.direction, pol: r.polarization, radarMode: r.mode, modeSource: r.modeSource, estimated: true, row: r });
+    frames.get(key).times.push({ when: r.begin, platform: "NISAR", track: r.track, direction: r.direction, pol: r.polarization, radarMode: r.mode, modeSource: r.modeSource, estimated: true, row: r, planUrl: r.planUrl });
   });
-  frames.forEach((f) => f.times.sort((a, b) => a.when - b.when));
+  frames.forEach((f) => { f.times.sort((a, b) => a.when - b.when); f.base = baseCycle(f.times, "nisar"); });
   state.nisar = [...frames.values()];
   return state.nisar;
 }
@@ -491,7 +581,7 @@ function loadWide(key) {
         const geojson = decodeWKB(c.geometry), center = centerOf(geojson);
         const times = (by.get(String(c.tile)) || []).sort((a, b) => a.when - b.when);
         times.forEach((t) => { t.light = lightAt(t.when, center[0], center[1]); });
-        return { tile: String(c.tile), h: Number(c.h), v: Number(c.v), title: `tile ${c.tile}`, geojson, bbox: turf.bbox(geojson), center, times };
+        return { tile: String(c.tile), h: Number(c.h), v: Number(c.v), title: `tile ${c.tile}`, geojson, bbox: turf.bbox(geojson), center, times, lon: center[0], lat: center[1], base: baseCycle(times, key) };
       });
       // predicted through the schedule's whole window: its end, not the last pass's
       // time (hours before it), lest the dates seem to run past the prediction
@@ -545,6 +635,16 @@ function satrecsFor() {
 // within its narrower strip). null if the swath misses the AOI.
 function refineAtAOI(p, satrec) {
   const [lon, lat] = aoiCenter();
+  if (p.shiftMs && satrec) {
+    // projected: timed at its base pass (orbital elements months ahead are
+    // not to be trusted), then carried forward by the same whole cycles
+    const q = refineAtAOI({ ...p, when: new Date(p.when.getTime() - p.shiftMs), shiftMs: 0, ...(p.node != null ? { node: p.node - p.shiftMs } : {}) }, satrec);
+    if (!q) return null;
+    const when = new Date(q.when.getTime() + p.shiftMs), light = lightAt(when, lon, lat);
+    const out = { ...q, when, whenEnd: when, light, shiftMs: p.shiftMs, projected: true, cycles: p.cycles, ...(q.node != null ? { node: q.node + p.shiftMs } : {}) };
+    if (p.mission === "s3") { out.instruments = light === "day" && q.olciStrip ? ["OLCI", "SLSTR"] : ["SLSTR"]; out.mode = out.instruments.join(" + "); }
+    return out;
+  }
   // no elements to time it with: the footprint's own time, unchecked
   if (!satrec) return { ...p, timedAtAOI: false };
   const r = closestApproach(satrec, lon, lat, p.when.getTime() - 900e3, p.when.getTime() + 900e3);
@@ -561,7 +661,8 @@ function refineAtAOI(p, satrec) {
   if (p.mission === "s3") {
     // the frame imaging the AOI: its time after the orbit's node
     if (p.node != null) q.frame = Math.floor((r.t - p.node) / 1000 / S3_FRAME_S) * S3_FRAME_S;
-    const olci = light === "day" && xs.some((x) => x >= S3_OLCI_KM[0] && x <= S3_OLCI_KM[1]);
+    q.olciStrip = xs.some((x) => x >= S3_OLCI_KM[0] && x <= S3_OLCI_KM[1]);
+    const olci = light === "day" && q.olciStrip;
     q.instruments = olci ? ["OLCI", "SLSTR"] : ["SLSTR"];
     q.mode = q.instruments.join(" + ");
   }
@@ -797,9 +898,9 @@ function centerOf(geojson) {
 // One cell per planned datatake swath (Sentinel-1 EW/SM always, IW and
 // Sentinel-2 when zoomed out): a single acquisition, dropped once filtered out.
 function datatakeCells(key, area, keep) {
-  const now = Date.now(), from = state.aoi ? now - PAST_MS[key] : now;
-  return state.rows.filter((r) => r.sensor === MISSION[key].sensor && keep(r) && r.end.getTime() >= from && bboxOverlapWrapped(r.bbox, area)).map((r) => {
-    const t = { when: r.begin, begin: r.begin, platform: r.platform, track: r.track, direction: r.direction, pol: r.polarization, mode: r.mode, pass: r, estimated: false };
+  const now = Date.now(), from = state.aoi ? now - PAST_MS[key] : now, t1 = windowMs()[1];
+  return rowsWithProjected().filter((r) => r.sensor === MISSION[key].sensor && keep(r) && r.end.getTime() >= from && (!r.projected || r.begin.getTime() <= t1) && bboxOverlapWrapped(r.bbox, area)).map((r) => {
+    const t = { when: r.begin, begin: r.begin, platform: r.platform, track: r.track, direction: r.direction, pol: r.polarization, mode: r.mode, pass: r, estimated: false, planUrl: r.planUrl, ...(r.projected ? { projected: true, cycles: r.cycles, shiftMs: r.shiftMs } : {}) };
     const ahead = r.end.getTime() >= now;
     return {
       mission: key, datatake: true, geojson: r.geojson, bbox: r.bbox, center: centerOf(r.geojson),
@@ -886,12 +987,13 @@ async function missionCells(key, area, f, token) {
     cells.push(...datatakeCells("s1", area, (r) => overview || r.mode !== "IW"));
     if (overview) return cells;
     let bursts;
-    const end = state.scheduleEnd.getTime();
+    const end = Math.max(state.scheduleEnd.getTime(), f.t1);
     const burstCell = (b) => {
       // with an AOI, also the planned passes of the recent past (see PAST_MS)
       const all = acquisitions(state.models, state.plans, b.track, b.tanx, state.aoi ? now - PAST_MS.s1 : now, end).map((a) => ({
         when: a.when, platform: a.platform, track: b.track, direction: a.pass.direction, pol: a.pass.polarization,
-        mode: "IW", pass: a.pass, estimated: false,
+        mode: "IW", pass: a.pass, estimated: false, planUrl: a.pass.planUrl,
+        ...(a.pass.projected ? { projected: true, cycles: a.pass.cycles, shiftMs: a.pass.shiftMs } : {}),
       }));
       return {
         mission: "s1", geojson: b.geojson, bbox: turf.bbox(b.geojson), center: centerOf(b.geojson), title: b.id,
@@ -945,7 +1047,9 @@ async function missionCells(key, area, f, token) {
       if (!bboxOverlapWrapped(t.bbox, area) || !f.m.s2.tiles(t.tile)) return;
       cells.push({
         mission: "s2", geojson: t.geojson, bbox: t.bbox, center: t.center, title: `tile ${t.tile}`,
-        track: null, frame: t.tile, frameLabel: t.tile, tile: t.tile, times: (s2.byTile.get(t.tile) || []).filter((x) => x.when.getTime() >= now), past: pastOf(s2.byTile.get(t.tile), now, "s2"),
+        track: null, frame: t.tile, frameLabel: t.tile, tile: t.tile,
+        times: [...(s2.byTile.get(t.tile) || []).filter((x) => x.when.getTime() >= now), ...projectedTimes({ base: s2.base.get(t.tile) }, "s2", f.t1)],
+        past: pastOf(s2.byTile.get(t.tile), now, "s2"),
       });
     });
   } else if (key === "landsat") {
@@ -975,11 +1079,12 @@ async function missionCells(key, area, f, token) {
       cells.push({
         mission: key, geojson: c.geojson, bbox: c.bbox, center: c.center, title: c.title, tile: c.tile,
         track: null, frame: null, frameLabel: c.tile, direction: null,
-        times: c.times.filter((x) => x.when.getTime() >= now), past: pastOf(c.times, now, key), candidate: !over,
+        times: [...c.times.filter((x) => x.when.getTime() >= now), ...projectedTimes(c, key, f.t1)], past: pastOf(c.times, now, key), candidate: !over,
       });
     });
   } else {
     await ensureSensor("nisar");
+    await ensureNisarLater(f.t0, f.t1);
     if (token !== state.token) return null;
     nisarFrames().forEach((fr) => {
       const nf = f.m.nisar;
@@ -987,7 +1092,7 @@ async function missionCells(key, area, f, token) {
       cells.push({
         mission: "nisar", geojson: fr.geojson, bbox: fr.bbox, center: centerOf(fr.geojson),
         title: `track ${fr.track} frame ${fr.frame ?? "?"}`, track: fr.track, frame: fr.frame, frameLabel: fr.frame == null ? "" : String(fr.frame),
-        direction: fr.direction, times: fr.times.filter((x) => x.when.getTime() >= now), past: pastOf(fr.times, now, "nisar"),
+        direction: fr.direction, times: [...fr.times.filter((x) => x.when.getTime() >= now), ...projectedTimes(fr, "nisar", f.t1)], past: pastOf(fr.times, now, "nisar"),
       });
     });
   }
@@ -1017,7 +1122,7 @@ function buildPasses(cells) {
   MISSIONS.filter((m) => isWide(m.key) && state.missions.has(m.key)).forEach((m) => out.push(...wideOverAOI(m.key, filters())));
   // Whole datatakes without native footprints: S1 EW/SM, S2 calibration takes.
   const f = filters();
-  state.rows.forEach((r) => {
+  rowsWithProjected().forEach((r) => {
     const mission = r.sensor === "sentinel-1" ? "s1" : r.sensor === "sentinel-2" ? "s2" : null;
     if (!mission || !state.missions.has(mission)) return;
     if (mission === "s1" || r.mode === "NOBS") return; // S1 datatakes are drawn as cells
@@ -1025,7 +1130,8 @@ function buildPasses(cells) {
     if (!timeOK(t, f) || !intersects(state.aoi, r.geojson, r.bbox)) return;
     out.push({
       key: `dt|${r.platform}|${r.begin.getTime()}`, mission, sensor: r.sensor, platform: r.platform, direction: r.direction,
-      track: r.track, pol: r.polarization, mode: r.mode, estimated: false, pass: r, cells: [], when: r.begin, whenEnd: r.end,
+      track: r.track, pol: r.polarization, mode: r.mode, estimated: false, pass: r, cells: [], when: r.begin, whenEnd: r.end, planUrl: r.planUrl,
+      ...(r.projected ? { projected: true, cycles: r.cycles, shiftMs: r.shiftMs } : {}),
       shapes: [nearAOI(r.geojson)], footprints: "datatake", ll: aoiCenter(),
       note: mission === "s1" ? `${r.mode} datatake (bursts are drawn for IW only), clipped to the AOI's surroundings.` : `${r.mode} datatake (not a nominal observation: no user tiles expected).`,
     });
@@ -1055,7 +1161,7 @@ function wideOverAOI(key, f, past = false) {
   return [...merged.values()].map((q) => {
     q.cells = [...new Set(q.cells)].filter((c) => intersects(state.aoi, c.geojson, c.bbox));
     const satrec = (state.satrecs || {})[q.platform];
-    const strip = satrec && q.timedAtAOI ? swathStrip(q.platform, satrec, q.when.getTime()) : null;
+    const strip = satrec && q.timedAtAOI ? swathStrip(q.platform, satrec, q.when.getTime() - (q.shiftMs || 0)) : null;
     q.shapes = strip ? [strip] : q.cells.map((c) => c.geojson);
     q.footprints = footprintLabel(q);
     return q;
@@ -1072,7 +1178,7 @@ function groupPasses(cells, timesOf) {
         key: k, mission: c.mission, sensor: MISSION[c.mission].sensor, platform: t.platform, direction: t.direction || c.direction || null,
         track: t.track ?? c.track, pol: t.pol, mode: t.mode || t.radarMode || (c.mission === "s2" ? "NOBS" : c.mission === "landsat" ? "OLI/TIRS" : WIDE_MODE[c.mission] || null),
         modeSource: t.modeSource || null, light: t.light || null, vza: t.vza ?? null, xtrack: t.xtrack ?? null, node: t.node ?? null, frame: t.frame ?? null,
-        estimated: t.estimated, projected: Boolean(t.projected), cycles: t.cycles || null, pass: t.pass || null, cells: [], times: [], ll: aoiCenter(),
+        estimated: t.estimated, projected: Boolean(t.projected), cycles: t.cycles || null, shiftMs: t.shiftMs || 0, planUrl: t.planUrl || null, pass: t.pass || null, cells: [], times: [], ll: aoiCenter(),
       });
     }
     const p = passes.get(k);
@@ -1144,7 +1250,7 @@ function passNote(p) {
     return `T${String(p.track).padStart(3, "0")}-${burstRange(bursts)}, imaged within ${Math.max(1, span)} s from ${p.when.toISOString().slice(11, 19)} UTC (${localText(p.when, p.ll)}); the datatake runs ${fmtWhen(p.pass.begin)}–${p.pass.end.toISOString().slice(11, 16)} UTC${p.pol ? `, ${polText(p.pol)}` : ""}.`;
   }
   if (p.mission === "s2") return `Relative orbit ${p.track}; tile times from the orbit (SGP4), ~10 s. STAC items carry the datatake start instead.`;
-  if (p.mission === "landsat") return p.projected ? `WRS-2 path ${p.track}, ${p.footprints}. ${PROJECTED_NOTE.landsat}` : `WRS-2 path ${p.track}, ${p.footprints}; scene times from the orbit (SGP4) on USGS's acquisition calendar.`;
+  if (p.mission === "landsat") return p.projected ? `WRS-2 path ${p.track}, ${p.footprints}; scene times of the calendar's last cycle, shifted by whole cycles.` : `WRS-2 path ${p.track}, ${p.footprints}; scene times from the orbit (SGP4) on USGS's acquisition calendar.`;
   const pol = p.pol ? `, ${polText(p.pol)}` : ", polarization not in the plan";
   const sband = polEntries(p.pol).some((e) => e.band === "S") ? " S-band data come from ISRO (Bhoonidhi), not ASF." : "";
   const inferred = p.modeSource === "earlier cycle" ? " (the plan leaves this date's mode blank: the frame's last listed mode, which matched ASF's products for 97% of L-band frames; the S-band part is not checked)" : "";
@@ -1290,7 +1396,11 @@ function detailCard(p) {
   // what it is, in a line or two; when each source likely has it, in a small
   // table (UTC, local under the median; n and the stratum in the row's tooltip);
   // how it was timed and the rest, folded
-  card.innerHTML = `<div class="headline">${passLabel(p)}${p.projected ? ` ${projectedTag(p)}` : ""}</div>${mode ? `<div class="dc-mode">${esc(mode)}</div>` : ""}`;
+  const src = sourceOf(p.mission, p);
+  const basis = src.basis === "projected" ? `<div class="dc-basis proj">${projectedNote(p.mission, p)}</div>`
+    : src.basis === "predicted" ? `<div class="dc-basis nm">Predicted from the orbit: ${MISSION[p.mission].label} has no acquisition plan (it images on every orbit). From ${sourceLink(src)}.</div>`
+      : `<div class="dc-basis nm">Planned: in ${sourceLink(src)}${src.text === PLAN_NAME[p.mission] ? "" : ` (${PLAN_NAME[p.mission]})`}. Plans can change.</div>`;
+  card.innerHTML = `<div class="headline">${passLabel(p)}${p.projected ? ` ${projectedTag(p.mission, p)}` : ""}</div>${mode ? `<div class="dc-mode">${esc(mode)}</div>` : ""}${basis}`;
   const e = expectations(p);
   if (e && e.note) card.insertAdjacentHTML("beforeend", `<div class="nm">${e.note}</div>`);
   if (e && e.list.length) {
@@ -1547,7 +1657,12 @@ function acqRow(c, x, planned, now) {
   }
   const dash = '<span class="sub">—</span>';
   // past acquisitions: a browse image for the map's preview queue, and the product in a viewer
-  let preview = dash, product = planned ? (x.projected ? `<span class="sub proj" title="${esc(PROJECTED_NOTE[c.mission] || "")}">projected</span>` : '<span class="sub">planned</span>') : dash;
+  let preview = dash, product = dash;
+  if (planned) {
+    const src = sourceOf(c.mission, x);
+    product = src.href ? `<a class="${src.basis === "projected" ? "proj" : "sub"}" href="${esc(src.href)}" target="_blank" rel="noopener" title="${esc(src.basis === "projected" ? plain(projectedNote(c.mission, x)) : `${src.basis}: ${src.text}`)}">${src.basis} ↗</a>`
+      : `<span class="sub">${src.basis}</span>`;
+  }
   if (!planned) {
     product = (x.links || []).map((l) => `<a href="${esc(l.href)}" target="_blank" rel="noopener" title="${esc(l.title || "")}">${esc(l.text)} ↗</a>`).join("<br>") || dash;
     if (x.browse) {
@@ -1945,7 +2060,7 @@ function cellPopup(c) {
     <div class="hist-night nm">${isWide(c.mission) ? nightNote(c, 0) : ""}</div>
     <div class="hist-tl-box">${timelineSVG([], upcoming, missionColor(c.mission), { width: TL_WIDTH })}</div>
     ${acqTable(c, recentSection(c, null, `<tr><td colspan="${popupCols(c)}" class="nm">Loading…</td></tr>`))}
-    <div class="hist-foot nm"><div>Upcoming: ${PLAN_OF[c.mission]}; ${TIMING_NOTE[c.mission]}. ${planEndNote(c.mission)}.${c.visible.some((t) => t.projected) ? ` Projected: ${PROJECTED_NOTE[c.mission]}` : ""}</div><div class="hist-src"></div></div></div>`;
+    <div class="hist-foot nm"><div>Upcoming: ${PLAN_OF[c.mission]}; ${TIMING_NOTE[c.mission]}. ${planEndNote(c.mission)}.${c.visible.some((t) => t.projected) ? ` <b>Projected</b> rows are in no published plan: each platform's last cycle repeated past its plan's end, subject to change (the row's link: the plan it was repeated from).` : ""}</div><div class="hist-src"></div></div></div>`;
 }
 
 // Where each platform's plan ends (ESA's Sentinel-1/2 plans reach ~3 weeks).
@@ -2393,7 +2508,7 @@ function renderList() {
   const head = document.createElement("div");
   head.className = "list-head";
   head.innerHTML = tab === "planned"
-    ? `<div class="nm">The agencies' plans in your dates, soonest first, with when each is likely downloadable.${ahead.some((it) => it.state === "projected") ? " Past a plan's end, <i>projected</i> passes repeat the plan's last cycle: likely, not planned." : ""}</div>`
+    ? `<div class="nm">The agencies' plans in your dates, soonest first, with when each is likely downloadable.${ahead.some((it) => it.state === "projected") ? " <b>Projected</b> passes are in no published plan: past a plan's end, its last cycle is repeated. They are likely, not planned, and subject to change." : ""}</div>`
     : `<div class="nm">Found in each catalogue now, newest first, with what is up.${searching ? ` Searching ${searching} catalogue${searching > 1 ? "s" : ""}…` : ""}</div>`;
   if (tab === "planned") head.append(exportBar(ahead.length));
   const shown = tab === "planned" ? ahead : [...past].reverse();
@@ -2432,7 +2547,7 @@ function renderList() {
     let status;
     if (it.kind === "pass") {
       const e = earliest(it.ref);
-      status = (it.ref.projected ? `${projectedTag(it.ref)} ` : "") + (e ? `~${utcText(roundUp10(e.exp.median_at), it.when)}${failingMark(e.failing)}<div class="nm">${localText(roundUp10(e.exp.median_at), ll)} · ${e.label}</div>` : `<span class="nm">${latencyLoading(it.mission) ? "loading latency…" : "delivery not measured"}</span>`);
+      status = (it.ref.projected ? `${projectedTag(it.mission, it.ref)} ` : "") + (e ? `~${utcText(roundUp10(e.exp.median_at), it.when)}${failingMark(e.failing)}<div class="nm">${localText(roundUp10(e.exp.median_at), ll)} · ${e.label}</div>` : `<span class="nm">${latencyLoading(it.mission) ? "loading latency…" : "delivery not measured"}</span>`);
     } else status = selected(it) ? '<span class="nm">details below ▾</span>' : recentSummary(it.ref);
     const req = it.kind === "recent" ? recentBrowse(it.ref) : null;
     const k = req && browseItem(req, listBrowseMeta(it));
@@ -2549,6 +2664,7 @@ async function refresh() {
   const token = ++state.token;
   state.s1Loading = null; // a superseded build's progress
   const f = filters();
+  projectedRows(f.t1);
   if (state.aoi && !state.satrecs && MISSIONS.some((m) => isWide(m.key) && state.missions.has(m.key))) {
     state.satrecs = await satrecsFor();
     if (token !== state.token) return;
@@ -2659,11 +2775,18 @@ function legendMissions() {
     } else what = st.native === 0 && !st.swaths ? `nothing planned ${state.aoi ? "over the AOI" : "here"}` : nativeName(m);
     const end = planEndOf(m.key);
     if (end && st.mode === "native" && !st.native && !st.swaths && end < new Date(`${state.start}T00:00:00Z`)) {
-      what = '<span class="warn-ink">nothing known in your dates: the plan ends before them</span>';
+      what = `<span class="warn-ink">nothing known in your dates: the ${isWide(m.key) ? "orbit prediction" : "plan"} ends before them</span>`;
     }
-    const pr = state.projections[m.key], past = end && end < endSel, projTo = pr ? new Date(pr.to - 1) : null;
-    const endTitle = past ? (pr ? `your dates run past the end of this plan: after it, passes are projected (${PROJECTED_NOTE[m.key]})` : "your dates run past the end of this plan: nothing is known after it")
+    const spec = state.projections[m.key], pr = spec && Object.keys(spec.platforms).length ? spec : null;
+    const past = end && end < endSel, projTo = pr ? new Date(pr.to - 1) : null;
+    const skipped = spec ? Object.entries(spec.notProjected || {}) : [];
+    const endTitle = past ? (pr ? "your dates run past the end of this plan: after it, passes are projected (each platform's last cycle repeated), in no published plan and subject to change" : "your dates run past the end of this plan: nothing is known after it")
       : isWide(m.key) ? "no plan: passes predicted from the orbit up to this date" : "the agency's plan reaches this date";
+    if (past && skipped.length) {
+      const byWhy = new Map();
+      skipped.forEach(([p, why]) => byWhy.set(why, [...(byWhy.get(why) || []), p]));
+      what += `<div class="nm">${[...byWhy].map(([why, ps]) => `${esc(ps.sort().join(" and "))}: not projected, ${esc(why)}.`).join(" ")}</div>`;
+    }
     const endTxt = end ? `<span class="${past && !pr ? "warn-ink" : "nm"}" title="${esc(endTitle)}">${isWide(m.key) ? "predicted" : "plan"} to ${fmtWhen(end).split(" ").slice(0, 3).join(" ")}${pr && past ? ` · <span class="proj-ink">projected to ${dayWithYear(projTo)}</span>` : ""}</span>` : "";
     const zoomBtn = btn !== "" ? `<button type="button" data-z="${btn}" data-m="${m.key}" title="Zoom in to level ${btn}">Zoom in</button>` : "";
     // native footprints: one line; otherwise what is shown goes on a second line
@@ -2971,14 +3094,14 @@ const initialOf = (key, field) => (field === "dirs" ? defaultsOf(key).dirs.filte
 const sameSet = (set, list) => set.size === list.length && list.every((v) => set.has(v));
 // The default date range: today to a month out (within the schedule).
 const isoDay = (d) => d.toISOString().slice(0, 10);
-// The date picker reaches the furthest of the selected missions' plans and
-// projections (Landsat: its projection; the others: the schedule's end).
-// An end date past the new limit is brought back to it.
+// The one date filter reaches the projections' horizon (a year: every
+// mission is projected that far, projection.py), or the schedule's end
+// without them. An end date past it is brought back to it.
 function syncDateLimits() {
   if (!state.scheduleEnd) return;
   const s = document.getElementById("date-start"), e = document.getElementById("date-end");
   let hi = state.scheduleEnd.getTime();
-  state.missions.forEach((k) => { const pr = state.projections[k]; if (pr) hi = Math.max(hi, pr.to - 1); });
+  Object.values(state.projections).forEach((pr) => { hi = Math.max(hi, pr.to - 1); });
   const max = isoDay(new Date(hi));
   if (s.max === max && e.max === max) return;
   s.max = e.max = max;
@@ -3203,7 +3326,8 @@ function exportRows() {
       p, e,
       cols: {
         time_utc: isoZ(p.when), end_utc: isoZ(p.whenEnd), local_time: fmtBoth(p.when, p.ll).split(" · ")[1] || "",
-        mission: MISSION[p.mission].label, platform: p.platform, basis: basisOf(p), direction: p.direction || "", track: p.track ?? "",
+        mission: MISSION[p.mission].label, platform: p.platform, basis: basisOf(p), source: sourceOf(p.mission, p).href || "",
+        projected_cycles: p.projected ? p.cycles ?? "" : "", direction: p.direction || "", track: p.track ?? "",
         footprints: p.footprints, mode: plain(modeText(p)),
         likely_downloadable_utc: e ? isoZ(roundUp10(e.exp.median_at)) : "", likely_downloadable_from: e ? e.label : "",
         likely_downloadable_p90_utc: e && e.exp.p90_at ? isoZ(roundUp10(e.exp.p90_at)) : "",
@@ -3239,8 +3363,9 @@ function exportICS() {
     const end = new Date(Math.max(p.whenEnd.getTime(), p.when.getTime() + 60e3));
     const desc = [`${passLabel(p)}.`, cols.mode, passNote(p),
       e ? `Likely downloadable from ${e.label} by ~${fmtBoth(roundUp10(e.exp.median_at), p.ll)} (90%: ${e.exp.p90_at ? fmtBoth(roundUp10(e.exp.p90_at), p.ll) : "not yet known"}).` : "",
-      p.projected ? `A projected acquisition: past the end of the agency's plan, the plan's last cycle repeated (${PROJECTED_NOTE[p.mission]}). ${location.href}`
-        : `A planned acquisition from the agencies' plans; plans can change. ${location.href}`].filter(Boolean).join("\n");
+      p.projected ? `PROJECTED, NOT PLANNED: ${plain(projectedNote(p.mission, p))} ${location.href}`
+        : isWide(p.mission) ? `Predicted from the orbit (no acquisition plan exists): ${sourceOf(p.mission, p).href}. ${location.href}`
+          : `Planned, in ${sourceOf(p.mission, p).href || PLAN_NAME[p.mission]}; plans can change. ${location.href}`].filter(Boolean).join("\n");
     const what = `${passLabel(p, { short: true })}${p.projected ? " (projected)" : ""}`;
     return ["BEGIN:VEVENT", `UID:${p.key.replace(/[^\w.-]/g, "-")}@swathcast`, `DTSTAMP:${now}`, `DTSTART:${t(p.when)}`, `DTEND:${t(end)}`,
       `SUMMARY:${icsText(`${what} over AOI`)}`, c ? `GEO:${r5(c[1])};${r5(c[0])}` : null,

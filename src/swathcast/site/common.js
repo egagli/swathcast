@@ -243,27 +243,46 @@ export function forgetSettings() {
 }
 
 // ---------------------------------------------------------------- projection
-// A plan carried past its end by its repeat cycle (projection.py): the
-// passes_index.json "projections" entries, as ms ({from, to, baseFrom,
-// repeatMs}); a malformed entry is left out.
+// A plan carried past its end by its repeat cycle (projection.py). The
+// passes_index.json "projections" entries, as ms: {key: {to, platforms:
+// {platform: {from, baseFrom, repeatMs}}, notProjected: {platform: why}}};
+// a malformed platform or entry is left out.
 export function parseProjections(idx) {
   const out = {};
   Object.entries((idx && idx.projections) || {}).forEach(([key, p]) => {
-    const from = Date.parse(p.from), to = Date.parse(p.to), baseFrom = Date.parse(p.base_from);
-    if ([from, to, baseFrom].every(Number.isFinite) && to > from && p.repeat_days > 0) out[key] = { from, to, baseFrom, repeatMs: p.repeat_days * 864e5 };
+    const to = Date.parse(p && p.to);
+    if (!Number.isFinite(to)) return;
+    const platforms = {};
+    Object.entries(p.platforms || {}).forEach(([plat, v]) => {
+      const from = Date.parse(v.from), baseFrom = Date.parse(v.base_from), repeatMs = v.repeat_days * 864e5;
+      if (Number.isFinite(from) && Number.isFinite(baseFrom) && repeatMs > 0 && from < to && from - baseFrom === repeatMs) platforms[plat] = { from, baseFrom, repeatMs };
+    });
+    if (Object.keys(platforms).length || Object.keys(p.not_projected || {}).length) out[key] = { to, platforms, notProjected: p.not_projected || {} };
   });
   return out;
 }
-// Each of base's acquisitions ({when: Date, ...}) repeated by whole cycles
-// into [pr.from, min(t1, pr.to)), soonest first: {src, when, cycles}.
-export function repeatCycle(base, pr, t1) {
-  const stop = Math.min(t1, pr.to), out = [];
-  if (stop <= pr.from) return out;
+// The acquisitions ({when: Date, platform}) of each platform's base cycle:
+// its plan's last cycle, [baseFrom, from).
+export function baseOf(times, spec) {
+  if (!spec) return [];
+  return times.filter((t) => {
+    const ps = spec.platforms[t.platform], w = t.when.getTime();
+    return ps && w >= ps.baseFrom && w < ps.from;
+  });
+}
+// Each base acquisition repeated by whole cycles of its platform into
+// [from, min(t1, to)), soonest first: {src, when, cycles, shiftMs}.
+export function repeatCycle(base, spec, t1) {
+  const out = [];
+  if (!spec) return out;
+  const stop = Math.min(t1, spec.to);
   base.forEach((src) => {
+    const ps = spec.platforms[src.platform];
+    if (!ps || stop <= ps.from) return;
     for (let k = 1; ; k++) {
-      const w = src.when.getTime() + k * pr.repeatMs;
+      const shiftMs = k * ps.repeatMs, w = src.when.getTime() + shiftMs;
       if (w >= stop) break;
-      if (w >= pr.from) out.push({ src, when: new Date(w), cycles: k });
+      if (w >= ps.from) out.push({ src, when: new Date(w), cycles: k, shiftMs });
     }
   });
   return out.sort((a, b) => a.when - b.when);
