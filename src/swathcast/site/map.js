@@ -1290,7 +1290,7 @@ const MISSION_SOURCES = {
   s1: POPUP_SOURCES,
   s2: ["cdse_s2_l1c", "cdse_s2_l2a", "es_s2_l1c", "es_s2_l2a", "pc_s2_l2a", "hls_s30"],
   landsat: ["usgs_landsat_l1", "usgs_landsat_l2", "es_landsat_l2", "pc_landsat_l2", "hls_l30"],
-  nisar: ["asf_nisar_l0b", "asf_nisar_rslc", "asf_nisar_gcov", "bhoonidhi_nisar_s_rslc", "bhoonidhi_nisar_s_gcov"],
+  nisar: ["asf_nisar_l0b", "asf_nisar_rslc", "asf_nisar_rslc_ur", "asf_nisar_gcov", "bhoonidhi_nisar_s_rslc", "bhoonidhi_nisar_s_gcov"],
   modis: ["lance_modis_l1b", "laads_modis_l1b", "laads_modis_l1b_c7", "lance_modis_snow", "nsidc_modis_snow"],
   viirs: ["lance_viirs_l1b", "laads_viirs_l1b", "lance_viirs_snow", "nsidc_viirs_snow"],
   s3: ["cdse_s3_efr", "eumetsat_s3_efr", "cdse_s3_efr_ntc", "cdse_s3_lfr", "pc_s3_lfr", "cdse_s3_rbt", "cdse_s3_rbt_ntc", "cdse_s3_lst", "pc_s3_lst"],
@@ -1447,7 +1447,7 @@ function detailCard(p) {
 // product if it is up, else when it is expected from the measured latency.
 const PLAN_MATCH_MS = 20 * 60e3;
 // Sources that do not process every acquisition (see README: how latency is defined)
-const PARTIAL_SOURCES = new Set(["pc_grd", "pc_rtc", "opera_rtc", "opera_cslc", "lance_modis_snow", "nsidc_modis_snow", "lance_viirs_snow", "nsidc_viirs_snow", "cdse_s3_lfr", "pc_s3_lfr", "cdse_s3_lst", "pc_s3_lst"]);
+const PARTIAL_SOURCES = new Set(["pc_grd", "pc_rtc", "opera_rtc", "opera_cslc", "lance_modis_snow", "nsidc_modis_snow", "lance_viirs_snow", "nsidc_viirs_snow", "cdse_s3_lfr", "pc_s3_lfr", "cdse_s3_lst", "pc_s3_lst", "asf_nisar_rslc_ur"]);
 function updateRecent() {
   const missions = MISSIONS.filter((m) => state.missions.has(m.key)).map((m) => m.key);
   const sig = `${state.aoiVersion}|${missions.join(",")}`;

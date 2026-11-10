@@ -156,6 +156,36 @@ def test_nisar_lists_and_looks_up_both_collections(monkeypatch):
     assert concepts() == set(nisar.GCOV)
 
 
+def test_nisar_urgent_response_rslc_is_matched_on_frame_and_start(monkeypatch):
+    pr = "NISAR_L1_PR_RSLC_034_015_D_057_2005_DHDH_M_20261025T055219_20261025T055255_P05036_N_F_J_001"
+    other = "NISAR_L1_PR_RSLC_034_015_D_058_2005_DHDH_M_20261025T055255_20261025T055330_P05036_N_F_J_001"
+    assert nisar.ur_pattern(pr) == "NISAR_L1_UR_RSLC_034_015_D_057_*_20261025T055219_*"
+    seen = []
+
+    def fake(session, params):
+        seen.append(params)
+        return [
+            {
+                "umm": {
+                    # its mode, polarization and end differ from the standard one
+                    "GranuleUR": "NISAR_L1_UR_RSLC_034_015_D_057_2005_QPDH_A_20261025T055219_20261025T055228_P05036_F_P_J_001",
+                    "ProviderDates": [
+                        {"Type": "Insert", "Date": "2026-10-28T08:00:00Z"}
+                    ],
+                }
+            }
+        ]
+
+    monkeypatch.setattr(nisar, "search_umm", fake)
+    got = nisar.NISARRSLCUrgent(session=None).lookup([pr, other])
+    assert set(got) == {pr}
+    assert got[pr].provider_id.startswith("NISAR_L1_UR_RSLC_034_015_D_057_")
+    assert ("collection_concept_id", nisar.UR_L1) in seen[0]
+    assert ("options[readable_granule_name][pattern]", "true") in seen[0]
+    assert nisar.NISARRSLCUrgent.coverage == "learned"
+    assert nisar.NISARRSLCUrgent in nisar.SOURCES
+
+
 # ---------------------------------------------------------------- tracker
 NOW = datetime(2026, 9, 29, 12, 0, tzinfo=UTC)
 

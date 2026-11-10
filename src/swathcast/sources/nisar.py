@@ -31,6 +31,17 @@ COLLECTIONS = {
     "RSLC": ("C3622236985-ASF", "C2853145197-ASF"),  # NISAR_L1_RSLC_V1, _PROVISIONAL_V1
 }
 GCOV = ("C3622241360-ASF", "C2854338529-ASF")  # NISAR_L2_GCOV_V1, _PROVISIONAL_V1
+#: NISAR_UR_L1: JPL's urgent-response pipeline (RSLC, RIFG, RUNW, ROFF made
+#: for named requests, e.g. a cyclone): checked 2026-11-10, 402 of 413 UR
+#: RSLCs sensed 2026-10-25..31 had a standard RSLC of the same frame and
+#: start second, and the UR one was in CMR first for 94 % of them (median
+#: 175 h earlier).
+UR_L1 = "C2887499907-ASF"
+#: the frame and start second shared by a standard RSLC and its UR twin (the
+#: mode, polarization, end and processing letters can differ)
+FRAME_START_RE = re.compile(
+    r"^NISAR_L1_(?:PR|UR)_RSLC_(?P<cycle>\d{3})_(?P<track>\d{3})_(?P<dir>[AD])_(?P<frame>\d{3})_\w{4}_\w{4}_\w_(?P<start>\d{8}T\d{6})_"
+)
 #: NISAR_L1_PR_RSLC_031_134_D_059_2005_DHDH_A_20260927T115943_20260927T120019_P05023_N_F_J_001
 RSLC_RE = re.compile(
     r"^NISAR_L1_PR_RSLC_(?P<cycle>\d{3})_(?P<track>\d{3})_(?P<dir>[AD])_(?P<frame>\d{3})_(?P<mode>\d{4})_(?P<pol>[A-Z]{4})_"
@@ -169,6 +180,61 @@ class NISARGCOV(Source):
         return found
 
 
+def ur_pattern(rslc: str) -> str | None:
+    """CMR name pattern of a standard RSLC's urgent-response twin."""
+    m = FRAME_START_RE.match(rslc)
+    if not m:
+        return None
+    g = m.groupdict()
+    return f"NISAR_L1_UR_RSLC_{g['cycle']}_{g['track']}_{g['dir']}_{g['frame']}_*_{g['start']}_*"
+
+
+class NISARRSLCUrgent(Source):
+    """The RSLC of the same frame from JPL's urgent-response pipeline
+    (``NISAR_UR_L1``): made only for requested frames, so its coverage is
+    learned; matched on frame and start second."""
+
+    key = "asf_nisar_rslc_ur"
+    label = "ASF NISAR RSLC, urgent response"
+    distributor = "ASF DAAC (NASA CMR), JPL urgent-response pipeline"
+    product = "RSLC (UR)"
+    reference_product = "RSLC"
+    coverage = "learned"
+    batch_size = 100
+
+    def lookup(self, ids: list[str]) -> dict[str, Found]:
+        by_key = {}
+        for g in ids:
+            m = FRAME_START_RE.match(g)
+            if m:
+                by_key.setdefault(m.groups(), []).append(g)
+        found: dict[str, Found] = {}
+        pats = sorted({ur_pattern(g) for g in ids if ur_pattern(g)})
+        for batch in chunks(pats, self.batch_size):
+            params = [
+                ("collection_concept_id", UR_L1),
+                ("options[readable_granule_name][pattern]", "true"),
+            ] + [("readable_granule_name[]", p) for p in batch]
+            for item in search_umm(self.session, params):
+                umm = item.get("umm", {})
+                m = FRAME_START_RE.match(umm.get("GranuleUR", ""))
+                if not m:
+                    continue
+                insert = provider_insert_date(umm)
+                ts = parse_utc(insert) if insert else None
+                for gid in by_key.get(m.groups(), []):
+                    prev = found.get(gid)
+                    if prev is None or (
+                        ts and prev.provider_timestamp and ts < prev.provider_timestamp
+                    ):
+                        found[gid] = Found(
+                            provider_timestamp=ts,
+                            provider_timestamp_field="ProviderDates.Insert",
+                            provider_id=umm["GranuleUR"],
+                        )
+        return found
+
+
 def _ref(key: str, label: str, ptype: str) -> type[Source]:
     return type(
         key,
@@ -181,5 +247,6 @@ SOURCES: list[type[Source]] = [
     _ref("asf_nisar_l0b", "ASF NISAR L0B", "L0B"),
     _ref("asf_nisar_rslc", "ASF NISAR RSLC", "RSLC"),
     NISARGCOV,
+    NISARRSLCUrgent,
 ]
 CATALOG: type[ReferenceCatalog] = NISARCatalog

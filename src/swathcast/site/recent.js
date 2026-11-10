@@ -178,6 +178,8 @@ export const SOURCES = {
   // V1 since 2026-10-21, PROVISIONAL_V1 before (sources/nisar.py)
   asf_nisar_l0b: { run: (a, t) => cmr([["collection_concept_id", "C3622265756-ASF"], ["collection_concept_id", "C2853089814-ASF"]], a, t, () => "NISAR") },
   asf_nisar_rslc: { run: (a, t) => cmr([["collection_concept_id", "C3622236985-ASF"], ["collection_concept_id", "C2853145197-ASF"]], a, t, () => "NISAR") },
+  // JPL's urgent-response RSLCs (requested frames only; sources/nisar.py)
+  asf_nisar_rslc_ur: { run: (a, t) => cmr([["collection_concept_id", "C2887499907-ASF"], ["readable_granule_name[]", "NISAR_L1_UR_RSLC_*"], ["options[readable_granule_name][pattern]", "true"]], a, t, () => "NISAR") },
   asf_nisar_gcov: { run: (a, t) => cmr([["collection_concept_id", "C3622241360-ASF"], ["collection_concept_id", "C2854338529-ASF"]], a, t, () => "NISAR") },
   ...Object.fromEntries(Object.entries(WIDE_COLLECTIONS).map(([k, ids]) => [k, { run: cmrAll(ids) }])),
   cdse_s3_efr: { search: "cdse_s3_efr", keep: byName(/_NR_/) },

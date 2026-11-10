@@ -218,7 +218,17 @@ with `curl` and the package's own source classes. The recorded responses are in 
   it: [operations](operations.md)); those are not backfilled, since their arrival was not observed.
   V1 RSLC/GCOV arrived 4-15 days after sensing on 2026-11-09 (median ~13 d, a backlog since the
   move; L0B ~6 h), and the poller ignores products first listed > 14 days after sensing
-  (`max_new_age_days`), so the slowest few percent are skipped until it clears. `created_at` windows work (106 RSLC,
+  (`max_new_age_days`), so the slowest few percent are skipped until it clears.
+- **NISAR urgent response** (ASF, CMR, `C2887499907-ASF` NISAR_UR_L1, since 2026-06-17): JPL's
+  urgent-response pipeline, products made for named requests (`URGENT_REQUEST_ID`, e.g. a cyclone
+  study): RSLC (`NISAR_L1_UR_RSLC_…`, ~50 a day in Oct–Nov 2026), RIFG, RUNW, ROFF, from the same
+  L0B as the standard ones. Tracked as the source `asf_nisar_rslc_ur` of the standard RSLC,
+  matched on frame and start second (cycle, track, direction, frame, `YYYYMMDDTHHMMSS`; mode,
+  polarization, end and processing letters can differ) by a CMR name pattern
+  (`options[readable_granule_name][pattern]`). Checked 2026-11-10 on 2026-10-25..31: 250 of 2,262
+  standard RSLCs had a UR twin (the pattern lookup found exactly the 250 a local match did); the
+  UR one was in CMR first for 94 % of twins (median 175 h earlier). Learned coverage (only requested
+  frames); timeout 16 days. `created_at` windows work (106 RSLC,
   24 L0B in a two-hour window). Names: `NISAR_L1_PR_RSLC_<cycle>_<track>_<A|D>_<frame>_<mode>_<pol>_A_<start>_<end>_…`;
   the GCOV of a frame has the same name after `NISAR_L2_PR_GCOV_`, and each RSLC's `InputGranules` is
   its L0B. ProviderDates Insert − start (2026-09-28): L0B median 6.5 h, RSLC 44.2 h, GCOV 45.9 h.

@@ -20,7 +20,7 @@ export const SOURCE_SLOT = {
   // other missions: same slot = same distributor role (reference 1/7, ESA-side mirror 2/8, PC 3, NASA HLS 4)
   cdse_s2_l1c: 1, cdse_s2_l2a: 7, es_s2_l1c: 2, es_s2_l2a: 8, pc_s2_l2a: 3, hls_s30: 4,
   usgs_landsat_l1: 1, usgs_landsat_l2: 7, es_landsat_l2: 8, pc_landsat_l2: 3, hls_l30: 4,
-  asf_nisar_l0b: 1, asf_nisar_rslc: 7, asf_nisar_gcov: 5,
+  asf_nisar_l0b: 1, asf_nisar_rslc: 7, asf_nisar_gcov: 5, asf_nisar_rslc_ur: 6,
   bhoonidhi_nisar_s_rslc: 7, bhoonidhi_nisar_s_gcov: 5,
   // MODIS/VIIRS: LANCE near-real-time 1, standard Level-1B 2/8, snow 5 (NRT) and 4 (NSIDC)
   lance_modis_l1b: 1, laads_modis_l1b: 2, laads_modis_l1b_c7: 8, lance_modis_snow: 5, nsidc_modis_snow: 4,

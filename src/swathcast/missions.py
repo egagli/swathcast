@@ -99,7 +99,9 @@ MISSIONS: dict[str, Mission] = {
             "NISAR",
             nisar.CATALOG,
             nisar.SOURCES,
-            {"asf_nisar_gcov": 10 * 24.0},
+            # the urgent-response RSLC: only requested frames, and on
+            # 2026-11-10 up to ~16 days after sensing
+            {"asf_nisar_gcov": 10 * 24.0, "asf_nisar_rslc_ur": 16 * 24.0},
         ),
         Mission(
             "nisar_s",

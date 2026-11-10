@@ -255,7 +255,7 @@ const MISSIONS = [
   },
   {
     key: "nisar", label: "NISAR", file: "latency_nisar.json", question: "a NISAR acquisition",
-    note: "L-band. Universe: every L0B (raw, per datatake segment) and L1 RSLC (per frame) product ASF lists in NASA's CMR (the V1 collections since 2026-10-21, PROVISIONAL_V1 before). GCOV is matched to its RSLC frame. Searching is anonymous; downloading needs an Earthdata login.",
+    note: "L-band. Universe: every L0B (raw, per datatake segment) and L1 RSLC (per frame) product ASF lists in NASA's CMR (the V1 collections since 2026-10-21, PROVISIONAL_V1 before). GCOV is matched to its RSLC frame, and so is the RSLC of JPL's urgent-response pipeline (NISAR_UR_L1: made only for requested frames, often days before the standard one; partial coverage). Searching is anonymous; downloading needs an Earthdata login.",
   },
   {
     key: "nisar_s", label: "NISAR S-band", file: "latency_nisar_s.json", question: "a NISAR S-band product",
