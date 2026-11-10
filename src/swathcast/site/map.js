@@ -303,6 +303,7 @@ async function load() {
   Object.entries(summary.ends).forEach(([p, t]) => { (state.planEnds[missionOf(p)] ||= {})[p] = t; });
   legend();
   state.projections = parseProjections(idx);
+  applySatelliteStatus(await satelliteStatus);
   state.planPages = (idx && idx.plan_pages) || {};
   const s = document.getElementById("date-start"), e = document.getElementById("date-end");
   s.min = e.min = isoDay(new Date()); s.max = e.max = isoDay(hi);
@@ -375,6 +376,27 @@ async function loadS2() {
 //   fainter and outlined dashed on the map, and said in the exports, with
 //   how well it held in the monthly hindcast (hindcast.json) when published.
 const PLAN_NAME = { s1: "ESA's Sentinel-1 plan", s2: "ESA's Sentinel-2 plan", landsat: "USGS's acquisition calendar", nisar: "NASA's NISAR plan", modis: "the orbit prediction", viirs: "the orbit prediction", s3: "the orbit prediction" };
+// Is each satellite still delivering (satellites.py, satellites.json)? A
+// silent one ("no data from it anywhere while passes were due") is not
+// projected, and its passes carry the warning; a silent data stream of a
+// working satellite (one distributor) is only noted.
+const satelliteStatus = getJSON("./data/satellites.json").catch(() => null);
+state.satellites = {};
+function applySatelliteStatus(report) {
+  state.satellites = (report && report.platforms) || {};
+  Object.entries(state.satellites).forEach(([platform, v]) => {
+    if (v.status !== "silent") return;
+    const spec = state.projections[missionOf(platform)];
+    if (!spec || !spec.platforms[platform]) return;
+    delete spec.platforms[platform];
+    spec.notProjected = { ...spec.notProjected, [platform]: "paused while this site's satellite check finds no data from it (above)" };
+  });
+}
+// The warning for a pass of a satellite the check flags ("" when none).
+function satelliteWarning(platform) {
+  const v = state.satellites[platform];
+  return v && (v.status === "silent" || v.status === "stream_silent") ? v.note : "";
+}
 let hindcast = null;
 getJSON("./data/hindcast.json").then((j) => { hindcast = j; }).catch(() => {});
 let norad = {};
@@ -1400,7 +1422,8 @@ function detailCard(p) {
   const basis = src.basis === "projected" ? `<div class="dc-basis proj">${projectedNote(p.mission, p)}</div>`
     : src.basis === "predicted" ? `<div class="dc-basis nm">Predicted from the orbit: ${MISSION[p.mission].label} has no acquisition plan (it images on every orbit). From ${sourceLink(src)}.</div>`
       : `<div class="dc-basis nm">Planned: in ${sourceLink(src)}${src.text === PLAN_NAME[p.mission] ? "" : ` (${PLAN_NAME[p.mission]})`}. Plans can change.</div>`;
-  card.innerHTML = `<div class="headline">${passLabel(p)}${p.projected ? ` ${projectedTag(p.mission, p)}` : ""}</div>${mode ? `<div class="dc-mode">${esc(mode)}</div>` : ""}${basis}`;
+  const warn = satelliteWarning(p.platform);
+  card.innerHTML = `<div class="headline">${passLabel(p)}${p.projected ? ` ${projectedTag(p.mission, p)}` : ""}</div>${mode ? `<div class="dc-mode">${esc(mode)}</div>` : ""}${warn ? `<div class="dc-basis sat-warn">⚠ ${esc(warn)}</div>` : ""}${basis}`;
   const e = expectations(p);
   if (e && e.note) card.insertAdjacentHTML("beforeend", `<div class="nm">${e.note}</div>`);
   if (e && e.list.length) {
@@ -2060,6 +2083,7 @@ function cellPopup(c) {
     <div class="hist-night nm">${isWide(c.mission) ? nightNote(c, 0) : ""}</div>
     <div class="hist-tl-box">${timelineSVG([], upcoming, missionColor(c.mission), { width: TL_WIDTH })}</div>
     ${acqTable(c, recentSection(c, null, `<tr><td colspan="${popupCols(c)}" class="nm">Loading…</td></tr>`))}
+    ${[...new Set(c.times.map((t) => t.platform))].map(satelliteWarning).filter(Boolean).map((w) => `<div class="hist-foot warn-ink">⚠ ${esc(w)}</div>`).join("")}
     <div class="hist-foot nm"><div>Upcoming: ${PLAN_OF[c.mission]}; ${TIMING_NOTE[c.mission]}. ${planEndNote(c.mission)}.${c.visible.some((t) => t.projected) ? ` <b>Projected</b> rows are in no published plan: each platform's last cycle repeated past its plan's end, subject to change (the row's link: the plan it was repeated from).` : ""}</div><div class="hist-src"></div></div></div>`;
 }
 
@@ -2547,7 +2571,8 @@ function renderList() {
     let status;
     if (it.kind === "pass") {
       const e = earliest(it.ref);
-      status = (it.ref.projected ? `${projectedTag(it.mission, it.ref)} ` : "") + (e ? `~${utcText(roundUp10(e.exp.median_at), it.when)}${failingMark(e.failing)}<div class="nm">${localText(roundUp10(e.exp.median_at), ll)} · ${e.label}</div>` : `<span class="nm">${latencyLoading(it.mission) ? "loading latency…" : "delivery not measured"}</span>`);
+      const sw = satelliteWarning(it.platform);
+      status = (sw ? `<span class="warn" title="${esc(sw)}">⚠</span> ` : "") + (it.ref.projected ? `${projectedTag(it.mission, it.ref)} ` : "") + (e ? `~${utcText(roundUp10(e.exp.median_at), it.when)}${failingMark(e.failing)}<div class="nm">${localText(roundUp10(e.exp.median_at), ll)} · ${e.label}</div>` : `<span class="nm">${latencyLoading(it.mission) ? "loading latency…" : "delivery not measured"}</span>`);
     } else status = selected(it) ? '<span class="nm">details below ▾</span>' : recentSummary(it.ref);
     const req = it.kind === "recent" ? recentBrowse(it.ref) : null;
     const k = req && browseItem(req, listBrowseMeta(it));
@@ -2782,6 +2807,8 @@ function legendMissions() {
     const skipped = spec ? Object.entries(spec.notProjected || {}) : [];
     const endTitle = past ? (pr ? "your dates run past the end of this plan: after it, passes are projected (each platform's last cycle repeated), in no published plan and subject to change" : "your dates run past the end of this plan: nothing is known after it")
       : isWide(m.key) ? "no plan: passes predicted from the orbit up to this date" : "the agency's plan reaches this date";
+    const flagged = Object.entries(state.satellites).filter(([p, v]) => missionOf(p) === m.key && (v.status === "silent" || v.status === "stream_silent"));
+    if (flagged.length) what += `<div class="warn-ink">${flagged.map(([, v]) => `⚠ ${esc(v.note)}`).join(" ")}</div>`;
     if (past && skipped.length) {
       const byWhy = new Map();
       skipped.forEach(([p, why]) => byWhy.set(why, [...(byWhy.get(why) || []), p]));

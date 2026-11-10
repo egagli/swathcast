@@ -111,6 +111,16 @@ def publish(
         (out_dir / f"latency_{key}.json").write_text(_dumps(mission_summary))
     publish_landsat_l1(data_dir, out_dir, now)
     publish_nisar_s(data_dir, out_dir, now)
+    # is each satellite still delivering (satellites.py): the map pauses the
+    # projection of a silent one and warns on its passes
+    try:
+        from swathcast.satellites import check as satellite_check
+
+        sched = Path(data_dir) / "schedule"
+        report = satellite_check(Path(data_dir), sched if sched.exists() else None, now)
+        (out_dir / "satellites.json").write_text(_dumps(report))
+    except Exception:  # noqa: BLE001 - a convenience; never fails the site
+        LOGGER.exception("satellite status check failed")
     # the monthly hindcast (hindcast.yml): how well each projection held
     hindcast = Path(data_dir) / "hindcast" / "hindcast.json"
     if hindcast.exists():

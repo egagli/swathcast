@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: data-branch
@@ -49,6 +50,38 @@ jobs:
         uses: ./.github/actions/push-data
         with:
           message: "data: poll ${{ github.run_id }}"
+      # Is each satellite still delivering? A source can answer "nothing new"
+      # because its satellite stopped (or its products moved): health.json
+      # cannot see that. One issue lists the flagged platforms; it is
+      # edited and commented on only when that list changes, and closed when
+      # none is left (satellites.py; the map reads the same check).
+      - name: Open, update or close the satellite-status issue (never fails the job)
+        if: always()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          sched=(); if [ -d data/schedule ]; then sched=(--schedule-dir data/schedule); fi
+          marker=$(pixi run -e poll swathcast satellites --data-dir data "${sched[@]}" --issue-body "$RUNNER_TEMP/sat.md" --run-url "$RUN_URL" | tail -n 1)
+          echo "$marker"
+          case "$marker" in "flagged: "*) ;; *) echo "::warning::satellite check did not run"; exit 0 ;; esac
+          gh label create satellite-status --color 5319e7 --description "Opened by the poll workflow: a satellite (or one of its data streams) went silent" --repo "$GITHUB_REPOSITORY" 2>/dev/null || true
+          existing=$(gh issue list --repo "$GITHUB_REPOSITORY" --label satellite-status --state open --json number --jq '.[0].number')
+          if [ "$marker" != "flagged: " ]; then
+            title="Satellite status: ${marker#flagged: }"
+            if [ -z "$existing" ]; then
+              gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --label satellite-status --body-file "$RUNNER_TEMP/sat.md"
+            else
+              old=$(gh issue view "$existing" --repo "$GITHUB_REPOSITORY" --json body --jq '.body' | head -n 1)
+              if [ "$old" != "<!-- $marker -->" ]; then
+                gh issue edit "$existing" --repo "$GITHUB_REPOSITORY" --title "$title" --body-file "$RUNNER_TEMP/sat.md"
+                gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" --body "Changed: ${marker#flagged: } ($RUN_URL)"
+              fi
+            fi
+          elif [ -n "$existing" ]; then
+            gh issue close "$existing" --repo "$GITHUB_REPOSITORY" --reason completed --comment "Every satellite is delivering again: $RUN_URL"
+          fi
       - name: Fail if the poller crashed, every source failed, or one has failed for over 24 h
         if: steps.poll.outputs.code != '0'
         run: |

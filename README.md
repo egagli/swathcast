@@ -58,7 +58,9 @@ snowmelt, for example), field campaigns, and coordination between missions.
   plan, every mission is *projected* for a year (each platform's last repeat cycle carried forward;
   Terra and Aqua excepted, as they no longer repeat), labelled projected and subject to change
   everywhere, with how well it held in a monthly hindcast
-  ([methodology](docs/methodology.md#projection-past-a-plans-end)). The globe draws footprints up to the poles; the flat map stops at 85°. Basemaps are
+  ([methodology](docs/methodology.md#projection-past-a-plans-end)). An hourly check flags a satellite that stops
+  delivering (its projection is paused and its passes warned) and opens an issue
+  ([operations](docs/operations.md)). The globe draws footprints up to the poles; the flat map stops at 85°. Basemaps are
   Esri Gray Canvas (the default), Esri World Imagery (with or without labels), Esri World Topographic
   and OpenStreetMap.
 - **Share and export**: the page's state (AOI, missions, filters, dates, the list's tab, the selected
