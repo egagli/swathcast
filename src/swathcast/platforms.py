@@ -22,7 +22,15 @@ REGISTRY_PATH = Path(__file__).parent / "site" / "platforms.json"
 RETIRED = frozenset({"retired", "decommissioned", "data_ended"})
 STATES = (
     frozenset(
-        {"operational", "extended", "drifting", "degraded", "commissioning", "other"}
+        {
+            "operational",
+            "extended",
+            "drifting",
+            "degraded",
+            "commissioning",
+            "planned",
+            "other",
+        }
     )
     | RETIRED
 )
@@ -102,6 +110,10 @@ def check(path: Path = REGISTRY_PATH) -> list[str]:
                 problems.append(
                     f"platforms.json {code}: bad status date {s['since']!r}"
                 )
+            if "norad" in p and not (isinstance(p["norad"], int) and p["norad"] > 0):
+                problems.append(
+                    f"platforms.json {code}: bad NORAD number {p['norad']!r}"
+                )
             for n in p.get("notices", []):
                 if not (
                     day.match(str(n.get("date", "")))
@@ -109,5 +121,30 @@ def check(path: Path = REGISTRY_PATH) -> list[str]:
                 ):
                     problems.append(
                         f"platforms.json {code}: notice without a date or https URL"
+                    )
+    for m in reg.get("missions", []):
+        for u in m.get("upcoming", []):
+            code = u.get("code")
+            if code in seen:
+                problems.append(f"platforms.json: {code} twice")
+            seen.add(code)
+            if u.get("state") not in ("planned", "commissioning"):
+                problems.append(
+                    f"platforms.json upcoming {code}: state {u.get('state')!r}"
+                )
+            if not str(u.get("source", "")).startswith("https://"):
+                problems.append(f"platforms.json upcoming {code}: no https source")
+            d = (u.get("launch") or {}).get("date")
+            if d and not day.match(d):
+                problems.append(
+                    f"platforms.json upcoming {code}: bad launch date {d!r}"
+                )
+            for n in u.get("notices", []):
+                if not (
+                    day.match(str(n.get("date", "")))
+                    and str(n.get("url", "")).startswith("https://")
+                ):
+                    problems.append(
+                        f"platforms.json upcoming {code}: notice without a date or https URL"
                     )
     return problems

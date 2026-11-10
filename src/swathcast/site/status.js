@@ -81,13 +81,31 @@ function updatesCell(p, feed) {
   return list + fetchedList(fetchedFor(p.code, p, feed)) + page || '<span class="nm">—</span>';
 }
 
+// The satellite's catalogue record at CelesTrak (orbit, launch, decay; and
+// its orbital elements from there).
+const celestrak = (p) => (p.norad ? `<div class="nm">${link(`https://celestrak.org/satcat/table-satcat.php?CATNR=${p.norad}`, `CelesTrak #${p.norad} ↗`)}</div>` : "");
+const UPCOMING_STATE = { planned: ["Planned", "b-info"], commissioning: ["Launched, commissioning", "b-warn"] };
+// A mission's new satellites: launched and not yet in operations, or planned.
+function upcomingTable(m, feed) {
+  const ups = m.upcoming || [];
+  if (!ups.length) return `<p class="nm upcoming-none">No new ${esc(m.label)} satellite announced${m.upcoming_note ? `: ${esc(m.upcoming_note)}` : "."}</p>`;
+  const rows = ups.map((u) => {
+    const l = u.launch || {};
+    const when = l.date ? `Launched ${day(l.date)}` : l.expected ? `Launch expected ${esc(l.expected)}` : "Launch not scheduled";
+    return `<tr id="${esc(u.code)}"><td class="name" data-h="Satellite"><b>${esc(u.name)}</b><div class="nm">${esc(u.code)}${u.reviewed ? ` · reviewed ${day(u.reviewed)}` : ""}</div>${celestrak(u)}</td>
+      <td data-h="Status">${badge(UPCOMING_STATE[u.state] || ["See notes", "b-info"])}<div class="nm">${esc(u.summary || "")} ${u.source ? link(u.source, "source") : ""}</div></td>
+      <td data-h="Launch">${when}${l.source ? ` ${link(l.source, "↗")}` : ""}</td>
+      <td data-h="Updates" colspan="3">${updatesCell(u, feed)}</td></tr>`;
+  }).join("");
+  return `<h3 class="upcoming-h">Upcoming ${esc(m.label)} satellites</h3><div class="scroll-x"><table class="sats upcoming"><thead><tr><th>Satellite</th><th>Status</th><th>Launch</th><th colspan="3">Updates</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
 function render(reg, sats, idx, feed) {
   const box = document.getElementById("missions");
   box.innerHTML = reg.missions.map((m) => {
     const rows = m.platforms.map((p) => {
       const retired = ["retired", "data_ended", "decommissioned"].includes(p.status.state);
       return `<tr id="${esc(p.code)}"${retired ? ' class="retired"' : ""}>
-        <td class="name" data-h="Satellite"><b>${esc(p.name)}</b><div class="nm">${esc(p.code)}${p.reviewed ? ` · reviewed ${day(p.reviewed)}` : ""}</div></td>
+        <td class="name" data-h="Satellite"><b>${esc(p.name)}</b><div class="nm">${esc(p.code)}${p.reviewed ? ` · reviewed ${day(p.reviewed)}` : ""}</div>${celestrak(p)}</td>
         <td data-h="Status">${statusCell(p)}</td>
         <td data-h="Dates">${datesCell(p)}</td>
         <td data-h="Newest data">${dataCell(p.code, sats)}</td>
@@ -100,7 +118,7 @@ function render(reg, sats, idx, feed) {
     return `<div class="card" id="m-${esc(m.key)}"><h2><span class="chip" style="background:var(${MISSION_COLOR[m.key] || "--muted"})"></span>${esc(m.label)}</h2>
       <p class="sub">${esc(m.operator || "")}${pages ? ` · ${pages}` : ""}</p>
       ${wide.length ? `<div class="mission-feed">${fetchedList(wide).replace("From the agencies' feeds (fetched daily):", "Mission-wide, from the agencies' feeds (fetched daily):")}</div>` : ""}
-      <div class="scroll-x"><table class="sats"><thead><tr><th>Satellite</th><th>Status</th><th>Dates</th><th>Newest data <span class="nm">(hourly)</span></th><th>On the map</th><th>Updates</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+      <div class="scroll-x"><table class="sats"><thead><tr><th>Satellite</th><th>Status</th><th>Dates</th><th>Newest data <span class="nm">(hourly)</span></th><th>On the map</th><th>Updates</th></tr></thead><tbody>${rows}</tbody></table></div>${upcomingTable(m, feed)}</div>`;
   }).join("");
   const n = reg.missions.reduce((a, m) => a + m.platforms.length, 0);
   const flagged = Object.entries((sats && sats.platforms) || {}).filter(([, v]) => v.status === "silent" || v.status === "stream_silent");

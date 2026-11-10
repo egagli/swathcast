@@ -44,6 +44,7 @@ KEEP_DAYS = 180
 #: platform code -> title pattern (case-insensitive, word-bounded)
 PLATFORM_PATTERNS = {
     "S1A": r"sentinel[- ]?1a|\bS-?1A\b",
+    "S1B": r"sentinel[- ]?1b|\bS-?1B\b",
     "S1C": r"sentinel[- ]?1c|\bS-?1C\b|S1C/D",
     "S1D": r"sentinel[- ]?1d|\bS-?1D\b|S1C/D",
     "S2A": r"sentinel[- ]?2a|\bS-?2A\b",
@@ -51,6 +52,12 @@ PLATFORM_PATTERNS = {
     "S2C": r"sentinel[- ]?2c|\bS-?2C\b",
     "S3A": r"sentinel[- ]?3a|\bS-?3A\b",
     "S3B": r"sentinel[- ]?3b|\bS-?3B\b",
+    "S3C": r"sentinel[- ]?3c|\bS-?3C\b",
+    "S3D": r"sentinel[- ]?3d|\bS-?3D\b",
+    "S2D": r"sentinel[- ]?2d|\bS-?2D\b",
+    "S1NG": r"sentinel[- ]?1 ?(?:next[- ]generation|NG)\b|sentinel[- ]?1[ef]\b",
+    "L7": r"landsat[- ]?7\b",
+    "LNEXT": r"landsat[- ]?next",
     "L8": r"landsat[- ]?8\b|landsat 8 and 9|landsat 8/9",
     "L9": r"landsat[- ]?9\b|landsat 8 and 9|landsat 8/9",
     "NISAR": r"\bnisar\b",
@@ -59,6 +66,8 @@ PLATFORM_PATTERNS = {
     "SNPP": r"suomi[- ]?npp|\bS-?NPP\b|\bSNPP\b",
     "N20": r"noaa[- ]?20\b|\bJPSS-1\b",
     "N21": r"noaa[- ]?21\b|\bJPSS-2\b",
+    "JPSS3": r"\bJPSS-3\b|noaa[- ]?22\b",
+    "JPSS4": r"\bJPSS-4\b|noaa[- ]?23\b",
 }
 #: mission -> pattern for items naming the mission but no single satellite
 MISSION_PATTERNS = {
@@ -70,9 +79,12 @@ MISSION_PATTERNS = {
     "viirs": r"\bviirs\b",
 }
 MISSION_OF = {
-    "S1A": "s1", "S1C": "s1", "S1D": "s1", "S2A": "s2", "S2B": "s2", "S2C": "s2",
-    "S3A": "s3", "S3B": "s3", "L8": "landsat", "L9": "landsat", "NISAR": "nisar",
+    "S1A": "s1", "S1B": "s1", "S1C": "s1", "S1D": "s1", "S1NG": "s1",
+    "S2A": "s2", "S2B": "s2", "S2C": "s2", "S2D": "s2",
+    "S3A": "s3", "S3B": "s3", "S3C": "s3", "S3D": "s3",
+    "L7": "landsat", "L8": "landsat", "L9": "landsat", "LNEXT": "landsat", "NISAR": "nisar",
     "Terra": "modis", "Aqua": "modis", "SNPP": "viirs", "N20": "viirs", "N21": "viirs",
+    "JPSS3": "viirs", "JPSS4": "viirs",
 }  # fmt: skip
 #: a title that may change a satellite's status in platforms.json
 LIFECYCLE = re.compile(

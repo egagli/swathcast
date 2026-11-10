@@ -24,6 +24,7 @@
     {
      "code": "S1C",
      "name": "Sentinel-1C",
+     "norad": 62261,
      "launch": {
       "date": "2024-12-05",
       "source": "https://sentiwiki.copernicus.eu/web/s1-mission"
@@ -68,6 +69,7 @@
     {
      "code": "S1D",
      "name": "Sentinel-1D",
+     "norad": 66315,
      "launch": {
       "date": "2025-11-04",
       "source": "https://sentiwiki.copernicus.eu/web/s1-mission"
@@ -112,6 +114,7 @@
     {
      "code": "S1A",
      "name": "Sentinel-1A",
+     "norad": 39634,
      "launch": {
       "date": "2014-04-03",
       "source": "https://sentiwiki.copernicus.eu/web/s1-mission"
@@ -167,6 +170,7 @@
     {
      "code": "S2B",
      "name": "Sentinel-2B",
+     "norad": 42063,
      "launch": {
       "date": "2017-03-07",
       "source": "https://www.esa.int/Applications/Observing_the_Earth/Copernicus/Sentinel-2/Facts_and_figures"
@@ -207,6 +211,7 @@
     {
      "code": "S2C",
      "name": "Sentinel-2C",
+     "norad": 60989,
      "launch": {
       "date": "2024-09-05",
       "source": "https://www.esa.int/Applications/Observing_the_Earth/Copernicus/Sentinel-2/Facts_and_figures"
@@ -246,6 +251,7 @@
     {
      "code": "S2A",
      "name": "Sentinel-2A",
+     "norad": 40697,
      "launch": {
       "date": "2015-06-23",
       "source": "https://www.esa.int/Applications/Observing_the_Earth/Copernicus/Sentinel-2/Facts_and_figures"
@@ -307,6 +313,7 @@
     {
      "code": "L9",
      "name": "Landsat 9",
+     "norad": 49260,
      "launch": {
       "date": "2021-09-27",
       "source": "https://www.usgs.gov/landsat-missions/landsat-9"
@@ -346,6 +353,7 @@
     {
      "code": "L8",
      "name": "Landsat 8",
+     "norad": 39084,
      "launch": {
       "date": "2013-02-11",
       "source": "https://www.usgs.gov/landsat-missions/landsat-8"
@@ -406,6 +414,7 @@
     {
      "code": "NISAR",
      "name": "NISAR",
+     "norad": 65053,
      "launch": {
       "date": "2025-07-30",
       "source": "https://science.nasa.gov/mission/nisar/mission-overview/"
@@ -467,6 +476,7 @@
     {
      "code": "Terra",
      "name": "Terra (MODIS)",
+     "norad": 25994,
      "launch": {
       "date": "1999-12-18",
       "source": "https://science.nasa.gov/mission/terra/"
@@ -502,6 +512,7 @@
     {
      "code": "Aqua",
      "name": "Aqua (MODIS)",
+     "norad": 27424,
      "launch": {
       "date": "2002-05-04",
       "source": "https://science.nasa.gov/mission/aqua/"
@@ -548,6 +559,7 @@
     {
      "code": "N21",
      "name": "NOAA-21 (JPSS-2)",
+     "norad": 54234,
      "launch": {
       "date": "2022-11-10",
       "source": "https://nesdis.noaa.gov/news/jpss-2-launches-space"
@@ -587,6 +599,7 @@
     {
      "code": "N20",
      "name": "NOAA-20 (JPSS-1)",
+     "norad": 43013,
      "launch": {
       "date": "2017-11-18",
       "source": "https://nesdis.noaa.gov/news/noaas-newest-polar-orbiting-satellite-celebrates-milestone"
@@ -616,6 +629,7 @@
     {
      "code": "SNPP",
      "name": "Suomi NPP",
+     "norad": 37849,
      "launch": {
       "date": "2011-10-28",
       "source": "https://science.nasa.gov/mission/suomi-npp/"
@@ -672,6 +686,7 @@
     {
      "code": "S3A",
      "name": "Sentinel-3A",
+     "norad": 41335,
      "launch": {
       "date": "2016-02-16",
       "source": "https://sentiwiki.copernicus.eu/web/s3-mission"
@@ -707,6 +722,7 @@
     {
      "code": "S3B",
      "name": "Sentinel-3B",
+     "norad": 43437,
      "launch": {
       "date": "2018-04-25",
       "source": "https://sentiwiki.copernicus.eu/web/s3-mission"
