@@ -6,8 +6,10 @@ name: notices
 # Satellites page. Notices that may change a satellite's status and that
 # src/swathcast/site/platforms.json neither cites nor acknowledges are listed
 # in one registry-review issue, edited (and commented on) only when that list
-# changes and closed when it is empty. A source that fails is skipped (and
-# reported on the page); the job itself fails only if it crashes.
+# changes and closed when it is empty. A source that fails keeps its items
+# from the last run that reached it (and the page says since when): NASA
+# Earthdata answers GitHub's runners with 403 (CloudFront), and USGS often
+# times out. The job itself fails only if it crashes.
 on:
   schedule:
     - cron: "13 6 * * *"
@@ -30,14 +32,14 @@ jobs:
       - uses: ./.github/actions/pixi
         with:
           environment: poll
+      - uses: ./.github/actions/data-branch
       - name: Fetch notices
         id: fetch
         env:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          pixi run -e poll swathcast notices --out "$RUNNER_TEMP/notices.json" --issue-body "$RUNNER_TEMP/review.md" --run-url "$RUN_URL" | tee "$RUNNER_TEMP/notices.log"
+          pixi run -e poll swathcast notices --out "$RUNNER_TEMP/notices.json" --previous data/notices/notices.json --issue-body "$RUNNER_TEMP/review.md" --run-url "$RUN_URL" | tee "$RUNNER_TEMP/notices.log"
           echo "marker=$(tail -n 1 "$RUNNER_TEMP/notices.log")" >> "$GITHUB_OUTPUT"
-      - uses: ./.github/actions/data-branch
       - name: Stage notices
         run: |
           mkdir -p data/notices

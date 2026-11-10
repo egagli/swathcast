@@ -111,7 +111,7 @@ function render(reg, sats, idx, feed) {
   if (fresh) fresh.textContent = sats ? `checked ${fmtAge(ageHours(sats.checked_at))}` : "";
   const src = document.getElementById("feeds");
   if (src) {
-    src.innerHTML = feed ? `Fetched ${stamp(feed.fetched_at)} (${fmtAge(ageHours(feed.fetched_at))}): ${Object.values(feed.sources).map((x) => `${link(x.url, x.label)} ${x.ok ? `<span class="badge b-ok">ok</span>` : `<span class="badge b-bad" title="${esc(x.error || "")}">failed</span>`}`).join(" · ")}.`
+    src.innerHTML = feed ? `Fetched ${stamp(feed.fetched_at)} (${fmtAge(ageHours(feed.fetched_at))}): ${Object.values(feed.sources).map((x) => `${link(x.url, x.label)} ${x.ok ? `<span class="badge b-ok">ok</span>` : `<span class="badge b-bad" title="${esc(x.error || "")}">failed today</span>${x.last_ok ? ` <span class="nm">(showing what it gave on ${day(x.last_ok)})</span>` : ' <span class="nm">(not reached yet)</span>'}`}`).join(" · ")}.`
       : "Not fetched yet (the daily notices job writes them).";
   }
   if (location.hash) document.getElementById(location.hash.slice(1))?.scrollIntoView();

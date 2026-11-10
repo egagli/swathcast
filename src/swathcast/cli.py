@@ -29,11 +29,15 @@ def _cmd_hindcast(args) -> int:
 def _cmd_notices(args) -> int:
     from swathcast.notices import run
 
-    report = run(args.out, args.issue_body, args.run_url or "")
+    report = run(args.out, args.issue_body, args.run_url or "", args.previous)
     for key, s in report["sources"].items():
-        print(
-            f"{key}: {'ok, ' + str(s['items']) + ' items' if s['ok'] else 'FAILED: ' + s['error']}"
-        )
+        if s["ok"]:
+            print(f"{key}: ok, {s['items']} items")
+        else:
+            print(
+                f"{key}: FAILED ({s['error']}); kept {s.get('kept', 0)} items "
+                f"fetched {s.get('last_ok') or 'never'}"
+            )
     print(f"{len(report['items'])} notices naming a tracked satellite or mission")
     print(report["marker"])
     return 0
@@ -180,6 +184,12 @@ def main(argv: list[str] | None = None) -> int:
         "(CDSE, NASA Earthdata, NOAA OSPO, USGS EROS); never fails",
     )
     p.add_argument("--out", type=Path, default=Path("notices.json"))
+    p.add_argument(
+        "--previous",
+        type=Path,
+        default=None,
+        help="the last notices.json: a failing source keeps its items from it",
+    )
     p.add_argument("--issue-body", type=Path, default=None)
     p.add_argument("--run-url", default="")
     p.set_defaults(func=_cmd_notices)

@@ -121,3 +121,32 @@ def test_old_items_are_dropped():
     old = CDSE.replace("Fri, 30 Oct 2026", "Fri, 30 Jan 2026")
     rep = notices.collect(lambda url: old if url == notices.CDSE_RSS else "", now=NOW)
     assert not any("Sentinel-1D" in x["title"] for x in rep["items"])
+
+
+def test_a_failing_source_keeps_its_last_items():
+    prev = notices.collect(
+        lambda url: (
+            EARTHDATA
+            if url == notices.EARTHDATA_ALERTS
+            else (_ for _ in ()).throw(OSError("x"))
+        ),
+        now=NOW,
+    )
+    assert prev["sources"]["earthdata"]["ok"]
+
+    def fetch(url):
+        if url == notices.EARTHDATA_ALERTS:
+            raise OSError("403 Forbidden")
+        return {notices.CDSE_RSS: CDSE, notices.OSPO_MESSAGES: OSPO}.get(url, "")
+
+    rep = notices.collect(fetch, now=NOW, previous=prev)
+    ed = rep["sources"]["earthdata"]
+    assert (
+        not ed["ok"]
+        and ed["kept"] == 1
+        and ed["last_ok"] == prev["sources"]["earthdata"]["fetched_at"]
+    )
+    assert any(x["source"] == "earthdata" for x in rep["items"])
+    # failing again: still the same last good date
+    again = notices.collect(fetch, now=NOW, previous=rep)
+    assert again["sources"]["earthdata"]["last_ok"] == ed["last_ok"]

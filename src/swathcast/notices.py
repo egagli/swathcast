@@ -235,9 +235,18 @@ SOURCES = {
 
 
 # ------------------------------------------------------------------- driver
-def collect(fetch, now: datetime | None = None, cited: set[str] | None = None) -> dict:
+def collect(
+    fetch,
+    now: datetime | None = None,
+    cited: set[str] | None = None,
+    previous: dict | None = None,
+) -> dict:
     """Fetch every source (``fetch(url) -> text``), keep the items that name
-    a tracked satellite or mission from the last KEEP_DAYS, newest first."""
+    a tracked satellite or mission from the last KEEP_DAYS, newest first.
+
+    A source that fails keeps its items from ``previous`` (the last report),
+    and says since when: NASA Earthdata answers GitHub's runners with 403 and
+    USGS often times out, so a run elsewhere (or a good day) is not lost."""
     now = now or datetime.now(UTC)
     cutoff = (now - timedelta(days=KEEP_DAYS)).date().isoformat()
     cited = cited or set()
@@ -245,14 +254,30 @@ def collect(fetch, now: datetime | None = None, cited: set[str] | None = None) -
     for key, (label, url, parse) in SOURCES.items():
         try:
             got = parse(fetch(url))
-            sources[key] = {"label": label, "url": url, "ok": True, "items": len(got)}
+            sources[key] = {
+                "label": label,
+                "url": url,
+                "ok": True,
+                "items": len(got),
+                "fetched_at": now.isoformat(timespec="seconds"),
+            }
         except Exception as exc:  # noqa: BLE001 - one failing source must not stop the rest
             LOGGER.warning("notices: %s failed: %s", key, exc)
+            prev = (previous or {}).get("sources", {}).get(key, {})
+            last_ok = prev.get("fetched_at") if prev.get("ok") else prev.get("last_ok")
+            kept = [
+                it for it in (previous or {}).get("items", [])
+                if it.get("source") == key and it["date"] >= cutoff
+            ]  # fmt: skip
+            for it in kept:
+                items.setdefault(it["url"], {**it, "cited": it["url"] in cited})
             sources[key] = {
                 "label": label,
                 "url": url,
                 "ok": False,
                 "error": str(exc)[:300],
+                "last_ok": last_ok,
+                "kept": len(kept),
             }
             continue
         for it in got:
@@ -308,7 +333,12 @@ def issue_body(items: list[dict], run_url: str = "") -> tuple[str, str]:
     return marker, "\n".join(lines) + "\n"
 
 
-def run(out: Path, issue: Path | None = None, run_url: str = "") -> dict:
+def run(
+    out: Path,
+    issue: Path | None = None,
+    run_url: str = "",
+    previous: Path | None = None,
+) -> dict:
     import requests
 
     from swathcast.platforms import registry
@@ -329,7 +359,13 @@ def run(out: Path, issue: Path | None = None, run_url: str = "") -> dict:
         for n in p.get("notices", [])
     }
     cited |= set(reg.get("acknowledged", []))  # reviewed: they change nothing
-    report = collect(fetch, cited=cited)
+    prev = None
+    if previous and Path(previous).exists():
+        try:
+            prev = json.loads(Path(previous).read_text())
+        except ValueError:
+            prev = None
+    report = collect(fetch, cited=cited, previous=prev)
     out = Path(out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(report, indent=1) + "\n")
