@@ -2399,6 +2399,15 @@ const LANE_ORDER = ["S1A", "S1C", "S1D", "S1", "S2A", "S2B", "S2C", "S2", "L8", 
 // products whose platform the catalogue does not give (HLS, for one)
 const LANE_UNKNOWN = { s1: "S1", s2: "S2", landsat: "L8/9", nisar: "NISAR", modis: "MODIS", viirs: "VIIRS", s3: "S3" };
 let tlItems = [];
+// The strip's key: each kind of marker drawn as the strip draws it.
+const tlSwatch = (inner) => `<svg class="tl-key" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">${inner}</svg>`;
+const tlDot = (attrs) => tlSwatch(`<circle cx="6" cy="6" r="4.3" stroke="var(--ink-2)" stroke-width="1.6" ${attrs}/>`);
+const TL_KEY = [
+  [tlDot('fill="var(--ink-2)"'), "acquired"],
+  [tlDot('fill="var(--surface)"'), "planned"],
+  [tlDot('fill="var(--surface)" stroke-dasharray="1 2"'), "projected"],
+  [tlSwatch('<rect x="0.5" y="2" width="11" height="8" fill="url(#tl-hatch-key)"/><defs><pattern id="tl-hatch-key" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="4" stroke="var(--muted)" stroke-width="1"/></pattern></defs>'), "past the plan's end"],
+].map(([icon, label]) => `<span class="tl-k">${icon} ${label}</span>`).join(" · ");
 // The strip's span: 30 days back, and ahead to the end of the dates chosen.
 function timelineSpan(now = Date.now()) {
   const end = state.end ? new Date(`${state.end}T23:59:59Z`).getTime() : 0;
@@ -2464,7 +2473,7 @@ function renderTimeline() {
   const nowX = x(now).toFixed(1);
   const loading = state.busy || (state.recent && Object.values(state.recent.results).some((r) => r.status === "loading"));
   const empty = items.length ? "" : `<text x="${(W / 2).toFixed(0)}" y="${top + 10}" text-anchor="middle">${loading ? "Finding passes…" : "No passes over this AOI in this window that match the filters."}</text>`;
-  tlBox.innerHTML = `<div class="tl-head"><b>Passes over your AOI</b><span class="nm">30 days back to ${dayWithYear(new Date(t1))} · ● acquired · ○ planned · dotted ○ projected · hatched: past the plan's end · click one to select it</span></div>`
+  tlBox.innerHTML = `<div class="tl-head"><b>Passes over your AOI</b><span class="nm">30 days back to ${dayWithYear(new Date(t1))} · ${TL_KEY} · click one to select it</span></div>`
     + `<svg viewBox="0 0 ${W} ${H}" height="${H}" role="group" aria-label="Passes over your AOI: ${items.length}">`
     + '<defs><pattern id="tl-hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" stroke="var(--muted)" stroke-width="1" opacity=".45"/></pattern></defs>'
     + `<rect x="${nowX}" y="${top - 4}" width="${(x(t1) - x(now)).toFixed(1)}" height="${H - top - 18}" fill="var(--surface-2)"/>`
