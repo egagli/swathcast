@@ -75,6 +75,11 @@ def check(path: Path = REGISTRY_PATH) -> list[str]:
         return [f"platforms.json unreadable: {exc}"]
     if not day.match(str(reg.get("reviewed", ""))):
         problems.append("platforms.json has no reviewed date")
+    for url in reg.get("acknowledged", []):
+        if not str(url).startswith("https://"):
+            problems.append(
+                f"platforms.json acknowledged entry is not an https URL: {url!r}"
+            )
     seen = set()
     for m in reg.get("missions", []):
         for p in m.get("platforms", []):

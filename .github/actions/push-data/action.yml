@@ -22,6 +22,7 @@ runs:
         - `schedule/upcoming_passes.parquet` (+ `.meta.json`): upcoming-pass schedule, plus the footprint grids
         - `tle.json`: orbital elements for the map's live satellites
         - `hindcast/hindcast.json` (+ `.md`): monthly measurement of the map's projected passes
+        - `notices/notices.json`: the agencies' newest notices for the tracked satellites (daily)
         MD
         rm -rf legacy
         git checkout -q --orphan squashed

@@ -8,6 +8,7 @@
 | [`poll.yml`](../.github/workflows/poll.yml) | hourly | latency poller → `data` branch; fails if every source failed or one has failed > 24 h; opens/updates/closes the `satellite-status` issue (a satellite or data stream gone silent, [operations](operations.md)) |
 | [`pages.yml`](../.github/workflows/pages.yml) | after each poll/schedule, and on code changes | summarise, check the data contract, deploy Pages |
 | [`hindcast.yml`](../.github/workflows/hindcast.yml) | monthly | how well each projection (a plan carried past its end) predicted what came next → `data` branch `hindcast/`, the site's `hindcast.json`; opens a `hindcast-failed` issue on failure |
+| [`notices.yml`](../.github/workflows/notices.yml) | daily | the agencies' newest notices for the tracked satellites (CDSE, NASA Earthdata, NOAA OSPO, USGS EROS) → `data` branch `notices/`, the Satellites page; opens/updates/closes the `registry-review` issue |
 | [`watchdog.yml`](../.github/workflows/watchdog.yml) | weekly | opens/updates a `stale-data` issue if data is stale or a source is failing; closes it on recovery |
 | [`ci.yml`](../.github/workflows/ci.yml) | push / PR | ruff, pytest (offline, recorded fixtures), site data-contract check |
 
@@ -32,6 +33,7 @@ src/swathcast/
   projection.py    plans carried past their end by their repeat cycle (projected passes)
   hindcast.py      how well that predicted what came next (swathcast hindcast)
   satellites.py    is each satellite still delivering? (swathcast satellites)
+  notices.py       the agencies' notices, fetched daily (swathcast notices)
   platforms.py     the platform registry (site/platforms.json): status, dates, notices; retired ones are not predicted
   ephemeris.py     SGP4 sub-satellite points and closest-approach timing
   s2grid.py        ESA's Sentinel-2 tiling grid and per-tile times

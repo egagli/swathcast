@@ -44,6 +44,9 @@ table.sats tr.retired .name b { color: var(--muted); }
 .b-info { background: var(--accent-soft); color: var(--ink); }
 ul.notices { margin: 0; padding: 0; list-style: none; }
 ul.notices li { margin: 0 0 3px; }
+ul.notices.feed { margin-top: 2px; }
+.nm.feed { margin-top: 6px; font-style: italic; }
+.mission-feed { margin: -4px 0 10px; }
 ul.notices .d { font-variant-numeric: tabular-nums; color: var(--ink-2); margin-right: 4px; white-space: nowrap; }
 .keys { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--ink-2); }
 @media (max-width: 760px) {
@@ -76,6 +79,8 @@ ul.notices .d { font-variant-numeric: tabular-nums; color: var(--ink-2); margin-
       <dd>Curated from each agency's own announcements (<code>platforms.json</code> in the <a href="https://github.com/egagli/swathcast" target="_blank" rel="noopener">repository</a>), each with its source; the date each was last reviewed is shown. A satellite marked retired is no longer planned, predicted or projected on the map; its past acquisitions and delivery times stay.</dd>
       <dt><b>Newest data and check</b></dt>
       <dd>Updated hourly by this site's poller: the newest sensing time any distributor has delivered for each satellite, per data stream, and whether it is overdue (the <a href="https://github.com/egagli/swathcast/blob/main/docs/operations.md" target="_blank" rel="noopener">satellite check</a>: silent past max(48 h, 1.5× its longest normal gap) beyond its usual delivery time while passes were due). A silent satellite also opens an issue on the repository.</dd>
+      <dt><b>From the agencies' feeds</b></dt>
+      <dd>Fetched daily by the <a href="https://github.com/egagli/swathcast/actions/workflows/notices.yml" target="_blank" rel="noopener">notices job</a> and matched to each satellite by name: <span id="feeds">loading…</span> A fetched notice that may change a satellite's status (an end of operations, an extension…) opens a review issue on the repository until the curated entry above cites or acknowledges it.</dd>
       <dt><b>On the map</b></dt>
       <dd>How far each satellite is planned (the agency's plan) and projected (its last repeat cycle carried forward, in no plan), from the schedule rebuilt daily.</dd>
     </dl>

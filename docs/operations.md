@@ -31,6 +31,18 @@ activity. swathcast guards against that, and against failing jobs, six ways:
    A satellite the registry (`src/swathcast/site/platforms.json`) marks retired is reported as
    `retired`, not `silent`: its silence is expected, so it opens no issue.
 
+   **Agency notices, fetched daily.** The `notices` workflow (`swathcast notices`, `notices.py`)
+   reads the Copernicus Data Space news RSS, NASA Earthdata's alerts and outages, NOAA OSPO's
+   operational messages and USGS EROS's data notifications, keeps the last 180 days of items whose
+   title names a tracked satellite or mission (word-boundary patterns), and writes them to the data
+   branch (`notices/notices.json`; the site's `notices.json`). The Satellites page lists the newest
+   per satellite (and mission-wide ones per mission) beside the curated ones, with each feed's fetch
+   status. A source that fails is skipped and reported there. A notice whose title reads like a
+   status change (end of operations, decommissioning, extension, transfer of duty, data opening…)
+   that `platforms.json` neither cites nor lists under `acknowledged` opens a `registry-review`
+   issue, edited only when the list changes and closed when it is empty: update the entry (and cite
+   the notice), or add its URL to `acknowledged` if it changes nothing.
+
    **Keeping the registry current.** `platforms.json` holds each satellite's status (with the date
    it began and its source), launch and operations dates, and up to a few of the agency's notices,
    with the date each entry was last reviewed; the Satellites page shows it. Update it when an

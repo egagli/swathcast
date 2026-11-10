@@ -745,5 +745,11 @@
     }
    ]
   }
- ]
+ ],
+ "acknowledged": [
+  "https://www.ospo.noaa.gov/data/messages/2026/10/MSG_20261030_1401.html",
+  "https://www.ospo.noaa.gov/data/messages/2026/10/MSG_20261030_1402.html",
+  "https://www.ospo.noaa.gov/data/messages/2026/11/MSG_20261102_1800.html"
+ ],
+ "acknowledged_note": "Agency notices reviewed on the date above that change nothing here (e.g. relays of a notice cited below); the daily notices job does not ask about them again."
 }

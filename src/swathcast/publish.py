@@ -121,6 +121,10 @@ def publish(
         (out_dir / "satellites.json").write_text(_dumps(report))
     except Exception:  # noqa: BLE001 - a convenience; never fails the site
         LOGGER.exception("satellite status check failed")
+    # the agencies' newest notices (notices.yml, daily), for the Satellites page
+    notices = Path(data_dir) / "notices" / "notices.json"
+    if notices.exists():
+        shutil.copyfile(notices, out_dir / "notices.json")
     # the monthly hindcast (hindcast.yml): how well each projection held
     hindcast = Path(data_dir) / "hindcast" / "hindcast.json"
     if hindcast.exists():

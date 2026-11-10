@@ -1,4 +1,4 @@
-"""Command line: ``swathcast {schedule,poll,extents,tle,summarize,viewer,check-site,watchdog,hindcast,satellites}``."""
+"""Command line: ``swathcast {schedule,poll,extents,tle,summarize,viewer,check-site,watchdog,hindcast,satellites,notices}``."""
 
 from __future__ import annotations
 
@@ -23,6 +23,19 @@ def _cmd_hindcast(args) -> int:
 
     run(args.out, sensors=args.sensors or ALL, since=args.since)
     print((args.out / "hindcast.md").read_text())
+    return 0
+
+
+def _cmd_notices(args) -> int:
+    from swathcast.notices import run
+
+    report = run(args.out, args.issue_body, args.run_url or "")
+    for key, s in report["sources"].items():
+        print(
+            f"{key}: {'ok, ' + str(s['items']) + ' items' if s['ok'] else 'FAILED: ' + s['error']}"
+        )
+    print(f"{len(report['items'])} notices naming a tracked satellite or mission")
+    print(report["marker"])
     return 0
 
 
@@ -160,6 +173,16 @@ def main(argv: list[str] | None = None) -> int:
     )
     p.add_argument("--since", help="ESA plan files issued from this date (ISO)")
     p.set_defaults(func=_cmd_hindcast)
+
+    p = sub.add_parser(
+        "notices",
+        help="fetch the agencies' newest notices for the tracked satellites "
+        "(CDSE, NASA Earthdata, NOAA OSPO, USGS EROS); never fails",
+    )
+    p.add_argument("--out", type=Path, default=Path("notices.json"))
+    p.add_argument("--issue-body", type=Path, default=None)
+    p.add_argument("--run-url", default="")
+    p.set_defaults(func=_cmd_notices)
 
     p = sub.add_parser(
         "satellites",
