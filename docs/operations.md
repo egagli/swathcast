@@ -28,6 +28,16 @@ activity. swathcast guards against that, and against failing jobs, six ways:
    noted. Our own failing sources make the status `unknown`, not silent. Run it by hand with
    `swathcast satellites --data-dir data --schedule-dir data/schedule`.
 
+   A satellite the registry (`src/swathcast/site/platforms.json`) marks retired is reported as
+   `retired`, not `silent`: its silence is expected, so it opens no issue.
+
+   **Keeping the registry current.** `platforms.json` holds each satellite's status (with the date
+   it began and its source), launch and operations dates, and up to a few of the agency's notices,
+   with the date each entry was last reviewed; the Satellites page shows it. Update it when an
+   agency announces a change (an extension, a decommissioning, a new satellite): the `satellite-
+   status` issue is the usual prompt. The site contract (`swathcast check-site`) checks it (states,
+   dates, sources, https links).
+
    Its first run on real data (2026-11-09) found both kinds: Suomi NPP's VIIRS had delivered
    nothing to LANCE or LAADS since 2026-11-02 15:24 UTC (`silent`); and ASF had moved NISAR to new
    `V1` collections (L0B `C3622265756-ASF`, RSLC `C3622236985-ASF`, GSLC `C3622244601-ASF`, GCOV

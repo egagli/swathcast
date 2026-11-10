@@ -515,9 +515,16 @@ def check_site(site_dir: Path) -> list[str]:
     """Return a list of contract violations (empty = OK)."""
     site_dir = Path(site_dir)
     problems: list[str] = []
-    for page in ("index.html", "dashboard.html"):
+    for page in ("index.html", "dashboard.html", "status.html"):
         if not (site_dir / page).exists():
             problems.append(f"missing page {page}")
+    # the platform registry the Satellites page and the map read
+    from swathcast.platforms import check as check_platforms
+
+    if (site_dir / "platforms.json").exists():
+        problems += check_platforms(site_dir / "platforms.json")
+    else:
+        problems.append("missing platforms.json")
     for page in site_dir.glob("*.html"):
         text = page.read_text()
         for ref in _local_refs(text):

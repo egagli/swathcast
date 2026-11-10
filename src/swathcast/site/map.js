@@ -160,7 +160,7 @@ const state = window.__state = {
   aoi: null, start: null, end: null, scheduleEnd: null, health: {},
   // per mission, a plan carried past its end by its repeat cycle
   // (passes_index.json "projections"; projection.py): {from, to, repeatMs, baseFrom} as ms
-  projections: {}, planPages: {},
+  projections: {}, planPages: {}, retired: {},
   cells: [], passes: [], notes: [], missionState: {},
   // the one selection: a pass or recent acquisition in the list ({kind, key})
   // or a footprint on the map ({kind: "cell", key: its title}); null: none
@@ -256,6 +256,21 @@ async function ensureSensor(sensor) {
 // Started as soon as this module runs: the downloads need neither the map nor
 // the time-zone lookup, which load() waits for. (index.html preloads the
 // index and the Sentinel-1/2 files, so they start with the page itself.)
+// The platform registry (platforms.json, see platforms.py): a retired
+// satellite is greyed out in its mission's filters and its rows say so; its
+// past acquisitions stay listed (the schedule no longer plans it).
+const platformRegistry = getJSON("./platforms.json").catch(() => null);
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const isoDayText = (iso) => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || ""); return m ? `${Number(m[3])} ${MONTH_NAMES[Number(m[2]) - 1]} ${m[1]}` : ""; };
+function applyRegistry(reg) {
+  state.retired = {};
+  ((reg && reg.missions) || []).forEach((m) => m.platforms.forEach((p) => {
+    const st = p.status || {};
+    if (!["retired", "decommissioned", "data_ended"].includes(st.state)) return;
+    const what = st.state === "decommissioned" ? "Decommissioned" : st.state === "data_ended" ? "Data ended" : "Retired";
+    state.retired[p.code] = `${p.name}: ${what}${st.since ? ` as of ${isoDayText(st.since)}` : ""}${st.by ? ` (${st.by})` : ""}. No new data: it is no longer planned, predicted or projected; its past acquisitions are still listed. See Satellites.`;
+  }));
+}
 const firstData = Promise.all([
   scheduleIndex,
   Promise.all(FIRST_SENSORS.map(rowsOf)),
@@ -302,6 +317,7 @@ async function load() {
   state.planEnds = {};
   Object.entries(summary.ends).forEach(([p, t]) => { (state.planEnds[missionOf(p)] ||= {})[p] = t; });
   legend();
+  applyRegistry(await platformRegistry);
   state.projections = parseProjections(idx);
   applySatelliteStatus(await satelliteStatus);
   state.planPages = (idx && idx.plan_pages) || {};
@@ -626,9 +642,22 @@ const solarText = (h) => {
   const m = Math.round(h * 12) * 5, hh = Math.floor(m / 60) % 24, mm = m % 60;
   return `~${hh % 12 || 12}:${String(mm).padStart(2, "0")} ${hh < 12 ? "AM" : "PM"}`;
 };
+// A retired platform's pill: greyed out, not clickable (its history stays
+// listed, so it stays ticked), and its tooltip says why.
+function markRetired(row, plats) {
+  row.querySelectorAll("label.check").forEach((l, i) => {
+    const why = state.retired[plats[i]];
+    if (!why) return;
+    l.classList.add("retired");
+    l.title = why;
+    const cb = l.querySelector("input");
+    if (cb) cb.disabled = true;
+  });
+}
 function labelCrossings(row, plats) {
   satrecsFor().then((recs) => {
     row.querySelectorAll("label.check").forEach((l, i) => {
+      if (state.retired[plats[i]]) return; // its pill says why it is greyed out
       const p = plats[i], x = recs[p] ? nodeSolarTimes(recs[p]) : {};
       const day = ["ascending", "descending"].find((d) => x[d] >= 6 && x[d] < 18);
       if (!day) return;
@@ -2596,7 +2625,8 @@ function renderList() {
     tr.setAttribute("aria-expanded", String(selected(it)));
     const m = MISSION[it.mission];
     const dirOf = it.direction || (it.mission === "s2" ? "descending" : null);
-    const sat = `${chip(it.mission)} ${esc(it.platform || m.label)}<div class="nm">${[dirOf ? `<span title="${esc(dirText(it.mission, dirOf))}">${dirOf === "ascending" ? "asc" : "desc"}</span>` : null, it.track != null && it.track !== "" ? `${TRACK_SHORT[it.mission]} ${it.track}` : null, it.ref.light === "night" ? "night" : null].filter(Boolean).join(" · ")}</div>`;
+    const retiredWhy = state.retired[it.platform];
+    const sat = `${chip(it.mission)} ${retiredWhy ? `<span class="retired-name" title="${esc(retiredWhy)}">${esc(it.platform)}</span>` : esc(it.platform || m.label)}<div class="nm">${[dirOf ? `<span title="${esc(dirText(it.mission, dirOf))}">${dirOf === "ascending" ? "asc" : "desc"}</span>` : null, it.track != null && it.track !== "" ? `${TRACK_SHORT[it.mission]} ${it.track}` : null, it.ref.light === "night" ? "night" : null].filter(Boolean).join(" · ")}</div>`;
     let status;
     if (it.kind === "pass") {
       const e = earliest(it.ref);
@@ -3001,6 +3031,7 @@ function buildControls() {
       const pr = checkRow("Platform", plats, mf.platforms);
       box2.append(pr);
       if (isWide(m.key)) labelCrossings(pr, plats);
+      markRetired(pr, plats);
     }
     if (mf.dirs) {
       const row = checkRow("Direction", ["ascending", "descending"], mf.dirs, (d) => `${cap(d)} (${SOLAR[m.key][d]})`,

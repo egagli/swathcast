@@ -32,6 +32,7 @@ src/swathcast/
   projection.py    plans carried past their end by their repeat cycle (projected passes)
   hindcast.py      how well that predicted what came next (swathcast hindcast)
   satellites.py    is each satellite still delivering? (swathcast satellites)
+  platforms.py     the platform registry (site/platforms.json): status, dates, notices; retired ones are not predicted
   ephemeris.py     SGP4 sub-satellite points and closest-approach timing
   s2grid.py        ESA's Sentinel-2 tiling grid and per-tile times
   wideswath.py     MODIS/VIIRS/Sentinel-3: no plans; passes on the sinusoidal tiles from the orbit

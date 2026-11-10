@@ -223,8 +223,13 @@ def tile_passes(
 def sin_tile_passes(grid, sats: dict, mission: str, start, end) -> pd.DataFrame:
     """One row per (tile, pass) of the mission's platforms over [start, end):
     tile, platform, time, direction, xtrack_km."""
+    from swathcast.platforms import is_retired
+
     parts = []
     for platform in PLATFORMS[mission]:
+        if is_retired(platform):  # no new data: not predicted (platforms.json)
+            LOGGER.info("%s: %s is retired; not predicted", mission, platform)
+            continue
         sat = sats.get(platform)
         if sat is None:
             LOGGER.warning("%s: no orbital elements for %s", mission, platform)

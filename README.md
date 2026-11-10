@@ -60,7 +60,14 @@ snowmelt, for example), field campaigns, and coordination between missions.
   everywhere, with how well it held in a monthly hindcast
   ([methodology](docs/methodology.md#projection-past-a-plans-end)). An hourly check flags a satellite that stops
   delivering (its projection is paused and its passes warned) and opens an issue
-  ([operations](docs/operations.md)). The globe draws footprints up to the poles; the flat map stops at 85°. Basemaps are
+  ([operations](docs/operations.md)).
+- **[The Satellites page](https://egagli.github.io/swathcast/status.html)** lists every satellite
+  by mission: its status (operational, extended, drifting, retired…), launch and operations dates,
+  the agencies' latest notices, the newest data any distributor has delivered (hourly) and how far
+  the map plans and projects it. Status and notices come from a curated registry
+  (`src/swathcast/site/platforms.json`, each entry with its sources and review date); a retired
+  satellite is no longer planned, predicted or projected, and is greyed out on the map with the date
+  it ended, while its past acquisitions and delivery history stay. The globe draws footprints up to the poles; the flat map stops at 85°. Basemaps are
   Esri Gray Canvas (the default), Esri World Imagery (with or without labels), Esri World Topographic
   and OpenStreetMap.
 - **Share and export**: the page's state (AOI, missions, filters, dates, the list's tab, the selected

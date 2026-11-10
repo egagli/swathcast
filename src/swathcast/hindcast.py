@@ -532,8 +532,12 @@ def wide_hindcast(
     for a year; between every pair of those days, how far the footprint moved,
     split along track (as seconds) and across. One row per (platform, pair)."""
     now = pd.Timestamp(now or datetime.now(UTC)).floor("D") - pd.Timedelta(days=3)
+    from swathcast.platforms import is_retired
+
     rows = []
     for platform, (mission, coll) in WIDE_COLLECTIONS.items():
+        if is_retired(platform):  # not projected: no point measuring it
+            continue
         rep = pd.Timedelta(days=16)
         n = int(days // 16)
         d0 = now - n * rep

@@ -87,9 +87,14 @@ def spec(sensor: str, plan_ends: dict, start, horizon_days: int = HORIZON_DAYS):
         return None
     to = pd.Timestamp(start) + pd.Timedelta(days=horizon_days)
     platforms = {}
+    from swathcast.platforms import retired_note
+
     skipped = {}
     for platform, end in sorted(plan_ends.items()):
         end = pd.Timestamp(end)
+        if retired_note(platform):  # platforms.json: no new data
+            skipped[platform] = retired_note(platform)
+            continue
         if platform in NOT_PROJECTED:
             skipped[platform] = NOT_PROJECTED[platform]
             continue

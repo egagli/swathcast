@@ -213,3 +213,7 @@ tr.projected td.when, .pass-list tr.item.projected td.when { font-style: italic;
 .detail-card .dc-basis.proj { padding: 6px 8px; border: 1px dashed var(--muted); border-radius: 6px; color: var(--ink-2, var(--ink)); background: var(--surface-2, transparent); }
 .hist-table a.proj { font-style: italic; border-bottom: 1px dashed var(--muted); text-decoration: none; }
 .detail-card .dc-basis.sat-warn { padding: 6px 8px; border-radius: 6px; background: var(--warn-bg); color: var(--warn-ink); }
+/* A retired platform (platforms.json): greyed out, with its reason on hover */
+label.check.retired { opacity: .45; cursor: help; }
+label.check.retired input { cursor: help; }
+.retired-name { color: var(--muted); cursor: help; }

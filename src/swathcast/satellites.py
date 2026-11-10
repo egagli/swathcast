@@ -213,9 +213,22 @@ def check(
                 "sources_failing": failing,
                 "what": STREAMS.get(key, (key, key))[1],
             }
+    from swathcast.platforms import retired_note
+
     platforms = {}
     for platform, by in sorted(streams.items()):
         states = {v["state"] for v in by.values()}
+        if retired_note(platform):
+            # platforms.json: it delivers no new data by design, so its
+            # silence is expected (its history stays)
+            last = max(parse_utc(v["last_seen"]) for v in by.values())
+            platforms[platform] = {
+                "status": "retired",
+                "last_seen": to_iso(last),
+                "note": f"{platform}: {retired_note(platform)}.",
+                "streams": by,
+            }
+            continue
         if states == {"silent"}:
             status = "silent"
         elif "silent" in states and "ok" in states:
