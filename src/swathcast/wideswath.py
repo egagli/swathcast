@@ -9,11 +9,11 @@ orbit alone: CelesTrak elements propagated with SGP4
 * **MODIS and VIIRS: sinusoidal tiles.** Their gridded land products
   (MOD09GA, MOD10A1, VNP10A1, VJ110A1, ...) come on the MODIS sinusoidal grid
   of 10-degree tiles (h00-35, v00-17), 460 of which hold land or sea.
-  A tile is imaged by a pass whose swath covers the tile centre: the time is
+  A tile is imaged by a pass whose swath covers the tile center: the time is
   when the ground track passes closest to it, and the signed cross-track
   distance there (``xtrack_km``, + to the right of the direction of travel)
   gives the view angle.
-* **Sentinel-3: the same tiles, each pass labelled with its frame.**
+* **Sentinel-3: the same tiles, each pass labeled with its frame.**
   Sentinel-3 products are cut in 3-minute frames on a fixed grid: relative
   orbit (1-385, a 27-day exact repeat) and the frame's start in seconds after
   the ascending node (0, 180, ... 5940), as in
@@ -98,7 +98,7 @@ def tile_name(h: int, v: int) -> str:
 
 def sin_grid():
     """The MODIS sinusoidal tiles that hold any of the Earth (460), as a
-    GeoDataFrame: ``tile`` ("h08v05"), ``h``, ``v``, centre ``lon``/``lat``
+    GeoDataFrame: ``tile`` ("h08v05"), ``h``, ``v``, center ``lon``/``lat``
     and the lon/lat outline (the tile's part inside the projection's
     world outline, with curved east/west edges)."""
     import geopandas as gpd

@@ -72,7 +72,7 @@ export class Tour {
     document.body.append(this.hand);
   }
 
-  // The hand moved to an element (its centre) or a screen point [x, y],
+  // The hand moved to an element (its center) or a screen point [x, y],
   // saying what it is about to do; resolves when it has arrived.
   async pointAt(target, say = "") {
     let x, y;

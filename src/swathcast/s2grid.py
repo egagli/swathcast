@@ -12,7 +12,7 @@ A datatake's begin/end apply to its whole swath, which can run pole to pole
 So the plan says *whether* a tile is imaged and the orbit says *when*:
 
 * ``timing="orbit"`` (normal): the time the satellite's ground track passes
-  closest to the tile centre, from CelesTrak elements propagated with SGP4
+  closest to the tile center, from CelesTrak elements propagated with SGP4
   (:mod:`swathcast.ephemeris`), clamped to the datatake. Against the granule
   ``SENSING_TIME`` of 91 tiles in 7 datatakes (2026-09-26..27): median 0.4 s,
   max 8.6 s.
@@ -134,14 +134,14 @@ def _u(lat_deg, ascending: bool):
 
 
 def tile_times(lat, begin, end, end_lat: float, ascending: bool):
-    """Estimated imaging time of tiles centred at ``lat`` within one datatake."""
+    """Estimated imaging time of tiles centered at ``lat`` within one datatake."""
     lat = np.asarray(lat, dtype=float)
     dt = (_u(end_lat, ascending) - _u(lat, ascending)) / (2 * np.pi) * ORBIT_PERIOD_S
     when = end - pd.to_timedelta(dt, unit="s")
     return np.clip(when, begin, end)
 
 
-def tile_centres(tiles) -> pd.DataFrame:
+def tile_centers(tiles) -> pd.DataFrame:
     """Mean of each tile's 4 corners (lon wrapped to [-180, 180))."""
     c = np.stack(tiles["corners"].to_numpy())
     lon = (c[:, :, 0].mean(axis=1) + 180) % 360 - 180
@@ -194,7 +194,7 @@ def tile_passes(tiles, schedule, elements: dict | None = None) -> pd.DataFrame:
     ]
     if s2.empty:
         return pd.DataFrame(columns=cols)
-    centres = tile_centres(tiles)
+    centers = tile_centers(tiles)
     sats = {}
     for platform, omm in (elements or {}).items():
         from swathcast.ephemeris import satrec
@@ -223,7 +223,7 @@ def tile_passes(tiles, schedule, elements: dict | None = None) -> pd.DataFrame:
     for dt, grp in pairs.groupby("dt"):
         row = s2.loc[dt]
         begin, end = row["begin_time"], row["end_time"]
-        where = centres.loc[grp["tile"]]
+        where = centers.loc[grp["tile"]]
         sat = sats.get(row["platform"])
         if sat is not None:
             times, direction = orbit_times(

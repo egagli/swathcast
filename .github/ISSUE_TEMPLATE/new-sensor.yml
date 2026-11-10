@@ -7,7 +7,7 @@ body:
     attributes:
       value: |
         swathcast shows only real data: planned passes from an operator's published plan (or, for
-        an instrument that images continuously, its orbit), recent acquisitions from a catalogue,
+        an instrument that images continuously, its orbit), recent acquisitions from a catalog,
         and latency measured by the hourly poll. Nothing is extrapolated. Fill in what you know and
         mark the rest **unknown**; see `docs/data-sources.md` for how existing missions are
         described.
@@ -60,9 +60,9 @@ body:
   - type: textarea
     id: history
     attributes:
-      label: History catalogue (recent acquisitions)
+      label: History catalog (recent acquisitions)
       description: >-
-        A catalogue the browser can query without a login (CORS-open), e.g. NASA CMR, a STAC API.
+        A catalog the browser can query without a login (CORS-open), e.g. NASA CMR, a STAC API.
         Give the collection ID and the query that finds one footprint's products.
       placeholder: "endpoint, collection ID, example query"
   - type: textarea
@@ -70,7 +70,7 @@ body:
     attributes:
       label: Latency sources
       description: >-
-        Where products appear and how fast, one line each: the reference catalogue (defines the
+        Where products appear and how fast, one line each: the reference catalog (defines the
         list of acquisitions), every mirror or derived product worth tracking, any publication
         timestamp they carry, and whether a login is needed. If a login is needed, say which
         repository secret would hold it.

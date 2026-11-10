@@ -22,10 +22,10 @@
   --radius: 12px;
   --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
   /* missions (validated: OKLab CVD separation, labels always beside them) */
-  /* mission colours, "Jewel" (2026-10-06): amethyst, vermilion, emerald,
+  /* mission colors, "Jewel" (2026-10-06): amethyst, vermilion, emerald,
      aquamarine, orchid; three spares in the order new missions take them
      (amber, sapphire, garnet). Checked with the dataviz palette validator:
-     the five in use, every pair, colour-blind dE 10.6 / normal 18.8 on
+     the five in use, every pair, color-blind dE 10.6 / normal 18.8 on
      white; dark steps below on the dark surface 8.2 / 16.4. */
   --s1: #6b2c9e; --s2: #e04a2a; --l8: #178a73; --l9: #4cc7b2; --nisar: #c27ad4;
   --m6: #e89a4e; --m7: #3a6ee6; --m8: #9c1d38;
@@ -213,7 +213,7 @@ tr.projected td.when, .pass-list tr.item.projected td.when { font-style: italic;
 .detail-card .dc-basis.proj { padding: 6px 8px; border: 1px dashed var(--muted); border-radius: 6px; color: var(--ink-2, var(--ink)); background: var(--surface-2, transparent); }
 .hist-table a.proj { font-style: italic; border-bottom: 1px dashed var(--muted); text-decoration: none; }
 .detail-card .dc-basis.sat-warn { padding: 6px 8px; border-radius: 6px; background: var(--warn-bg); color: var(--warn-ink); }
-/* A retired platform (platforms.json): greyed out, with its reason on hover */
+/* A retired platform (platforms.json): grayed out, with its reason on hover */
 label.check.retired { opacity: .45; cursor: help; }
 label.check.retired input { cursor: help; }
 .retired-name { color: var(--muted); cursor: help; }

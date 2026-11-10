@@ -58,5 +58,5 @@ def coverage_cell(
     """
     if relative_orbit is None or anx_start_s is None:
         return None
-    centre = anx_start_s + duration_s / 2.0
-    return f"{int(relative_orbit):03d}-{int(centre // COVERAGE_CELL_SECONDS):03d}"
+    center = anx_start_s + duration_s / 2.0
+    return f"{int(relative_orbit):03d}-{int(center // COVERAGE_CELL_SECONDS):03d}"

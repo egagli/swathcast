@@ -9,7 +9,7 @@ Unless an entry gives another date, the checks below were run on **2026-09-29** 
 with `curl` and the package's own source classes. The recorded responses are in `tests/fixtures/` (re-record with
 `pixi run python tests/record_fixtures.py`); the live smoke tests are `pixi run test-live`.
 
-## Constellation (as seen in the catalogues)
+## Constellation (as seen in the catalogs)
 
 - CDSE IW GRDH products sensed 2026-09-27: **S1C 459, S1D 529, no S1A** (each also has a `_COG` twin).
 - ASF's `SENTINEL-1A_DP_GRD_HIGH` collection's newest granule was sensed **2026-06-29**; S1C and S1D
@@ -35,9 +35,9 @@ with `curl` and the package's own source classes. The recorded responses are in 
   1000), `polarisationChannels`, `timeliness` (`NRT-3h` or `Fast-24h`), `GeoFootprint`.
 - **Timestamps on one product** (`S1C_IW_GRDH_1SDV_20260925T193709_…_55E1`): sensing 19:37:09,
   `processingDate` 21:20:58, `OriginDate` 21:27:14, `PublicationDate` 21:29:54. `ModificationDate`
-  equalled `PublicationDate` on the products inspected.
+  equaled `PublicationDate` on the products inspected.
 - **`PublicationDate` semantics: not yet validated.** It is the natural candidate for "listed in the
-  catalogue", and the listing itself filters on it, so a product whose `PublicationDate` precedes its
+  catalog", and the listing itself filters on it, so a product whose `PublicationDate` precedes its
   actual indexing would be caught by the 3 h overlap. Whether it can precede visibility by more than
   that is exactly what the first-seen comparison below will show.
 - **Paging cap, verified 2026-09-29: CDSE OData silently stops after about 11,000 rows.** A
@@ -56,7 +56,7 @@ with `curl` and the package's own source classes. The recorded responses are in 
 - **Latency shape seen in the listing** (`PublicationDate − ContentDate/Start`, 5,854 IW GRD+SLC
   products published 2026-09-26..28): median about 2 h, p95 about 6.6 h, a handful at 25 h and two at
   71 h. The poller therefore admits new rows up to 14 days after sensing.
-- **Why CDSE is the reference**: it is the producer's own catalogue; in these checks it was complete
+- **Why CDSE is the reference**: it is the producer's own catalog; in these checks it was complete
   for both platforms and published within hours, while ASF took days (below). Planetary Computer is
   also fast for GRD but ingests CDSE's `_COG` products, so it is downstream of CDSE by construction.
 
@@ -169,7 +169,7 @@ with `curl` and the package's own source classes. The recorded responses are in 
   `thumbnail` (image/jpeg) and `metadata` (`.met`, JSON) at
   `https://bhoonidhi.nrsc.gov.in/stac/PRODUCTJPGS/NISAR/SSAR/<yyyy>/<MON>/<dd>/<id>.jpg|.met`, both public
   (no login, no query string) but without CORS (a preflight is 403); `QAPDF` with a broken href
-  (`://<id>_QA.pdf`). The thumbnail is one channel, grey, the product decimated 20×: an RSLC's in radar
+  (`://<id>_QA.pdf`). The thumbnail is one channel, gray, the product decimated 20×: an RSLC's in radar
   geometry (median 1.8 MB, up to 12 MB), a GCOV's on its UTM grid (400 m pixels at 20 m spacing,
   median ~0.35 MB), exactly the extent the `.met` gives (`EPSG`, `ProdUL…LR MapX/Y`; the item's
   `ProdLatLon` in lat/lon, from the top-left, clockwise, then the first again), black outside the swath,
@@ -258,11 +258,11 @@ with `curl` and the package's own source classes. The recorded responses are in 
   (granules sensed on the 12th inserted on the 13th); Aqua's NRT stream had gaps of 30–110 min on 11
   and 12 Oct.
 - **Sentinel-3 at CDSE** (checked 2026-10-13): `Collection/Name eq 'SENTINEL-3'`, names
-  `S3A_OL_1_EFR____<start>_<stop>_<created>_<duration>_<cycle>_<relorbit>_<frame>_<centre>_O_<NR|NT|ST>_<baseline>.SEN3`.
+  `S3A_OL_1_EFR____<start>_<stop>_<created>_<duration>_<cycle>_<relorbit>_<frame>_<center>_O_<NR|NT|ST>_<baseline>.SEN3`.
   Attributes include `timeliness` (`NR`, `NT`), `relativeOrbitNumber`, `orbitNumber`,
   `orbitDirection`, `cycleNumber`, `productType`. On 2026-10-12, NRT: 459 OLCI EFR (daylight, partial
   frames at the terminator) and 991 SLSTR RBT. `PublicationDate` − sensing for NRT ~1.5–2 h; NTC a day
-  later (`_NT_`, often a different processing centre). The frame field is the start in seconds after
+  later (`_NT_`, often a different processing center). The frame field is the start in seconds after
   the ascending node (see methodology); 12 S3B SLSTR NRT products were named frame `6120`, starting a
   minute after the node. Frames can be split: `…_0540_…` twice (030610–030645 and 030645–030910).
   Products of past years are still being republished (old `SL_2_AOD`), hence the reference listing's
@@ -292,7 +292,7 @@ with `curl` and the package's own source classes. The recorded responses are in 
   links of the form `/documents/d/sentinel/s1c_mp_user_<start>_<end>` (S1) and
   `s2b_mp_acq__kml_<start>_<end>` (S2), start/end in the name. On 2026-09-29 the S1 page linked 214
   files back to S1A in February (18 still covering the future) and filed one S1D plan under the
-  Sentinel-1C heading. S1 placemark fields: `SatelliteId, DatatakeId, Mode, Swath, Polarisation,
+  Sentinel-1C heading. S1 placemark fields: `SatelliteId, DatatakeId, Mode, Swath, Polarization,
   ObservationTimeStart/Stop, ObservationDuration, OrbitAbsolute, OrbitRelative` (polarizations seen:
   DV, DH, SH, SV); S2: `ID, Mode, ObservationTimeStart/Stop, ObservationDuration, OrbitAbsolute,
   OrbitRelative, Scenes` (modes NOBS, VIC, DARK-O, RAW, SUN).
@@ -300,7 +300,7 @@ with `curl` and the package's own source classes. The recorded responses are in 
   (cycle day of each date of a 16-day cycle, keyed from 1970-01-01), `cycle_path_row.json` (per
   mission and cycle day: `{path, rows: [...]}`, rows 1–248 including night-side rows). WRS-2 outlines
   (57,784) from the LandsatLook map service `nimbus.cr.usgs.gov/arcgis/rest/services/LLook_Outlines/MapServer/1`.
-  USGS STAC (`landsatlook.usgs.gov/stac-server`, `landsat-c2l1`) has scene `datetime` (scene centre)
+  USGS STAC (`landsatlook.usgs.gov/stac-server`, `landsat-c2l1`) has scene `datetime` (scene center)
   and `created`; on 2026-09-26/27 it had no/few Landsat 8 scenes (0 and 114) against ~780 L9 a day.
 - **NASA NISAR** (`science.nasa.gov/mission/nisar/data/`) links the observation plan
   (`NISAR_ROP358_TFDB_ObservationPlan_CY2026-20260305.kmz`, 17 MB) and a released-data KMZ. Placemarks

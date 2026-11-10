@@ -12,7 +12,7 @@ product of the same frame or path/row is the better outline for the next one:
   ``LANDSAT_DAYS``, by (path, row).
 
 Each falls back to the planned footprint where no product was seen (or the
-catalogue failed); the schedule's meta records how many were replaced.
+catalog failed); the schedule's meta records how many were replaced.
 """
 
 from __future__ import annotations
@@ -36,7 +36,7 @@ MAX_PAGES = 60
 
 
 def _call(fn, *args, attempts: int = 4, **kw):
-    """One catalogue request, retried (USGS's STAC answers 502 now and then)."""
+    """One catalog request, retried (USGS's STAC answers 502 now and then)."""
     for i in range(attempts):
         try:
             r = fn(*args, **kw)
@@ -54,7 +54,7 @@ def _iso(t: datetime) -> str:
 
 def _usable(poly) -> bool:
     """A footprint the map can draw as it is: valid, and not across 180 deg
-    (catalogue rings there jump by ~360 deg; the plan's own outline is kept)."""
+    (catalog rings there jump by ~360 deg; the plan's own outline is kept)."""
     if poly is None or poly.is_empty or not poly.is_valid:
         return False
     w, _, e, _ = poly.bounds

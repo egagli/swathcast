@@ -57,7 +57,7 @@ DIRECTION_MAX_ABS_LAT = 70.0
 #: Sentinel-1 footprints are left exact.
 SITE_SIMPLIFY_DEG = 0.01
 #: Days of the recent past kept per sensor: a pass already imaged but not yet
-#: in any catalogue is still shown (as planned, not delivered) until it is
+#: in any catalog is still shown (as planned, not delivered) until it is
 #: delivered. About the p90 delivery time of the sensor's first source
 #: (2026-10: Sentinel-1 CDSE 6 h, Sentinel-2 CDSE 7 h, NISAR L0B 9 h, Landsat
 #: Level-1 at USGS 244 h), plus a day.
@@ -330,7 +330,7 @@ WIDESWATH_FILES = {
 
 def build_wideswath(out_dir: Path, sensors, sats: dict, start, end, days: int) -> dict:
     """The sinusoidal tiles and when MODIS, VIIRS and Sentinel-3 image each
-    (predicted from the orbit; Sentinel-3 passes labelled with their frame),
+    (predicted from the orbit; Sentinel-3 passes labeled with their frame),
     written beside the schedule.
     Returns counts for the sidecar; a mission whose platforms have no
     elements is left out (and said so)."""

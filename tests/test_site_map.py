@@ -1,5 +1,5 @@
 """The map's DOM-free helpers under node: AOIs (aoi.js), times (common.js),
-burst-map tiles (footprints.js), catalogue fetches (catalogues.js)."""
+burst-map tiles (footprints.js), catalog fetches (catalogs.js)."""
 
 import json
 import shutil
@@ -23,7 +23,7 @@ def run_node(tmp_path, body):
             ("a", "aoi"),
             ("c", "common"),
             ("fp", "footprints"),
-            ("cat", "catalogues"),
+            ("cat", "catalogs"),
             ("dr", "drape"),
             ("hi", "history"),
         )
@@ -85,7 +85,7 @@ const naive = a.parseAOI("POLYGON((179 -17, -179 -17, -179 -16, 179 -16, 179 -17
 out.naive = naive;
 out.naiveBox = a.aoiBBox(naive.geometry);
 out.naiveParts = a.aoiParts(naive.geometry);
-out.naiveCentre = a.aoiCenter(naive.geometry);
+out.naiveCenter = a.aoiCenter(naive.geometry);
 out.east = a.parseAOI("POLYGON((179 -17, 181 -17, 181 -16, 179 -16, 179 -17))").geometry;
 out.box = a.parseAOI("170,-20,-170,-10").geometry;
 out.boxBBox = a.aoiBBox(out.box);
@@ -99,7 +99,7 @@ out.linkUnclosed = a.aoiFromParam("0,0;1,0;1,1").coordinates[0].length;
     assert out["naive"]["geometry"]["type"] == "MultiPolygon"
     assert out["naiveBox"] == [179, -17, 181, -16]
     assert out["naiveParts"] == [[179, -17, 180, -16], [-180, -17, -179, -16]]
-    assert abs(out["naiveCentre"][0]) == 180
+    assert abs(out["naiveCenter"][0]) == 180
     assert out["east"] == out["naive"]["geometry"]
     assert out["boxBBox"] == [170, -20, 190, -10]
     assert out["pole"] == "Polygon" and out["poleBox"] == [-180, 85, 180, 89]
@@ -146,7 +146,7 @@ def test_bursts_arrive_tile_by_tile(tmp_path):
     out = run_node(
         tmp_path,
         """
-// a fake burst map: one IW burst at the centre of each 2-degree tile
+// a fake burst map: one IW burst at the center of each 2-degree tile
 const entry = (x, y) => ({ title: `S1_137_${String(290000 + x * 100 + y).padStart(6, "0")}_IW2-BURSTMAP`,
   polygons: [[[y * 2 + 0.9, x * 2 + 0.9, y * 2 + 0.9, x * 2 + 1.1, y * 2 + 1.1, x * 2 + 1.1, y * 2 + 0.9, x * 2 + 0.9].join(" ")]] });
 let calls = 0, failAt = null;
@@ -171,7 +171,7 @@ out.calls = calls; out.after = after.length;
     assert out["calls"] < 25 and out["after"] < 25
 
 
-def test_catalogue_retry(tmp_path):
+def test_catalog_retry(tmp_path):
     out = run_node(
         tmp_path,
         """
@@ -234,11 +234,11 @@ out.cornerPx = cs.map(([lon, lat]) => px(lon, lat).map((v) => Math.round(v * 100
 out.widened = hi.widenToImage([[-125, 49.9], [-121, 49.9], [-121, 46.9], [-125, 46.9]], [10, 20, 989, 979], 1000, 1000);
 """,
     )
-    assert out["worst"] < 0.01  # metres
+    assert out["worst"] < 0.01  # meters
     assert out["bbox"] == [-125, 46.9, -121, 49.9]
     assert (
         abs(out["mid"][0] - 500.5) < 1e-6 and 6 < 500 - out["mid"][1] < 8
-    )  # pixel centres
+    )  # pixel centers
     assert out["top"][1] < 1
     assert out["cornerPx"] == [[0, 0], [343, 0], [343, 343], [0, 343]]
     (w, n), (e, _), (_, s) = out["widened"][:3]
@@ -247,8 +247,8 @@ out.widened = hi.widenToImage([[-125, 49.9], [-121, 49.9], [-121, 46.9], [-125, 
 
 def test_opera_fit_and_single_channel_previews(tmp_path):
     """An OPERA burst browse (no published grid) is fitted to its footprint:
-    its data spans the footprint's UTM box east-west, square pixels, centred
-    north-south. A Sentinel-1 channel preview is grey, one asset, rescaled."""
+    its data spans the footprint's UTM box east-west, square pixels, centered
+    north-south. A Sentinel-1 channel preview is gray, one asset, rescaled."""
     out = run_node(
         tmp_path,
         """

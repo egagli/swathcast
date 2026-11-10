@@ -39,7 +39,7 @@ out.north = g.destination(10, 80, 0, 1111.9508);
 """,
     )
     iw = out["sentinel-1|IW"]
-    assert 488 <= (iw[0] + iw[1]) / 2 <= 500  # GRD centres right of the track
+    assert 488 <= (iw[0] + iw[1]) / 2 <= 500  # GRD centers right of the track
     assert iw[1] - iw[0] == 250
     assert out["sentinel-1|XX"] == iw  # unknown mode: IW
     assert out["sentinel-1|EW"][1] - out["sentinel-1|EW"][0] > 400
@@ -83,7 +83,7 @@ SATELLITE_JS = (
 def test_wide_swath_passes_match_python(tmp_path):
     """The map times a MODIS/VIIRS/Sentinel-3 pass at the AOI itself
     (swathgeom.closestApproach, satellite.js); the schedule times it at the
-    tile centre (wideswath.tile_passes, sgp4). Same elements, same answer."""
+    tile center (wideswath.tile_passes, sgp4). Same elements, same answer."""
     import urllib.request
 
     import pandas as pd
@@ -293,7 +293,7 @@ def test_sentinel3_quicklook_is_placed_from_the_orbit(tmp_path):
     across the track, right edge of the swath first) placed from the orbit:
     on the recorded S3B frames (relative orbit 304, ~80 N, descending), the
     footprint's points map onto the image's edges; s3Browse takes the quicklook from CDSE's download
-    host (the catalogue's link redirects there)."""
+    host (the catalog's link redirects there)."""
     import urllib.request
 
     from conftest import load_fixture

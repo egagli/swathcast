@@ -1,4 +1,4 @@
-"""ESA Copernicus Data Space Ecosystem (CDSE) OData catalogue.
+"""ESA Copernicus Data Space Ecosystem (CDSE) OData catalog.
 
 CDSE is the reference catalog: the tracking universe is every IW GRDH / IW
 SLC product it publishes. Verified field notes are in docs/sources.md.

@@ -83,7 +83,7 @@ function updatesCell(p, feed) {
   return list + fetchedList(fetchedFor(p.code, p, feed)) + page || '<span class="nm">—</span>';
 }
 
-// The satellite's catalogue record at CelesTrak (orbit, launch, decay; and
+// The satellite's catalog record at CelesTrak (orbit, launch, decay; and
 // its orbital elements from there).
 const celestrak = (p) => (p.norad ? `<div class="nm">${link(`https://celestrak.org/satcat/table-satcat.php?CATNR=${p.norad}`, `CelesTrak #${p.norad} ↗`)}</div>` : "");
 const UPCOMING_STATE = { planned: ["Planned", "b-info"], commissioning: ["Launched, commissioning", "b-warn"] };

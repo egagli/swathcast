@@ -1,7 +1,7 @@
-// Continuous colour ramps for "time until the next acquisition", interpolated
+// Continuous color ramps for "time until the next acquisition", interpolated
 // in OKLab (perceptually even steps between the stops).
 
-// Days on the colour axis, and the square-root scale that spreads the next
+// Days on the color axis, and the square-root scale that spreads the next
 // few days (where most footprints fall) across more of the ramp.
 export const HORIZON_D = 30;
 export const scaleT = (days) => Math.sqrt(Math.min(Math.max(days, 0), HORIZON_D) / HORIZON_D);
@@ -10,7 +10,7 @@ export const TICKS_D = [0, 1, 3, 7, 14, 30];
 export const RAMPS = {
   // dark green (about to happen) -> dark red (furthest out), as asked
   greenred: ["#00441b", "#1a9850", "#a6d96a", "#fee08b", "#fdae61", "#d73027", "#67001f"],
-  // colour-vision-deficiency safe: viridis, dark (about to happen) -> light
+  // color-vision-deficiency safe: viridis, dark (about to happen) -> light
   // (furthest out), lightness rising monotonically, like the green-red ramp
   cvd: ["#440154", "#443983", "#31688e", "#21918c", "#35b779", "#90d743", "#fde725"],
 };
@@ -44,7 +44,7 @@ export function oklabToHex([L, a, b]) {
 }
 
 const labCache = new Map();
-// Colour at t in [0, 1] along a ramp.
+// Color at t in [0, 1] along a ramp.
 export function rampColor(name, t) {
   if (!labCache.has(name)) labCache.set(name, RAMPS[name].map(hexToOklab));
   const stops = labCache.get(name);

@@ -1,5 +1,5 @@
 """The map in a real browser (Playwright + Chromium), on a small synthetic site:
-one planned Sentinel-1 EW pass over Seattle a day from now, every catalogue
+one planned Sentinel-1 EW pass over Seattle a day from now, every catalog
 and tile server stubbed (empty answers), the JavaScript libraries from their
 CDNs. Skipped where Playwright, Chromium or the CDNs are not available.
 
@@ -42,7 +42,7 @@ def unavailable(why):
 
 
 CDN = "https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/5.24.0/maplibre-gl.min.js"
-STUBS = {  # catalogue hosts -> an empty answer of the shape the page expects
+STUBS = {  # catalog hosts -> an empty answer of the shape the page expects
     "api.daac.asf.alaska.edu": {"type": "FeatureCollection", "features": []},
     "cmr.earthdata.nasa.gov": {"items": [], "feed": {"entry": []}},
     "earth-search.aws.element84.com": {"type": "FeatureCollection", "features": []},
@@ -89,7 +89,7 @@ def wkb_polygon(ring):
 
 def build_site(root, now):
     """The site's files and a two-pass schedule over Seattle: S1D EW in a day,
-    and S1D EW 6 h ago (imaged, in no catalogue yet)."""
+    and S1D EW 6 h ago (imaged, in no catalog yet)."""
     site = root / "site"
     data = site / "data"
     data.mkdir(parents=True)
@@ -180,7 +180,7 @@ def wide_swath_site(data, now):
         pd.Timestamp(now) - pd.Timedelta(days=2),
         pd.Timestamp(now) + pd.Timedelta(days=8),
     )
-    centre = pd.DataFrame({"tile": ["h09v04"], "lon": [-122.0], "lat": [47.0]})
+    center = pd.DataFrame({"tile": ["h09v04"], "lon": [-122.0], "lat": [47.0]})
     sats = {p: satrec(omm[p]) for p in ("Terra", "S3A", "S3B")}
     pq.write_table(
         pa.table(
@@ -197,7 +197,7 @@ def wide_swath_site(data, now):
         ("modis", "modis_tile_passes"),
         ("sentinel-3", "s3_tile_passes"),
     ):
-        p = wideswath.sin_tile_passes(centre, sats, mission, t0, t1)
+        p = wideswath.sin_tile_passes(center, sats, mission, t0, t1)
         cols = {
             "tile": [str(x) for x in p["tile"]],
             "platform": [str(x) for x in p["platform"]],
@@ -279,7 +279,7 @@ ASF_BROWSE = {
 
 # Planetary Computer's Sentinel-1 GRD item at a pass (history.js BROWSE.s1:
 # its search by point, limit 5), so a preview opens with its channels
-# (colour, VV, VH); the preview images: a 1x1 PNG
+# (color, VV, VH); the preview images: a 1x1 PNG
 PC_S1_ITEM = {
     "type": "FeatureCollection",
     "features": [
@@ -344,7 +344,7 @@ def stub(route):
         or "googletagmanager" in url
     ):
         return route.abort()
-    # the libraries: fetched here (Python honours a proxy the browser may not
+    # the libraries: fetched here (Python honors a proxy the browser may not
     # be told about), once per run
     if url not in CACHE:
         try:
@@ -440,7 +440,7 @@ def test_one_list_with_now_and_one_selection(browser, server):
         "[...document.querySelectorAll('table.pass-list tr.item')].map(r => r.className + ' ' + r.innerText)",
     )
     assert len(rows) == 1 and "S1D" in rows[0] and "in 24.0 h" in rows[0]
-    # the other tab: the pass of 6 h ago, in no catalogue yet (EW: no RTC or CSLC is made)
+    # the other tab: the pass of 6 h ago, in no catalog yet (EW: no RTC or CSLC is made)
     page.click('#list-tabs [data-tab="past"]')
     rows = js(
         page,

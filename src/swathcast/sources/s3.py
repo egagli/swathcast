@@ -11,7 +11,7 @@ Verified 2026-10-13 (docs/sources.md):
   product of the frame: ``..._0179_145_081_3420_...`` is duration 179 s,
   cycle 145, relative orbit 081, frame 3420 (s after the ascending node).
   The same frame's NRT and NTC products, EUMETSAT's copy (processed by
-  another centre, so named ``_MAR_`` instead of ``_PS1_``) and its Level-2
+  another center, so named ``_MAR_`` instead of ``_PS1_``) and its Level-2
   products share platform, instrument, cycle, relative orbit and frame, so
   the granule id is ``S3A_OL_1_EFR_20261013T133354_145_081_3420`` (with the
   reference's start) and sources are matched on platform, instrument, cycle,

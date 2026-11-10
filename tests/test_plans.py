@@ -145,7 +145,7 @@ def omm():
 
 
 def test_landsat_scene_times_from_the_orbit(truth, omm):
-    """40 USGS STAC scenes: the pass nearest the WRS-2 centre on the scene's
+    """40 USGS STAC scenes: the pass nearest the WRS-2 center on the scene's
     date is within 10 s of the scene time (the 10:12 formula: tens of min)."""
     errs, formula = [], []
     df = pd.DataFrame(truth["landsat"])
@@ -219,7 +219,7 @@ def test_landsat_turnaround_rows_timed_from_the_orbit(omm):
     import geopandas as gpd
     from shapely.geometry import box
 
-    truth = [  # platform, path, cycle day, WRS-2 centre lon, scene time
+    truth = [  # platform, path, cycle day, WRS-2 center lon, scene time
         ("L8", 181, 2, 88.7477, "2026-08-26T10:17:07.548Z"),
         ("L9", 173, 2, 101.1082, "2026-08-26T09:27:45.354Z"),
         ("L8", 69, 1, -98.2052, "2026-08-25T22:44:56.100Z"),

@@ -231,7 +231,7 @@ function auditNote() {
   const ok = !a.missing_rows && !a.duplicate_rows && !a.bad_status;
   $("audit-note").innerHTML = `Tracking-table audit: ${a.granules.toLocaleString()} granules, ${a.rows.toLocaleString()} rows; ` +
     `<span class="${ok ? "good" : "bad"}">${a.missing_rows} missing, ${a.duplicate_rows} duplicate, ${a.bad_status} invalid</span>. ` +
-    "Every granule the reference catalogue listed has a row at every source for its product; each is seen, still pending (censored) or timed out.";
+    "Every granule the reference catalog listed has a row at every source for its product; each is seen, still pending (censored) or timed out.";
 }
 
 function healthTable(health) {

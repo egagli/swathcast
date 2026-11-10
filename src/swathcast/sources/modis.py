@@ -74,7 +74,7 @@ VIIRS_SNOW = {
     "N21": "C3824913163-NSIDC_CPRD",
 }
 #: learned-coverage cell: day/night flag and a 10-degree box of the granule
-#: centre (snow products are made for daytime land granules only)
+#: center (snow products are made for daytime land granules only)
 CELL_DEG = 10
 
 
@@ -107,7 +107,7 @@ def platform_of(gid: str) -> str:
         raise ValueError(f"unknown MODIS/VIIRS product {gid!r}") from exc
 
 
-def _centre(umm: dict):
+def _center(umm: dict):
     try:
         pts = umm["SpatialExtent"]["HorizontalSpatialDomain"]["Geometry"]["GPolygons"][
             0
@@ -125,7 +125,7 @@ def acquisition(item: dict, product_type: str, mode: str) -> Acquisition:
     umm = item["umm"]
     gid = granule_id(producer_id(umm))
     rng = umm["TemporalExtent"]["RangeDateTime"]
-    lon, lat = _centre(umm)
+    lon, lat = _center(umm)
     flag = (umm.get("DataGranule") or {}).get("DayNightFlag") or "Unspecified"
     insert = provider_insert_date(umm)
     cell = (

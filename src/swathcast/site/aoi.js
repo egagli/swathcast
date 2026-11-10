@@ -6,7 +6,7 @@
 // all within [-180, 180]: one that crosses 180 deg is stored as a
 // MultiPolygon split there (the Box tool draws them so too). aoiBBox and
 // aoiParts see through the split: the one is continuous across 180 (its east
-// edge may exceed 180), the other is the pieces to search catalogues with.
+// edge may exceed 180), the other is the pieces to search catalogs with.
 
 const wrapLon = (x) => ((((x + 180) % 360) + 360) % 360) - 180;
 const r6 = (v) => Math.round(v * 1e6) / 1e6;
@@ -63,7 +63,7 @@ export function parseAOI(text) {
 
 // ------------------------------------------------------------ checking
 // Ranges, rings and the antimeridian. Returns {geometry, note}: the
-// geometry normalised (longitudes within [-180, 180], split at 180), and a
+// geometry normalized (longitudes within [-180, 180], split at 180), and a
 // note when something was read in a way the person should know about.
 export function checkAOI(g) {
   if (!g || !["Point", "Polygon", "MultiPolygon"].includes(g.type)) {
@@ -150,7 +150,7 @@ const boxOf = (pts) => {
 };
 
 // The pieces of the AOI, one [w, s, e, n] each, all within [-180, 180]: what
-// a catalogue is searched with. A Point gives one zero-size box.
+// a catalog is searched with. A Point gives one zero-size box.
 export function aoiParts(g) {
   if (g.type === "Point") return [[g.coordinates[0], g.coordinates[1], g.coordinates[0], g.coordinates[1]]];
   return polysOf(g).map((rings) => boxOf(rings[0]));
@@ -166,7 +166,7 @@ export function aoiBBox(g) {
   return [Math.min(...use.map((p) => p[0])), Math.min(...use.map((p) => p[1])), Math.max(...use.map((p) => p[2])), Math.max(...use.map((p) => p[3]))];
 }
 
-// The AOI's centre, [lon, lat] with lon within [-180, 180] (for local times).
+// The AOI's center, [lon, lat] with lon within [-180, 180] (for local times).
 export function aoiCenter(g) {
   if (g.type === "Point") return g.coordinates.slice(0, 2);
   const [w, s, e, n] = aoiBBox(g);

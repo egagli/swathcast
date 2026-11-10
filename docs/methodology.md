@@ -31,7 +31,7 @@ product or a field campaign around "usually 3 h" fails badly if 10 % of scenes t
 ## The tracking universe
 
 Each hour, the poller lists **every IW GRDH and IW SLC product that CDSE published since the last
-run** (OData, `PublicationDate` window, paged to the end, with a 3 h overlap to absorb catalogue
+run** (OData, `PublicationDate` window, paged to the end, with a 3 h overlap to absorb catalog
 indexing lag, duplicates dropped by name). `_COG` duplicates are excluded. Every listed product
 becomes one row per applicable source:
 
@@ -110,7 +110,7 @@ in the APIs states the coverage. So coverage is **learned from the data**:
 
 Consequences, stated plainly: "% not delivered" for these sources means *failures inside the area the
 source serves*, not coverage. While the history is short, a cell becomes eligible only once something
-in it has arrived, which slightly favours delivered rows; the effect shrinks as the history grows past
+in it has arrived, which slightly favors delivered rows; the effect shrinks as the history grows past
 one repeat cycle. ASF GRD and SLC are treated as full-coverage (`coverage = "full"`), a hypothesis the
 data will test: a full-coverage source with a large, geographically clustered "not delivered"
 fraction would falsify it.
@@ -219,28 +219,28 @@ none:
   (`FULL_FRAME=FALSE`) cover about half the nominal frame. The map draws footprints clipped at ±85°:
   MapLibre extends any fill that reaches its Web Mercator tiles' edge (±85.05°) to the pole. On the
   globe, the parts poleward of 85° (Sentinel-1 EW reaches 87.7° N, NISAR 88° S) are drawn by an overlay
-  (`site/overlay.js`: d3-geo, spherical polygons with great-circle edges) with the same colours and
+  (`site/overlay.js`: d3-geo, spherical polygons with great-circle edges) with the same colors and
   order, and can be hovered and clicked; the flat map ends at 85°. The data are not
   clipped, so an AOI inside a cap still lists its passes.
 - **Edges near the poles.** Orbits converge, so footprints pile up: over 12 days a point at 60° is
   under about 5 footprints of each mission, at 82° about 18 Sentinel-1 swaths, at 75° about 22 NISAR
-  frames. The map draws planned swaths without outlines (soonest on top, so the visible colour
+  frames. The map draws planned swaths without outlines (soonest on top, so the visible color
   boundaries are the real edges), fades the other footprints' outlines from 60° to a trace at 75°,
   and leaves out the segments on ±180° where a footprint was split at the antimeridian (790 of them
   in the 2026-09-30 schedule), which are not edges. MapLibre's fill antialiasing is off: its 1 px
-  outline in each polygon's own colour is drawn after all fills, so hidden footprints showed theirs.
+  outline in each polygon's own color is drawn after all fills, so hidden footprints showed theirs.
 - **Footprint timelines.** A footprint's popup lists its acquisitions of the last 90 days, read live
-  in the browser from the catalogues (only products that exist; `site/history.js`): Sentinel-1 IW
-  bursts from ASF's burst catalogue by full burst ID (the VV and VH bursts of one pass grouped);
-  Sentinel-1 EW/SM swaths from ASF's Level-0 products of that track over the swath centre;
+  in the browser from the catalogs (only products that exist; `site/history.js`): Sentinel-1 IW
+  bursts from ASF's burst catalog by full burst ID (the VV and VH bursts of one pass grouped);
+  Sentinel-1 EW/SM swaths from ASF's Level-0 products of that track over the swath center;
   Sentinel-2 tiles from Earth Search `sentinel-2-l1c` by MGRS tile (the tile's own sensing time and
   cloud cover; a reprocessed datatake counted once); Landsat scenes from Earth Search
   `landsat-c2-l2` by path/row (Level-2, days behind USGS's Level-1, whose STAC does not allow browser
   requests); NISAR frames from CMR's ASF L1 RSLC by track and frame (L-band), and S-band from
   this site's per-track files of the poller's Bhoonidhi listing (`nisar_s/<track>.parquet`; its
   search needs a login). The planned acquisitions follow, and a timeline shows both.
-- **Grey and filtered footprints.** A footprint whose acquisitions are all filtered out is not drawn.
-  Grey means nothing is planned for it at all in the schedule, and is drawn only while that mission's
+- **Gray and filtered footprints.** A footprint whose acquisitions are all filtered out is not drawn.
+  Gray means nothing is planned for it at all in the schedule, and is drawn only while that mission's
   filters and the dates are at their defaults. Fill opacity defaults to 30 % (adjustable on the map).
 - **Polarizations are the real channels**, only for the SAR missions. ESA's S1 codes and the third
   token of a NISAR mode map to channels: SH → HH, SV → VV, DH → HH+HV, DV → VV+VH,
@@ -263,7 +263,7 @@ none:
 
 The schedule is built 30 days ahead (`schedule --days 30`) from published plans, so it is
 *planned* only as far as each agency publishes. Past that, every pass is *projected* for a year
-from today ([Projection](#projection-past-a-plans-end)), labelled so and never shown as planned.
+from today ([Projection](#projection-past-a-plans-end)), labeled so and never shown as planned.
 As of 2026-10-01 (plan ends) and 2026-11-09 (NISAR's plan):
 
 | Mission | Plan published by | Planned to | Then |
@@ -285,9 +285,9 @@ Sentinel-1/2 row and Sentinel-2 tile pass), NASA's KMZ, or USGS's calendar page;
 to its satellite's orbital elements at CelesTrak; a projected pass to the plan file whose last
 cycle it repeats. The daily schedule job picks up each new plan file, so the planned horizon rolls
 forward by itself. A footprint's popup says where each platform's plan ends. Its timeline writes the gap
-(Δ) between consecutive acquisitions, recent ones from the catalogue and upcoming ones from the plan
+(Δ) between consecutive acquisitions, recent ones from the catalog and upcoming ones from the plan
 (the gap across "now" runs from the last real one to the first planned one). Where they do not all
-fit (Sentinel-2 tiles see a pass every 1–2 days), the longest gaps are labelled first and every
+fit (Sentinel-2 tiles see a pass every 1–2 days), the longest gaps are labeled first and every
 dot's tooltip carries its gap.
 
 ### Projection past a plan's end
@@ -295,7 +295,7 @@ dot's tooltip carries its gap.
 A *projected* acquisition is a planned (or predicted) one carried forward by whole repeat cycles
 past the end of its plan: each platform's last cycle, repeated (`projection.py`). It is in no
 published plan and is subject to change. It is a fourth kind of pass beside observed (in a
-catalogue), planned (in an agency's plan) and predicted (from the orbit, for the missions without a
+catalog), planned (in an agency's plan) and predicted (from the orbit, for the missions without a
 plan), and the map never shows it as planned: the popups, the AOI list and the detail card tag it
 *projected* and say what it is, which plan it repeats (linked) and, once the monthly hindcast is
 published, how well that held at this lead for this platform; the timeline draws it dotted; a
@@ -351,7 +351,7 @@ exactly the calendar's later dates (a unit test checks this). Against USGS Level
 
 USGS's calendar itself reaches any date: the dates past the 30-day window are USGS's published
 calendar, but USGS also keeps a separate list of pending acquisitions and can change either, and the
-times there are ours, so they are labelled projected like the rest. What the hindcast cannot see:
+times there are ours, so they are labeled projected like the rest. What the hindcast cannot see:
 USGS changing its calendar (Landsat 8 is past its design life).
 
 **Sentinel-1 and Sentinel-2.** ESA keeps months of old plan files online (S1 from 2026-02-10, S2
@@ -427,15 +427,15 @@ Without plans, the orbit says both *whether* and *when* (`wideswath.py`, CelesTr
    SLSTR nadir −500 to +996 km (both tilted away from the sun, to the right of travel).
 2. **Tiles.** The map's footprints are the MODIS sinusoidal tiles (10°, h00–35 × v00–17; the 460 that
    hold any of the Earth), the grid of the MODIS/VIIRS land and snow products (MOD09GA, MOD10A1,
-   VNP10A1, …). A tile is imaged by a pass whose swath covers the tile centre; its time is the closest
-   approach of the ground track (10 s steps, parabolic refinement), and the centre's cross-track
+   VNP10A1, …). A tile is imaged by a pass whose swath covers the tile center; its time is the closest
+   approach of the ground track (10 s steps, parabolic refinement), and the center's cross-track
    distance gives the view zenith angle (spherical Earth; MODIS reaches ~65°, VIIRS ~70° at the edges).
-   Checked against LANCE's near-real-time Level-1B granules whose CMR footprint holds the tile centre,
+   Checked against LANCE's near-real-time Level-1B granules whose CMR footprint holds the tile center,
    for 60 random tiles, 2026-10-11 00:00 to 10-12 09:00 UTC: predicted passes with a real granule
    Terra 265/268, Aqua 247/265 (14 of the 18 misses fall in two Aqua NRT outages that window), Suomi
    NPP 323/323, NOAA-20 335/335, NOAA-21 321/321; real passes predicted 98–99 % (Terra 265/268, Aqua
    247/252, Suomi NPP 323/330, NOAA-20 335/339, NOAA-21 321/329; CMR's granule outlines are four
-   corners joined straight, so a granule can claim a tile centre just outside its swath). In the same
+   corners joined straight, so a granule can claim a tile center just outside its swath). In the same
    check, all three VIIRS NRT streams were empty from about 17:00 on 12 Oct to 12:00 on 13 Oct (an
    outage, back-filled later), which is why the window ends on the 12th.
 3. **At the AOI.** A tile is 1,100 km across, so over an AOI each candidate pass (from the tiles within
@@ -464,12 +464,12 @@ Without plans, the orbit says both *whether* and *when* (`wideswath.py`, CelesTr
    the four passes of 11–12 Oct had exactly the real products' relative orbit and frame).
 5. **Instruments and light.** A Sentinel-3 pass lists OLCI only in daylight at the AOI and when the
    AOI is inside OLCI's narrower strip. Day or night is the sun's elevation at the AOI (or tile
-   centre) at the pass; the map's *Light* filter starts with night off, as Landsat's night side does.
+   center) at the pass; the map's *Light* filter starts with night off, as Landsat's night side does.
 
 The live satellites draw the same strips (MODIS ±1,175 km, VIIRS ±1,531 km, Sentinel-3 SLSTR), always
 filled: these sensors image on every orbit. Their placement was checked on 502 real products of 13 Oct
 (the map's own `swathgeom.js` with satellite.js and `tle.json`): the satellite's nadir lay inside every
-real footprint, 7–21 km (median) from the real swath's centre line; Sentinel-3 strips overlapped the
+real footprint, 7–21 km (median) from the real swath's center line; Sentinel-3 strips overlapped the
 real frames by a median IoU of 0.996 (boundaries ~3–4 km apart, OLCI and SLSTR alike). MODIS/VIIRS
 strips are drawn across the inertial direction of travel (above): their corners then lie a median
 17–35 km from the real granule corners, against 61–77 km across the ground track.
@@ -478,17 +478,17 @@ strips are drawn across the inertial direction of travel (above): their corners 
 
 CDSE serves a quicklook JPEG with every Sentinel-3 product, public and CORS-open, but in the
 instrument's own geometry: rows are scan lines in time order, columns run across the track, and there
-is no lat/lon grid (the product's footprint outline is all the catalogue gives). Worldview has no
+is no lat/lon grid (the product's footprint outline is all the catalog gives). Worldview has no
 Sentinel-3 layer. So the map places the OLCI quicklook from the orbit (`site/swathgeom.js`
 `swathImageModel`): a place's row is the time the scan line through it was taken (its closest approach
 to the SGP4 ground track; Sentinel-3 is yaw-steered, so scan lines are perpendicular to it), and its
 column its cross-track distance, linear between the swath's right edge (column 0) and its left. The
 frame's first and last scan lines and its two swath edges are read from the footprint (they match the
-catalogue's start and stop times to within 0.4 s on 18 frames), so elements propagated weeks from
+catalog's start and stop times to within 0.4 s on 18 frames), so elements propagated weeks from
 their epoch still land the image on its footprint.
 
 - **Orientation.** Of the 8 ways to lay the image on its footprint, one matched NASA Worldview's Terra
-  true colour of the same morning best on each of 7 OLCI frames (correlation 0.28–0.79, against at
+  true color of the same morning best on each of 7 OLCI frames (correlation 0.28–0.79, against at
   most 0.43 for any other): the first row is the frame's start, the first column the right of travel.
 - **Accuracy.** Against OpenStreetMap's land/water map (GIBS `OSM_Land_Water_Map`), the shift that
   best aligned each third × third of a frame with the coastlines: OLCI, 33 patches on 24 daytime
@@ -498,7 +498,7 @@ their epoch still land the image on its footprint.
   the right of travel, ~6 at the left): it is part of the swath's width (mapping only the data columns
   to the swath moved coastlines a median 12 km) and is made transparent.
 - **Day only.** Every Sentinel-3 frame in daylight is descending. Night (ascending) SLSTR quicklooks are
-  thermal; their orientation could not be established (land/sea contrast at night favoured the image
+  thermal; their orientation could not be established (land/sea contrast at night favored the image
   turned 180° in only 10 of 18 frames), so they are not placed.
 
 ## Landsat and NISAR timing
@@ -510,11 +510,11 @@ latitude, because local solar time along a sun-synchronous track varies with lat
 (`ephemeris.nearest_pass`), the day's orbit is propagated once (SGP4, CelesTrak elements) and each
 footprint gets the pass on its date, in its direction, that passes it as expected:
 
-- **Landsat**: WRS-2 scene centres lie on the nominal ground track, so the pass that comes closest
+- **Landsat**: WRS-2 scene centers lie on the nominal ground track, so the pass that comes closest
   (accepted within 60 km). Against 4,707 USGS STAC scene times (2026-09-10/11/26/27): median 0.3 s,
   p99 6 s; closest-approach distance median 2.4 km. 6 were a day off where the calendar and UTC dates
   differ. p95 0.5 s for scenes 1–2 days from the elements' epoch, 5–6 s at 17–18 days.
-- **NISAR** looks left: frame centres were 561–579 km (p5–p95) left of the ground track in the same
+- **NISAR** looks left: frame centers were 561–579 km (p5–p95) left of the ground track in the same
   check, so the pass that has the frame ~567 km to its left (accepted within 60 km). Against 2,804
   RSLC granule mid-times: median 0.65 s, p95 14 s (frames are ~35 s long), 24 over a minute.
 
@@ -524,7 +524,7 @@ Without elements, both fall back to the formula (the `timing` column says which 
 turns: it runs neither north nor south, so the direction filter could drop the scene's own pass,
 and ~540 scenes a month (of ~70,000) took the formula, up to an orbit off. Poleward of 78° a scene
 left without a pass is now looked for in either direction (elsewhere a pass the other way can cross
-a scene centre, so the filter stays). Three USGS row-246 scenes (2026-08-25/26), timed with elements
+a scene center, so the filter stays). Three USGS row-246 scenes (2026-08-25/26), timed with elements
 a month later, come out within 15 s (`test_landsat_turnaround_rows_timed_from_the_orbit`).
 
 ## The live satellites on the map
@@ -536,10 +536,10 @@ direction of travel over the rotating Earth (what a zero-Doppler radar looks alo
 
 | Instrument | Strip (km from the ground track) | From |
 |---|---|---|
-| Sentinel-1 IW | 369–619 right | 250 km swath; GRD footprint centres 488–500 km right (`ephemeris.py`) |
+| Sentinel-1 IW | 369–619 right | 250 km swath; GRD footprint centers 488–500 km right (`ephemeris.py`) |
 | Sentinel-1 EW | 215–625 right | 400 km swath, incidence 18.9–47° |
 | Sentinel-1 SM | 215–625 right | the plan does not name the beam: the extent of all six 80 km beams |
-| NISAR | 446–688 left | ~240 km swath; frame centres 561–579 km left (see above) |
+| NISAR | 446–688 left | ~240 km swath; frame centers 561–579 km left (see above) |
 | Sentinel-2 MSI | 145 either side | 290 km swath |
 | Landsat OLI | 92.5 either side | 185 km swath |
 | MODIS | 1,175 either side, across the orbit's inertial direction | measured on LANCE granules: ±1,171–1,178 km; no yaw steering |
@@ -550,9 +550,9 @@ The strip is filled where the plan has the satellite imaging: inside a Sentinel-
 half a frame (18 s) of a NISAR frame time or half a scene (16 s) of a Landsat scene time. Checked on
 2026-10-05 against the next 30 h of the plans: at times inside each datatake (every 20 s), the strip's
 line of sight lay inside the planned footprint for 100% of samples (median, p10) for 1,444 IW and 721
-EW samples and 98.3% (mean) for 2,431 Sentinel-2 ones; the strip's centre was inside 400 of 400
+EW samples and 98.3% (mean) for 2,431 Sentinel-2 ones; the strip's center was inside 400 of 400
 sampled NISAR frames and Landsat scenes at their times, and over all of the schedule's orbit-timed
-frames and scenes it was within 300 km of the centre of every one (39,566 NISAR frames, 69,457
+frames and scenes it was within 300 km of the center of every one (39,566 NISAR frames, 69,457
 Landsat scenes). SM is the exception, as expected: its beam's 80 km strip is a third of the extent
 drawn.
 
@@ -560,7 +560,7 @@ drawn.
 
 **Tiles versus swaths.** A tile counts as imaged by a datatake when any part of it is: Sentinel-2
 makes a product for a tile even when the swath only clips it (mostly no-data). So zoomed in, a tile can
-be coloured by a pass a day before the swath that covers a given point inside it, and tiles can light up
+be colored by a pass a day before the swath that covers a given point inside it, and tiles can light up
 north of the planned swaths' reach. Each tile pass carries `coverage`, the fraction of the tile inside
 the datatake footprint, shown in the map as "covers ~N% of the tile". Checked against the real L1C
 footprints of two datatakes on 2026-09-22 (S2B relative orbit 70, S2C 142; 579 tiles): median absolute
@@ -583,7 +583,7 @@ their granule `SENSING_TIME`s run from 08:28 to 09:00), so "the time of the pass
 2. **Time: from the orbit.** The plan says *whether* a tile is imaged; the satellite's orbit says
    *when*. The schedule job fetches CelesTrak elements for S2A/B/C, propagates them with SGP4
    (`ephemeris.py`, the same model the map uses in the browser), and takes the moment the ground
-   track passes closest to the tile centre (1 s steps, parabolic refinement), clamped to the
+   track passes closest to the tile center (1 s steps, parabolic refinement), clamped to the
    datatake ± 30 s (real tiles were sensed up to 16 s before their datatake's planned start).
    Against 91 granule `SENSING_TIME`s in 7 datatakes (2026-09-26..27; fixture
    `tests/fixtures/s2_tile_sensing.json`, elements of 2026-09-29, so propagated 2–3 days back):
@@ -605,7 +605,7 @@ Sentinel-2 is needed.
 
 ## Other missions: Sentinel-2, Landsat 8/9, HLS, NISAR
 
-The same tracker runs once per mission (`missions.py`), with its own reference catalogue, sources and
+The same tracker runs once per mission (`missions.py`), with its own reference catalog, sources and
 table under `data/missions/<key>/`; definitions (first-seen latency, censoring, Kaplan–Meier, prompt
 rows, learned coverage, timeouts) are unchanged. Only the universes and matching differ:
 
@@ -640,7 +640,7 @@ rows, learned coverage, timeouts) are unchanged. Only the universes and matching
   the granules' time window and matched on that stamp (CMR cannot search producer ids without
   wildcards). LANCE deletes its products after 7 days (their CMR `Delete` date), so its snow source
   times out after 5. Snow products are made for daytime land granules only: learned coverage on
-  day/night × a 10° box of the granule centre. MODIS collection 6.1 and 7 Level-1B are both being
+  day/night × a 10° box of the granule center. MODIS collection 6.1 and 7 Level-1B are both being
   produced (2026-10-13), and both are tracked.
 - **Sentinel-3 frames** keep their key across processings: a frame's NRT and NTC products, EUMETSAT's
   copy (processed elsewhere, so named `_MAR_` where CDSE's is `_PS1_`) and its Level-2 products share

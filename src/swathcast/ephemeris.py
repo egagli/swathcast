@@ -8,7 +8,7 @@ ground track passes closest to it.
 Checked on 2026-09-29: for 91 Sentinel-2 tiles (7 datatakes, 2026-09-26..27)
 the closest-approach time matched the granule ``SENSING_TIME`` with median
 0.4 s and max 8.6 s (elements propagated 2-3 days back from their epoch); for
-1,683 Sentinel-1 GRD products the footprint centre sat 488-500 km (p5-p95)
+1,683 Sentinel-1 GRD products the footprint center sat 488-500 km (p5-p95)
 right of the ground track, as IW's right-looking geometry predicts.
 """
 
@@ -74,7 +74,7 @@ def closest_approach(
     slon, slat = subpoints(sat, ts)
     d = _haversine_km(lon[:, None], lat[:, None], slon[None, :], slat[None, :])
     i = np.argmin(d, axis=1)
-    # parabolic refinement of the minimum between neighbouring steps
+    # parabolic refinement of the minimum between neighboring steps
     j = np.clip(i, 1, len(ts) - 2)
     d0, d1, d2 = (d[np.arange(len(j)), j + k] ** 2 for k in (-1, 0, 1))
     denom = d0 - 2 * d1 + d2

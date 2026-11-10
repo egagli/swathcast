@@ -4,7 +4,7 @@ Verified 2026-09-29 (docs/sources.md):
 
 * The reference is USGS's public STAC (``landsatlook.usgs.gov/stac-server``),
   collections ``landsat-c2l1`` (L1) and ``landsat-c2l2-sr`` (L2 surface
-  reflectance), listed by their ``created`` time. ``datetime`` (scene centre)
+  reflectance), listed by their ``created`` time. ``datetime`` (scene center)
   is the sensing time. About 800 L1 and 650 L2 scenes a day.
 * **Landsat 8 real-time (RT) products are not in the public STAC**: L8 scenes
   appear only as T1/T2, 7-12 days after sensing. So Landsat 8 latency here is

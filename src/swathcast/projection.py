@@ -17,7 +17,7 @@ from that measurement (docs/methodology.md, "Projection").
 Time: shifting by whole repeat periods keeps the time of day, because each
 orbit is held on its reference ground track. This is used instead of
 propagating orbital elements months ahead (SGP4 drifts and does not know
-about manoeuvres); the hindcast compares the two.
+about maneuvers); the hindcast compares the two.
 """
 
 from __future__ import annotations

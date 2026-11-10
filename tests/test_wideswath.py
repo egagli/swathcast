@@ -49,7 +49,7 @@ def test_view_zenith_angle():
 # ---------------------------------------------------------------- passes
 def test_a_modis_tile_pass_is_inside_the_real_granule(sats):
     """The LANCE granule MOD021KM.A2026286.0940 (09:40-09:45 UTC): its
-    centre is imaged by Terra in that window, close to nadir."""
+    center is imaged by Terra in that window, close to nadir."""
     item = load_fixture("cmr_wideswath_umm.json")["modis_nrt"]
     a = modis.acquisition(item, "L1B", "MODIS")
     t0 = datetime(2026, 10, 13, 9, 0, tzinfo=UTC).timestamp()
@@ -187,7 +187,7 @@ def test_sentinel3_sources_match_on_the_frame():
         "304-1620",
     )
     assert a.orbit_direction in ("ascending", "descending")
-    # the NTC product and EUMETSAT's copy (another centre's name) match the same frame
+    # the NTC product and EUMETSAT's copy (another center's name) match the same frame
     ntc = s3.CDSES3Source(
         session=FakeSession(FakeResponse({"value": items})),
         product_type="OL_1_EFR",
@@ -225,8 +225,8 @@ def test_new_missions_are_registered():
 
 
 def test_sentinel3_tile_passes_carry_the_products_frame(sats):
-    """A pass over the centre of the real RBT frame (S3B, relative orbit 304,
-    frame 1620, 2026-10-12 04:26:28) is labelled with that frame."""
+    """A pass over the center of the real RBT frame (S3B, relative orbit 304,
+    frame 1620, 2026-10-12 04:26:28) is labeled with that frame."""
     from shapely.geometry import shape
 
     item = next(

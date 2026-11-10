@@ -640,7 +640,7 @@
       "state": "drifting",
       "since": null,
       "by": "NASA",
-      "summary": "In free drift since its last drag-makeup manoeuvres (Dec 2021), sinking below the A-Train toward later crossing times. NASA expects MODIS collection to end in late 2026/early 2027. Not projected: it no longer repeats its ground track.",
+      "summary": "In free drift since its last drag-makeup maneuvers (Dec 2021), sinking below the A-Train toward later crossing times. NASA expects MODIS collection to end in late 2026/early 2027. Not projected: it no longer repeats its ground track.",
       "source": "https://www.earthdata.nasa.gov/data/alerts-outages/transition-from-modis-viirs"
      },
      "notices": [
@@ -855,7 +855,7 @@
       "state": "operational",
       "since": null,
       "by": "ESA/EUMETSAT",
-      "summary": "Operational; recent notices are routine calibrations and manoeuvres (OLCI calibration 11 Nov 2026) and short anomalies.",
+      "summary": "Operational; recent notices are routine calibrations and maneuvers (OLCI calibration 11 Nov 2026) and short anomalies.",
       "source": "https://dataspace.copernicus.eu/news/2026-11-9-copernicus-sentinel-3a-unavailability-notice-olci-s09-calibration-planned-11"
      },
      "notices": [
@@ -895,7 +895,7 @@
       "state": "operational",
       "since": null,
       "by": "ESA/EUMETSAT",
-      "summary": "Operational; recent notices are routine manoeuvres and lunar calibrations (26 and 29 Oct 2026) and short OLCI anomalies.",
+      "summary": "Operational; recent notices are routine maneuvers and lunar calibrations (26 and 29 Oct 2026) and short OLCI anomalies.",
       "source": "https://dataspace.copernicus.eu/news/2026-10-30-copernicus-sentinel-3b-unavailability-notice-oop-manoeuvre-planned-29102026-doy-302"
      },
      "notices": [

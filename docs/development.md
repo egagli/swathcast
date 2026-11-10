@@ -6,7 +6,7 @@
 |---|---|---|
 | [`schedule.yml`](../.github/workflows/schedule.yml) | daily | plans for the next 30 days, as far as each is published (ESA, USGS, NASA), orbit-predicted MODIS/VIIRS/Sentinel-3 passes, footprint grids and orbit timing → `data` branch |
 | [`poll.yml`](../.github/workflows/poll.yml) | hourly | latency poller → `data` branch; fails if every source failed or one has failed > 24 h; opens/updates/closes the `satellite-status` issue (a satellite or data stream gone silent, [operations](operations.md)) |
-| [`pages.yml`](../.github/workflows/pages.yml) | after each poll/schedule, and on code changes | summarise, check the data contract, deploy Pages |
+| [`pages.yml`](../.github/workflows/pages.yml) | after each poll/schedule, and on code changes | summarize, check the data contract, deploy Pages |
 | [`hindcast.yml`](../.github/workflows/hindcast.yml) | monthly | how well each projection (a plan carried past its end) predicted what came next → `data` branch `hindcast/`, the site's `hindcast.json`; opens a `hindcast-failed` issue on failure |
 | [`notices.yml`](../.github/workflows/notices.yml) | daily | the agencies' newest notices for the tracked satellites (CDSE, NASA Earthdata, NOAA OSPO, USGS EROS) → `data` branch `notices/`, the Satellites page; opens/updates/closes the `registry-review` issue |
 | [`watchdog.yml`](../.github/workflows/watchdog.yml) | weekly | opens/updates a `stale-data` issue if data is stale or a source is failing; closes it on recovery |
@@ -82,4 +82,4 @@ additions.
 3. Verify its field semantics and identifier matching against the live API, write them up in
    `docs/sources.md`, record a fixture in `tests/record_fixtures.py`, and add offline tests plus a
    `@pytest.mark.live` smoke test.
-4. Give it a colour slot in `site/common.js` (`SOURCE_SLOT`) and a popup position in `site/map.js`.
+4. Give it a color slot in `site/common.js` (`SOURCE_SLOT`) and a popup position in `site/map.js`.

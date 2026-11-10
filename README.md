@@ -11,42 +11,42 @@ snowmelt, for example), field campaigns, and coordination between missions.
 
 **Live site: <https://egagli.github.io/maps/swathcast.html>**
 
-![The swathcast Passes page: a globe of NISAR frames coloured by time to the next acquisition, and an area of interest in the Pacific Northwest with its planned passes, footprints and timeline](docs/images/swathcast.jpg)
+![The swathcast Passes page: a globe of NISAR frames colored by time to the next acquisition, and an area of interest in the Pacific Northwest with its planned passes, footprints and timeline](docs/images/swathcast.jpg)
 
 ## What you can do
 
 ### Passes: the next acquisition over any place
 
-- **See every mission's native footprints**, each coloured by how long until it is next imaged:
+- **See every mission's native footprints**, each colored by how long until it is next imaged:
   Sentinel-1 IW bursts (ESA/OPERA burst IDs, e.g. `T137-292398-IW2`, timed to the second) and EW/SM
   swaths, Sentinel-2 MGRS tiles, Landsat 8/9 WRS-2 scenes and NISAR frames; MODIS, VIIRS and
   Sentinel-3 on the MODIS sinusoidal tiles (the grid of the MODIS/VIIRS land and snow products).
-- **Filter per mission**: platform, direction (labelled with each mission's local solar time, e.g.
+- **Filter per mission**: platform, direction (labeled with each mission's local solar time, e.g.
   Sentinel-1 ascending ~6 PM, descending ~6 AM), Sentinel-1 mode, track/path, burst/tile/row/frame,
   and for the SAR missions the real polarization channels (e.g. VV+VH, or HH+HV+VH+VV; for NISAR per
   radar, L-band and S-band). Dates are shared across missions. Landsat's ascending (night, thermal
   only) passes are off by default. MODIS, VIIRS and Sentinel-3 filter by **light** (day or night at
-  the place; night off by default, and then left out of footprint popups too; each platform labelled with its daytime equator crossing in local
+  the place; night off by default, and then left out of footprint popups too; each platform labeled with its daytime equator crossing in local
   solar time, from its current orbit: Terra and Aqua have drifted), MODIS and VIIRS also by **maximum view zenith angle** (their
-  pixels grow 2–5× towards the swath edges), Sentinel-3 by relative orbit and frame.
+  pixels grow 2–5× toward the swath edges), Sentinel-3 by relative orbit and frame.
 - **Draw or paste an area of interest** (GeoJSON, WKT or `west,south,east,north`; one crossing 180°
   is split there) to get one list from now outwards: its planned passes, soonest first, then its
   acquisitions of the last 90 days (Sentinel-1 IW, EW and stripmap), newest first. A pass already
-  imaged but not yet in any catalogue stays listed until it is delivered. A timeline along the bottom
+  imaged but not yet in any catalog stays listed until it is delivered. A timeline along the bottom
   of the map shows the same, one lane per satellite; selecting a pass in either highlights it in both.
   MODIS, VIIRS and Sentinel-3 passes are timed at the AOI itself, kept only if their swath reaches
   it, and listed with the view zenith angle there (and for Sentinel-3 the products' frame and which
   instruments see the AOI: SLSTR, and OLCI in daylight within its narrower strip); a selected pass
   highlights the strip it images around the AOI.
 - **Open any footprint's timeline**: its acquisitions of the last 90 days, read live from the
-  catalogues (real products only), each linked to the product, and its planned ones. NISAR frames
+  catalogs (real products only), each linked to the product, and its planned ones. NISAR frames
   and Landsat scenes are outlined as their latest real products were, not as planned.
 - **Preview a product on the map**: its browse image is draped over the footprint and can be
-  reordered, faded and removed (Sentinel-1 in colour or one channel, VV or VH; MODIS and VIIRS: the
-  true colour from [NASA Worldview](https://worldview.earthdata.nasa.gov/), within the tile: the
+  reordered, faded and removed (Sentinel-1 in color or one channel, VV or VH; MODIS and VIIRS: the
+  true color from [NASA Worldview](https://worldview.earthdata.nasa.gov/), within the tile: the
   pass's own granules for SNPP and NOAA-20, the day's mosaic otherwise; at night, the night's
   thermal mosaic (MODIS band 31, VIIRS I5) and for SNPP and NOAA-20 also the Day/Night Band;
-  Sentinel-3: CDSE's quicklook of the frame, placed from the orbit: OLCI's true colour by day,
+  Sentinel-3: CDSE's quicklook of the frame, placed from the orbit: OLCI's true color by day,
   SLSTR's thermal at night). Worldview's mosaics hold one image per platform per day (and per
   night), each pixel from the pass that saw it nearest nadir, so a MODIS/VIIRS pass from a mosaic
   shows its own share of it, and says so when that share does not reach the place.
@@ -56,7 +56,7 @@ snowmelt, for example), field campaigns, and coordination between missions.
   and the legend says, per mission, what is shown, from which zoom its footprints appear and where
   its plan ends. Every planned pass links to the plan file it comes from. Past the end of its
   plan, every mission is *projected* for a year (each platform's last repeat cycle carried forward;
-  Terra and Aqua excepted, as they no longer repeat), labelled projected and subject to change
+  Terra and Aqua excepted, as they no longer repeat), labeled projected and subject to change
   everywhere, with how well it held in a monthly hindcast
   ([methodology](docs/methodology.md#projection-past-a-plans-end)). An hourly check flags a satellite that stops
   delivering (its projection is paused and its passes warned) and opens an issue
@@ -66,7 +66,7 @@ snowmelt, for example), field campaigns, and coordination between missions.
   the agencies' latest notices, the newest data any distributor has delivered (hourly) and how far
   the map plans and projects it. Status and notices come from a curated registry
   (`src/swathcast/site/platforms.json`, each entry with its sources and review date); a retired
-  satellite is no longer planned, predicted or projected, and is greyed out on the map with the date
+  satellite is no longer planned, predicted or projected, and is grayed out on the map with the date
   it ended, while its past acquisitions and delivery history stay. The globe draws footprints up to the poles; the flat map stops at 85°. Basemaps are
   Esri Gray Canvas (the default), Esri World Imagery (with or without labels), Esri World Topographic
   and OpenStreetMap.
@@ -85,7 +85,7 @@ snowmelt, for example), field campaigns, and coordination between missions.
   VIIRS: NASA LANCE near-real-time, LAADS and NSIDC; for Sentinel-3: CDSE near-real-time and
   non-time-critical, EUMETSAT and Planetary Computer), from delivery
   latency **measured by this repository's own hourly poller**, never estimated from documentation.
-- **For each recent acquisition**, every source's catalogue is searched live from the browser, with
+- **For each recent acquisition**, every source's catalog is searched live from the browser, with
   links to the products already up and expected times for the rest. USGS's Landsat STAC does not
   answer browsers, so the poller publishes the last 90 days of Level-1 scenes per WRS-2 path for the
   map to read; ISRO's Bhoonidhi needs a login, so the poller publishes its NISAR S-band listing the same
@@ -105,10 +105,10 @@ snowmelt, for example), field campaigns, and coordination between missions.
 | Sentinel-1 IW | ESA burst grid (ASF's `Sentinel-1_Burst_Map`, fetched live from CMR for the AOI or view) | exact to about a second: plan datatake + ANX orbit timing fitted from CDSE products (see [methodology](docs/methodology.md#sentinel-1-burst-timing)) |
 | Sentinel-1 EW/SM | the planned datatake, clipped to the area around the AOI | datatake start |
 | Sentinel-2 | ESA's MGRS tiling grid (56,686 tiles) | when the satellite's orbit (CelesTrak elements, SGP4) passes the tile during a planned datatake: median 0.4 s, max 8.6 s from real sensing times (see [methodology](docs/methodology.md#sentinel-2-tile-timing)) |
-| Landsat 8/9 | WRS-2 scenes on USGS's acquisition calendar (paths *and rows* per day) | the pass nearest the scene centre on that date (SGP4): median 0.3 s, p99 6 s from 4,707 USGS scene times ([methodology](docs/methodology.md#landsat-and-nisar-timing)) |
+| Landsat 8/9 | WRS-2 scenes on USGS's acquisition calendar (paths *and rows* per day) | the pass nearest the scene center on that date (SGP4): median 0.3 s, p99 6 s from 4,707 USGS scene times ([methodology](docs/methodology.md#landsat-and-nisar-timing)) |
 | NISAR | track/frame from NASA's observation plan, with polarization | the pass with the frame ~567 km to its left on that date (SGP4): median 0.65 s, p95 14 s from 2,804 RSLC granules |
-| MODIS, VIIRS | MODIS sinusoidal tiles (460); no plan: every pass whose swath (measured: ±1,171–1,548 km) covers the tile centre | closest approach to the tile centre (SGP4), then at the AOI itself: 1,491 of 1,512 predicted tile passes were real LANCE granules (14 of the 21 misses during LANCE outages), and the browser's timing matches the schedule's to under 1 s ([methodology](docs/methodology.md#modis-viirs-and-sentinel-3-timing)) |
-| Sentinel-3 | the same tiles; each pass labelled with its products' frame (relative orbit, seconds after the node) | as MODIS; frames from the orbit: 1,438 of 1,450 CDSE products matched, full frames within 0.12 s |
+| MODIS, VIIRS | MODIS sinusoidal tiles (460); no plan: every pass whose swath (measured: ±1,171–1,548 km) covers the tile center | closest approach to the tile center (SGP4), then at the AOI itself: 1,491 of 1,512 predicted tile passes were real LANCE granules (14 of the 21 misses during LANCE outages), and the browser's timing matches the schedule's to under 1 s ([methodology](docs/methodology.md#modis-viirs-and-sentinel-3-timing)) |
+| Sentinel-3 | the same tiles; each pass labeled with its products' frame (relative orbit, seconds after the node) | as MODIS; frames from the orbit: 1,438 of 1,450 CDSE products matched, full frames within 0.12 s |
 
 The plans themselves have datatakes up to 54°/116° of latitude long (S1/S2), per-day paths (Landsat)
 and per-date frames (NISAR); this site resolves them to the footprints above. Times are shown in UTC and in the civil time zone at the
@@ -164,7 +164,7 @@ pixi run viewer --schedule x.parquet --latency site-data/latency.json
 
 The viewer serves the same pages as the live site at `http://127.0.0.1:8472/`. To view the live data
 locally, clone the `data` branch (`git clone -b data --depth 1
-https://github.com/egagli/swathcast data`) and summarise it.
+https://github.com/egagli/swathcast data`) and summarize it.
 
 ## Citing
 
@@ -179,6 +179,6 @@ project. The code was largely written by claude code.
 ## License
 
 The code is Apache-2.0 (see [LICENSE](LICENSE) and [NOTICE](NOTICE)). The site's data are metadata
-derived from the providers' plans and catalogues; each provider's terms apply
+derived from the providers' plans and catalogs; each provider's terms apply
 ([data sources](docs/data-sources.md#terms-and-attribution)). Contains modified Copernicus Sentinel
 data processed by ESA.

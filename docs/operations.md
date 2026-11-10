@@ -53,7 +53,7 @@ activity. swathcast guards against that, and against failing jobs, six ways:
    status` issue is the usual prompt. The site contract (`swathcast check-site`) checks it (states,
    dates, sources, https links, NORAD numbers).
 
-   Each satellite carries its NORAD catalogue number (`norad`), which the page links to CelesTrak.
+   Each satellite carries its NORAD catalog number (`norad`), which the page links to CelesTrak.
    Satellites that ended before this site tracked them (Sentinel-1B, Landsat 7) are listed for the
    record with a retired state. Each mission's `upcoming` list holds satellites announced or
    launched but not yet delivering public data (`state` `planned` or `commissioning`, with a
@@ -76,7 +76,7 @@ disabled workflows. Re-enabling is one click per workflow in the Actions tab.
 
 | Secret | Used by | Without it |
 |---|---|---|
-| `EARTHDATA_USERNAME`, `EARTHDATA_PASSWORD` | `poll` (exact placement of NISAR and OPERA browse images) | previews are fitted to the catalogue footprint instead (NISAR 0–5 km off, OPERA 1.5–3 km) |
+| `EARTHDATA_USERNAME`, `EARTHDATA_PASSWORD` | `poll` (exact placement of NISAR and OPERA browse images) | previews are fitted to the catalog footprint instead (NISAR 0–5 km off, OPERA 1.5–3 km) |
 | `BHOONIDHI_USER_ID`, `BHOONIDHI_PASSWORD` | `poll` (NISAR S-band latency at ISRO's Bhoonidhi, and the S-band history the map's popup shows) | the S-band mission is skipped and the popup shows L-band only; the job does not fail |
 
 Secrets are not passed to workflows triggered by pull requests from forks; `ci.yml` needs none.

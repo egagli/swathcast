@@ -5,7 +5,7 @@ The poller's health (``health.json``) says whether each *source* answers; it
 cannot tell that a source answers with nothing new because a satellite has
 stopped (or because a distributor moved its products elsewhere). So, for
 each platform and each of its data streams (the mission stores the poller
-writes: one reference catalogue per mission; NISAR has two, L-band at ASF and
+writes: one reference catalog per mission; NISAR has two, L-band at ASF and
 S-band at ISRO):
 
 - **last seen**: the newest sensing time any of the stream's granules has;

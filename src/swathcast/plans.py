@@ -6,19 +6,19 @@
   they are merged **newest wins**: each file owns the time from its start to
   where a newer file takes over. (Concatenating them instead
   would have kept 27 S1 datatakes on 2026-09-29 that the newest plan had dropped.) Every
-  placemark attribute is kept: datatake id, mode, swath, polarisation,
+  placemark attribute is kept: datatake id, mode, swath, polarization,
   absolute/relative orbit.
 * **Landsat 8/9**: USGS's 16-day cycle calendar (``cycles.json``: cycle day
   of each date) and ``cycle_path_row.json`` (paths *and rows* acquired on each
   cycle day), on the WRS-2 outlines from USGS's LandsatLook map service.
 * **NISAR**: the observation-plan KMZ linked from NASA's NISAR data page:
-  per frame, the dates and radar mode (whose third token is the polarisation).
+  per frame, the dates and radar mode (whose third token is the polarization).
   Each date is listed twice and may carry several modes, merged here; dates
   whose mode is blank (about 20% of the ROP358 plan) take the frame's last
   listed mode (``mode_source`` = "earlier cycle"; that predicted the real
-  RSLC polarisations for 517 of 535 frames, vs 1,438 of 1,438 when listed).
+  RSLC polarizations for 517 of 535 frames, vs 1,438 of 1,438 when listed).
 
-Polarisations are the real channels ("VV+VH", "HH", "HH+HV+VH+VV"), not the
+Polarizations are the real channels ("VV+VH", "HH", "HH+HV+VH+VV"), not the
 agencies' codes: :data:`POLARIZATIONS`, checked against CDSE product names
 (S1) and ASF RSLC ``FREQUENCY_*_POLARIZATION`` attributes (NISAR L-band),
 2026-09-29. Only the SAR missions have one. NISAR's are given per band
@@ -91,7 +91,7 @@ SCHEDULE_COLUMNS = [
     "plan_url",
 ]
 
-#: Agency polarisation code -> channels. ESA S1 plan ``Polarisation`` and the
+#: Agency polarization code -> channels. ESA S1 plan ``Polarisation`` and the
 #: third token of a NISAR radar-mode mnemonic. NISAR QD ("quasi-dual") is HH
 #: and VV on two separate 5 MHz sub-bands (RSLC products SVSH / SHSV).
 POLARIZATIONS = {
@@ -553,7 +553,7 @@ def orbit_refine(
 
 
 def refine_many(sat, lons, lats, guesses, directions):
-    """Vectorised enough: one propagation per distinct guess hour."""
+    """Vectorized enough: one propagation per distinct guess hour."""
     out = []
     for lon, lat, g, d in zip(lons, lats, guesses, directions, strict=True):
         out.append(orbit_refine(sat, lon, lat, g, d))
@@ -578,7 +578,7 @@ def utc_window(days: int, now: datetime | None = None):
     return start, start + pd.Timedelta(days=days)
 
 
-def lonlat_centre(ring) -> tuple[float, float]:
+def lonlat_center(ring) -> tuple[float, float]:
     a = np.asarray(ring, dtype=float)[:-1] if len(ring) > 1 else np.asarray(ring)
     lons = a[:, 0]
     if lons.max() - lons.min() > 180:
@@ -597,7 +597,7 @@ def landsat_scenes(
     """One row per planned Landsat scene: platform, path, row, direction, time.
 
     Time: the pass on the calendar date (UTC, +/- 2 h) whose ground track
-    comes closest to the WRS-2 scene centre (which lies on the nominal track).
+    comes closest to the WRS-2 scene center (which lies on the nominal track).
     Checked against 4,707 USGS STAC scene times (2026-09-10/11/26/27): median
     0.3 s, p99 6 s; 6 were a day off where the calendar date and UTC date
     differ. Without elements: the 10:12 local-solar-time formula (median 35
@@ -607,18 +607,18 @@ def landsat_scenes(
     cal = landsat_calendar(cycles, cycle_path_row, start.date(), days)
     cells = wrs2.set_index(["path", "row"])
     cal = cal[[k in cells.index for k in zip(cal["path"], cal["row"], strict=True)]]
-    centre = {
-        k: lonlat_centre(list(g.exterior.coords)) for k, g in cells.geometry.items()
+    center = {
+        k: lonlat_center(list(g.exterior.coords)) for k, g in cells.geometry.items()
     }
     cal["direction"] = [
         cells.at[(p, r), "direction"]
         for p, r in zip(cal["path"], cal["row"], strict=True)
     ]
     lon = np.array(
-        [centre[(p, r)][0] for p, r in zip(cal["path"], cal["row"], strict=True)]
+        [center[(p, r)][0] for p, r in zip(cal["path"], cal["row"], strict=True)]
     )
     lat = np.array(
-        [centre[(p, r)][1] for p, r in zip(cal["path"], cal["row"], strict=True)]
+        [center[(p, r)][1] for p, r in zip(cal["path"], cal["row"], strict=True)]
     )
     cal = cal.reset_index(drop=True)
     when = np.full(len(cal), np.nan)  # unix seconds
@@ -638,7 +638,7 @@ def landsat_scenes(
                 d0 + 93600,
                 ascending=direction == "ascending",
             )
-            good = np.isfinite(t) & (dist < 60)  # scene centres lie on the track
+            good = np.isfinite(t) & (dist < 60)  # scene centers lie on the track
             when[idx[good]] = t[good]
             timing[idx[good]] = "orbit"
             track_km[idx] = dist
@@ -646,7 +646,7 @@ def landsat_scenes(
             # run neither north nor south, so the direction filter can drop
             # their pass (it took the formula, up to an orbit off, for ~540
             # scenes a month): look again in either direction. Only there:
-            # elsewhere a pass the other way can cross a scene centre.
+            # elsewhere a pass the other way can cross a scene center.
             polar = idx[~good & (np.abs(lat[idx]) > TURN_LAT)]
             if len(polar):
                 t2, dist2 = nearest_pass(
@@ -664,20 +664,20 @@ def landsat_scenes(
     return cal.drop(columns=["day"]).reset_index(drop=True)
 
 
-#: NISAR frame centres lie 561-579 km (p5-p95) left of the ground track:
+#: NISAR frame centers lie 561-579 km (p5-p95) left of the ground track:
 #: 2,804 RSLC frames sensed 2026-09-26/27 (CMR), SGP4 with CelesTrak elements.
 NISAR_FRAME_OFFSET_KM = 567.0
 
 
 def nisar_times(df, sat) -> tuple[np.ndarray, np.ndarray]:
     """Abeam time of each planned frame: the pass on its (UTC) plan date that
-    has the frame centre ~567 km to its left. Against those 2,804 frames:
+    has the frame center ~567 km to its left. Against those 2,804 frames:
     median 0.65 s, p95 14 s from the granule mid-time (the formula: 42 min).
     Returns unix seconds (NaN where no pass qualifies) and the distance."""
     from swathcast.ephemeris import nearest_pass
 
-    lon = np.array([lonlat_centre(r)[0] for r in df["ring"]])
-    lat = np.array([lonlat_centre(r)[1] for r in df["ring"]])
+    lon = np.array([lonlat_center(r)[0] for r in df["ring"]])
+    lat = np.array([lonlat_center(r)[1] for r in df["ring"]])
     when = np.full(len(df), np.nan)
     dist = np.full(len(df), np.nan)
     for (day, direction), idx in df.groupby(["day", "direction"]).indices.items():
@@ -752,10 +752,10 @@ def nisar_schedule(start, end, session, cache_dir: Path, sat=None, until=None):
         (plan["day"] >= start.floor("D") - pd.Timedelta(days=1)) & (plan["day"] < end)
     ]
     df = df.reset_index(drop=True)
-    centres = [lonlat_centre(r) for r in df["ring"]]
+    centers = [lonlat_center(r) for r in df["ring"]]
     formula = [
         formula_time(d, lon, dr if dr in NISAR_LST_H else "descending", NISAR_LST_H)
-        for d, (lon, _), dr in zip(df["day"], centres, df["direction"], strict=True)
+        for d, (lon, _), dr in zip(df["day"], centers, df["direction"], strict=True)
     ]
     orbit = nisar_times(df, sat)[0] if sat is not None else np.full(len(df), np.nan)
     times = [
@@ -804,7 +804,7 @@ def nisar_schedule(start, end, session, cache_dir: Path, sat=None, until=None):
             [
                 formula_time(
                     d,
-                    lonlat_centre(r)[0],
+                    lonlat_center(r)[0],
                     dr if dr in NISAR_LST_H else "descending",
                     NISAR_LST_H,
                 )

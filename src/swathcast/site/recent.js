@@ -3,12 +3,12 @@
 // point, or the AOI's bounding box) for the last RECENT_DAYS, and its
 // products are grouped into acquisitions (one platform, within 15 minutes).
 // The sources and their queries mirror swathcast/sources/*.py; every one of
-// these catalogues answers browsers (CORS) and needs no login. USGS's
+// these catalogs answers browsers (CORS) and needs no login. USGS's
 // LandsatLook STAC (no CORS) and ISRO's Bhoonidhi (login) cannot be searched
 // from here: for those only the measured latency is shown (USGS's Level-1
 // comes from this site's own listing instead, see registerSource).
 import { aoiParts } from "./aoi.js";
-import { ASF, CMR, ES, ODATA, PC, getJSON, iso, plat } from "./catalogues.js";
+import { ASF, CMR, ES, ODATA, PC, getJSON, iso, plat } from "./catalogs.js";
 
 export const RECENT_DAYS = 90;
 const GROUP_MS = 15 * 60e3;
@@ -27,7 +27,7 @@ function queryAreas(aoi) {
   });
 }
 
-// ------------------------------------------------------------ catalogue searches
+// ------------------------------------------------------------ catalog searches
 // Each returns products: {when, platform, id, href, download?}.
 async function cdse(area, since, collection, names = null) {
   const t = since.toISOString().replace("Z", "").slice(0, 23);
@@ -41,7 +41,7 @@ async function cdse(area, since, collection, names = null) {
   const d = await getJSON(`${ODATA}?${new URLSearchParams({ $filter: filter, $top: top, $orderby: "ContentDate/Start desc", ...(s3 ? { $expand: "Assets" } : {}) })}`);
   return (d.value || []).map((p) => ({
     when: new Date(p.ContentDate.Start), platform: p.Name.slice(0, 3), id: p.Name.replace(/\.(SAFE|SEN3)$/, ""), mode: s1Mode(p.Name),
-    href: `${ODATA}(${p.Id})?$expand=Attributes`, linkText: "catalogue record", geometry: p.GeoFootprint || null,
+    href: `${ODATA}(${p.Id})?$expand=Attributes`, linkText: "catalog record", geometry: p.GeoFootprint || null,
     ...(s3 ? { odata: p } : {}),
   }));
 }

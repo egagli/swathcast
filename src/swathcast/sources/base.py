@@ -91,7 +91,7 @@ class Source(ABC):
     burst_level: bool = False
     #: "full": every reference granule is expected here.
     #: "learned": only granules in coverage cells this source has ever
-    #: delivered count towards its statistics (see docs/methodology.md).
+    #: delivered count toward its statistics (see docs/methodology.md).
     coverage: str = "full"
     timeout_hours: float = 14 * 24.0
     #: whether the provider timestamp was validated as a publication time

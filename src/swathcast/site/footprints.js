@@ -186,7 +186,7 @@ export function burstTiles(bbox) {
 
 // IW bursts intersecting [w, s, e, n] (lon -180..180). Throws if more than
 // MAX_TILES tiles or MAX_BURSTS bursts (callers check burstTiles first).
-// Tiles are fetched from the centre outwards (the view before its margin);
+// Tiles are fetched from the center outwards (the view before its margin);
 // as each comes in, onProgress(done, total, bursts) gets the bursts so far
 // (the same array, growing: copy it to keep it).
 export async function fetchBursts([w, s, e, n], { signal, onProgress } = {}) {

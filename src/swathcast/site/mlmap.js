@@ -18,7 +18,7 @@ const ESRI_IMAGERY_ATTR = 'Imagery &copy; <a href="https://www.esri.com/" target
 export const BASEMAPS = {
   streets: { label: "OpenStreetMap", title: "OpenStreetMap standard tiles (inverted in dark mode)", bg: ["#aad3df", "#0d0d0d"], layers: () => [{ tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"], attribution: OSM_ATTR, maxzoom: 19, invert: true }] },
   light: {
-    label: "Esri Gray Canvas", title: "Esri Light Gray Canvas (Dark Gray in dark mode): muted, so the footprint colours stand out", bg: ["#d8d8d8", "#262626"],
+    label: "Esri Gray Canvas", title: "Esri Light Gray Canvas (Dark Gray in dark mode): muted, so the footprint colors stand out", bg: ["#d8d8d8", "#262626"],
     layers: (dark) => [
       { tiles: ESRI(`Canvas/World_${dark ? "Dark" : "Light"}_Gray_Base`), attribution: "&copy; Esri, HERE, Garmin, &copy; OpenStreetMap contributors", maxzoom: 16 },
       { tiles: ESRI(`Canvas/World_${dark ? "Dark" : "Light"}_Gray_Reference`), attribution: "", maxzoom: 16 },
@@ -303,7 +303,7 @@ class Group {
       map.addSource(name, { type: "geojson", data: { type: "FeatureCollection", features: [] }, tolerance: 0.2 });
       map.addLayer({
         id: `${name}-fill`, type: "fill", source: name, filter: ["all", ["==", ["geometry-type"], "Polygon"], ["get", "fill"]],
-        // no antialiasing: its 1 px outline, in each polygon's own colour, is drawn
+        // no antialiasing: its 1 px outline, in each polygon's own color, is drawn
         // after all the fills, so footprints hidden under others show their edges
         paint: { "fill-color": ["get", "fillColor"], "fill-opacity": ["get", "fillOpacity"], "fill-antialias": false },
       });

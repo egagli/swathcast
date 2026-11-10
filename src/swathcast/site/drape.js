@@ -19,7 +19,7 @@ const mercY = (lat) => Math.log(Math.tan(Math.PI / 4 + (lat * D2R) / 2));
 const latOfMercY = (y) => (2 * Math.atan(Math.exp(y)) - Math.PI / 2) / D2R;
 
 // lon/lat (WGS84) to UTM [easting, northing] (Snyder 1987), the inverse of
-// history.js utmToLonLat; to well under a metre within a zone.
+// history.js utmToLonLat; to well under a meter within a zone.
 export function lonLatToUtm(lon, lat, zone, south) {
   const a = 6378137, f = 1 / 298.257223563, k0 = 0.9996, e2 = f * (2 - f), ep2 = e2 / (1 - e2);
   const phi = lat * D2R, lam = lon * D2R, lam0 = ((zone - 1) * 6 - 180 + 3) * D2R;
@@ -74,7 +74,7 @@ export function lonLatToPixel(where, width, height) {
 
 // The output grid: the image's lon/lat box, its rows regular in Web
 // Mercator. Returns {bbox, toSource(i, j) -> [u, v]} for an output of
-// outW x outH pixels (i, j: output pixel centres).
+// outW x outH pixels (i, j: output pixel centers).
 export function mercatorGrid(where, width, height, outW, outH) {
   const cs = imageCorners(where);
   const lons = cs.map((p) => p[0]), lats = cs.map((p) => p[1]);
@@ -145,8 +145,8 @@ export function resample(srcCanvas, where) {
 
 // An image whose UTM grid is not published (OPERA's RTC-S1 browse), fitted
 // to its data: the data's pixel extent [x0, y0, x1, y1] (inclusive) spans the
-// footprint's UTM box [X0, Y0, X1, Y1] east-west, with square pixels, centred
-// on the box north-south (the catalogue's footprint leaves out the bursts'
+// footprint's UTM box [X0, Y0, X1, Y1] east-west, with square pixels, centered
+// on the box north-south (the catalog's footprint leaves out the bursts'
 // overlap, so its north-south extent is short). Approximate: against
 // Planetary Computer's exact RTC of the same passes (6 bursts, 2026-10), its
 // corners land 1.5-3 km off (fitting the corners instead is no better).
@@ -158,10 +158,10 @@ export function fitUtmToData(epsg, [X0, Y0, X1, Y1], [x0, y0, x1, y1], width, he
 
 // The UTM zone (as an EPSG code) of a lon/lat point, and a ring's box in it.
 // The UTM grid of an image known by its four corners (lon/lat from the
-// top-left, clockwise): NISAR GCOVs are on the UTM zone of their centre (or
+// top-left, clockwise): NISAR GCOVs are on the UTM zone of their center (or
 // polar stereographic near the poles), north-up, so in the right zone the
-// corners form an axis-aligned rectangle. Tries the centre's zone, then its
-// neighbours; null when none fits (the image is then stretched between its
+// corners form an axis-aligned rectangle. Tries the center's zone, then its
+// neighbors; null when none fits (the image is then stretched between its
 // corners: approximate).
 export function gcovGrid(corners, tolM = 30) {
   const lon = corners.reduce((t, p) => t + p[0], 0) / 4, lat = corners.reduce((t, p) => t + p[1], 0) / 4;

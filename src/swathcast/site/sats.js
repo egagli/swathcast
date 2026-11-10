@@ -241,7 +241,7 @@ export class LiveSatellites {
 }
 
 function describeRange([a, b]) {
-  if (a < 0 && b > 0) return `${Math.round(b - a)} km wide, centred beneath it`;
+  if (a < 0 && b > 0) return `${Math.round(b - a)} km wide, centered beneath it`;
   const side = a < 0 ? "left" : "right";
   const [n, f] = [Math.abs(a), Math.abs(b)].sort((x, y) => x - y);
   return `${Math.round(f - n)} km wide, ${Math.round(n)}-${Math.round(f)} km to its ${side}`;
@@ -281,9 +281,9 @@ function fadingPath(ctx, proj, pts, now, { color, span, shift = 0, trail }) {
 
 // A line drawn as a filled ribbon of quads, one per segment, sharing their
 // edges (no overlaps or caps to stack up), each filled with a gradient from
-// its start to its end: widths and colours vary smoothly along it. xy: screen
+// its start to its end: widths and colors vary smoothly along it. xy: screen
 // points (null where hidden), fp: a value per point, half(f) the half-width,
-// col(f) the colour.
+// col(f) the color.
 function ribbon(ctx, xy, fp, half, col) {
   const n = xy.length;
   const normal = (i) => {
@@ -335,7 +335,7 @@ function paintStrip(ctx, path, px, samples, now, color) {
   });
 }
 
-// A colour mixed toward white (k = 0..1), as hex.
+// A color mixed toward white (k = 0..1), as hex.
 function mixWhite(hex, k) {
   const n = parseInt(hex.replace("#", "").slice(0, 6), 16);
   if (!Number.isFinite(n)) return hex;

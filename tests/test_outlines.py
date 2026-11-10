@@ -1,6 +1,6 @@
 """Observed outlines (swathcast.outlines): NISAR frames from CMR's RSLC
 footprints, Landsat cells from USGS's Level-1 footprints, both with offline
-fake catalogues."""
+fake catalogs."""
 
 from datetime import UTC, datetime
 

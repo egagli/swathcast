@@ -226,7 +226,7 @@ USGS_STAC = "https://landsatlook.usgs.gov/stac-server/search"
 
 
 def landsat_scenes_actual(session, path: int, row: int, start, end) -> pd.DataFrame:
-    """Level-1 scenes of one path/row from USGS's STAC: platform, time, centre."""
+    """Level-1 scenes of one path/row from USGS's STAC: platform, time, center."""
     body = {
         "collections": ["landsat-c2l1"],
         "datetime": f"{pd.Timestamp(start).isoformat()}/{pd.Timestamp(end).isoformat()}",

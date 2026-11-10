@@ -56,7 +56,7 @@ def gcov_name(rslc: str) -> str:
     return rslc.replace("NISAR_L1_PR_RSLC_", "NISAR_L2_PR_GCOV_", 1)
 
 
-def _centre(umm: dict):
+def _center(umm: dict):
     try:
         poly = umm["SpatialExtent"]["HorizontalSpatialDomain"]["Geometry"]["GPolygons"][
             0
@@ -81,7 +81,7 @@ def acquisition(item: dict, ptype: str) -> Acquisition:
         raise ValueError(f"unexpected NISAR {ptype} name {gid!r}")
     g = m.groupdict()
     rng = umm["TemporalExtent"]["RangeDateTime"]
-    lon, lat = _centre(umm)
+    lon, lat = _center(umm)
     insert = provider_insert_date(umm)
     frame = g.get("frame") or g.get("seg")
     return Acquisition(

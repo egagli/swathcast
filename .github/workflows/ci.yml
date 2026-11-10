@@ -40,7 +40,7 @@ jobs:
 
   browser:
     # The map in Chromium (tests/test_site_browser.py): a synthetic site, the
-    # catalogues stubbed, the JavaScript libraries from their CDNs.
+    # catalogs stubbed, the JavaScript libraries from their CDNs.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

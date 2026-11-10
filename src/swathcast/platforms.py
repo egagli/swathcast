@@ -2,7 +2,7 @@
 
 One file, ``site/platforms.json``, read by the schedule job (what to predict
 and project), the satellite check, the hindcast and the site (the Satellites
-page; retired platforms greyed out on the map). It is curated by hand from
+page; retired platforms grayed out on the map). It is curated by hand from
 the agencies' own notices, each entry with its sources and the date it was
 last reviewed; the live part of the Satellites page (newest data, the
 hourly check) comes from ``satellites.json``.

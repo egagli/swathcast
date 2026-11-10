@@ -1,7 +1,7 @@
 """Orbital elements for the map's live satellite positions.
 
 CelesTrak's GP API in OMM JSON form (``FORMAT=json``), one request per NORAD
-catalogue number. The browser propagates them with SGP4 (satellite.js
+catalog number. The browser propagates them with SGP4 (satellite.js
 ``json2satrec``); this module only fetches and checks them. A satellite whose
 fetch fails keeps its previous elements, so one CelesTrak hiccup does not
 blank the map.
@@ -21,7 +21,7 @@ from pathlib import Path
 LOGGER = logging.getLogger(__name__)
 
 GP_URL = "https://celestrak.org/NORAD/elements/gp.php"
-#: schedule platform code -> NORAD catalogue number
+#: schedule platform code -> NORAD catalog number
 NORAD = {
     "S1A": 39634,
     "S1C": 62261,

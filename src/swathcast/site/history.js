@@ -1,19 +1,19 @@
-// Recent acquisitions of one footprint, read live from the catalogues (no
+// Recent acquisitions of one footprint, read live from the catalogs (no
 // estimates): each item is a product that exists. Every query is CORS-open:
 //   Sentinel-1 burst   ASF Search, SLC-BURST by full burst ID (per polarization, grouped)
-//   Sentinel-1 EW/SM   ASF Search, Level-0 (RAW) of the track over the swath centre
+//   Sentinel-1 EW/SM   ASF Search, Level-0 (RAW) of the track over the swath center
 //   Sentinel-2 tile    Earth Search sentinel-2-l1c by MGRS tile (tile sensing time, cloud)
 //   Landsat scene      Earth Search landsat-c2-l2 by WRS-2 path/row (USGS L2, days behind),
 //                      merged with USGS's Level-1 list (this site's landsat_l1 files)
 //   NISAR frame        NASA CMR, ASF L1 RSLC by track and frame (L-band), with each one's GCOV
 //                      (for its preview); S-band: this site's nisar_s files (the poller's
 //                      Bhoonidhi listing: its search needs a login)
-//   MODIS/VIIRS tile   NASA CMR, LAADS Level-1B granules over the tile centre (one per pass)
-//   Sentinel-3 tile    CDSE, OLCI EFR and SLSTR RBT products over the tile centre (one per orbit)
+//   MODIS/VIIRS tile   NASA CMR, LAADS Level-1B granules over the tile center (one per pass)
+//   Sentinel-3 tile    CDSE, OLCI EFR and SLSTR RBT products over the tile center (one per orbit)
 // Each acquisition carries links to its product (a viewer a person can use:
 // ASF Vertex, STAC Browser, Earthdata Search) and what fetchBrowse() needs to
 // find a browse image of it (see there).
-import { ASF, CMR, ES as EARTH_SEARCH, ODATA, PC as PC_STAC, getJSON, iso, plat as platName } from "./catalogues.js";
+import { ASF, CMR, ES as EARTH_SEARCH, ODATA, PC as PC_STAC, getJSON, iso, plat as platName } from "./catalogs.js";
 import { sunElevation } from "./common.js";
 import { gcovGrid } from "./drape.js";
 
@@ -25,7 +25,7 @@ const earthdata = (collection, granule) => `https://search.earthdata.nasa.gov/se
 export const HISTORY_DAYS = 90;
 
 const cache = new Map();
-const plat = (p) => platName(p) || p; // an unknown platform is shown as the catalogue names it
+const plat = (p) => platName(p) || p; // an unknown platform is shown as the catalog names it
 // co-polarized channel first, as products are named: VV+VH, HH+HV
 const POL_RANK = { HH: 0, VV: 1, HV: 2, VH: 3 };
 
@@ -57,7 +57,7 @@ async function s1Burst(c, since) {
     };
   });
   return {
-    source: `ASF burst catalogue (${id}, IW SLC bursts)`,
+    source: `ASF burst catalog (${id}, IW SLC bursts)`,
     items: groupBy(items, (x) => `${x.platform}|${Math.round(x.when / 6e4)}`),
   };
 }
@@ -81,7 +81,7 @@ async function s1Swath(c, since) {
   // a pass can be several consecutive Level-0 products: one per (platform, orbit)
   const grouped = new Map();
   items.sort((x, y) => x.when - y.when).forEach((x) => { const k = `${x.platform}|${x.orbit ?? Math.round(x.when / 6e5)}`; if (!grouped.has(k)) grouped.set(k, x); });
-  return { source: `ASF Sentinel-1 Level-0, ${r.mode} track ${r.track} over the swath centre`, items: [...grouped.values()] };
+  return { source: `ASF Sentinel-1 Level-0, ${r.mode} track ${r.track} over the swath center`, items: [...grouped.values()] };
 }
 
 async function stac(collections, query, since) {
@@ -262,11 +262,11 @@ async function nisarFrame(c, since) {
 }
 
 // MODIS/VIIRS: the LAADS Level-1B granules (5-minute MODIS, 6-minute VIIRS,
-// day and night) whose footprint holds the tile centre, one acquisition per
+// day and night) whose footprint holds the tile center, one acquisition per
 // pass (consecutive granules of a pass merged), with the view zenith angle
-// at the centre from the granule's own geometry not being in CMR: the pass
+// at the center from the granule's own geometry not being in CMR: the pass
 // is listed with its day/night flag. Preview: NASA Worldview's (GIBS) true
-// colour of that platform and day over the tile.
+// color of that platform and day over the tile.
 export const WIDE_L1B = {
   Terra: "C3861664481-LAADS", Aqua: "C3861713185-LAADS", // MOD021KM/MYD021KM collection 7
   SNPP: "C2105087643-LAADS", N20: "C2103811746-LAADS", N21: "C3478403600-LAADS",
@@ -310,7 +310,7 @@ async function wideTile(c, since) {
     } else items.push({ ...x, last: x.when, starts: [x.when] });
   });
   // the pass's own granules where Worldview has them (and those either side:
-  // only the ones over the tile centre are listed)
+  // only the ones over the tile center are listed)
   items.forEach((x) => {
     if (x.browse && !x.browse.night && GIBS_GRANULE[x.platform]) x.browse = { ...x.browse, granules: granuleTimes(x.starts) };
   });
@@ -322,12 +322,12 @@ async function wideTile(c, since) {
       .map((y) => y.when.getTime());
     if (others.length) x.browse = { ...x.browse, split: { platform: x.platform, t: x.when.getTime(), others, point: c.center } };
   });
-  return { source: `NASA CMR, LAADS Level-1B granules over the tile centre (${plats.join(", ")}), and LANCE's near-real-time ones of the last 7 days`, items: items.map(({ last, nrt, starts, ...x }) => x),
-    note: "Times are each pass's first granule over the tile centre (granules are 5-6 min long)." };
+  return { source: `NASA CMR, LAADS Level-1B granules over the tile center (${plats.join(", ")}), and LANCE's near-real-time ones of the last 7 days`, items: items.map(({ last, nrt, starts, ...x }) => x),
+    note: "Times are each pass's first granule over the tile center (granules are 5-6 min long)." };
 }
 
 // Sentinel-3: the OLCI EFR and SLSTR RBT products at CDSE (near-real time
-// and non-time-critical) whose footprint holds the tile centre, one
+// and non-time-critical) whose footprint holds the tile center, one
 // acquisition per platform and orbit (cycle and relative orbit in the name),
 // with its relative orbit and frame.
 async function s3Tile(c, since) {
@@ -344,15 +344,15 @@ async function s3Tile(c, since) {
     if (when < g.when) Object.assign(g, { when, frame: Number(m[3]) });
     if (!g.instruments.includes(inst)) g.instruments.push(inst);
     if (!g.links.some((l) => l.text === inst)) g.links.push({ href: `${ODATA}(${p.Id})?$expand=Attributes`, text: inst, title: p.Name });
-    // the preview: the OLCI frame over the tile centre (true colour, by day),
+    // the preview: the OLCI frame over the tile center (true color, by day),
     // else SLSTR's (thermal at night)
     const b = s3Browse(p, plat, c.geojson);
     const key = inst === "OLCI" ? "browse" : "slstrBrowse";
     if (b && (!g[key] || when < new Date(g[key].start))) g[key] = b;
   });
   const items = [...by.values()].map(({ slstrBrowse, ...x }) => ({ ...x, browse: x.browse || slstrBrowse || null, instruments: x.instruments.sort(), light: x.instruments.includes("OLCI") ? "day" : null }));
-  return { source: "CDSE, Sentinel-3 OLCI EFR and SLSTR RBT products over the tile centre", items,
-    note: "Previews: CDSE's quicklook of the frame, placed from the orbit: OLCI's true colour by day, SLSTR's (thermal) at night." };
+  return { source: "CDSE, Sentinel-3 OLCI EFR and SLSTR RBT products over the tile center", items,
+    note: "Previews: CDSE's quicklook of the frame, placed from the orbit: OLCI's true color by day, SLSTR's (thermal) at night." };
 }
 
 // A Sentinel-3 preview request from a CDSE OData product (with its Assets):
@@ -363,7 +363,7 @@ export function s3Browse(p, platform, clip = null) {
   if (!ql || !g) return null;
   return {
     kind: "s3", platform, name: p.Name.replace(/\.SEN3$/, ""), slstr: p.Name.includes("_SL_1_"), start: p.ContentDate.Start, end: p.ContentDate.End, footprint: g, clip,
-    // the download host serves it with CORS (the catalogue's link redirects there)
+    // the download host serves it with CORS (the catalog's link redirects there)
     url: ql.DownloadLink.replace("//catalogue.dataspace.copernicus.eu/", "//download.dataspace.copernicus.eu/"),
   };
 }
@@ -415,7 +415,7 @@ export function medianRevisit(items) {
 // or below the line, whichever is free; a gap with no room for its label
 // (dense revisits; longest gaps are placed first) is still in each dot's tooltip.
 // One lane per platform (S2A, S2B, S2C...), like the AOI's timeline; gaps
-// between consecutive passes (any platform) are labelled above the lanes.
+// between consecutive passes (any platform) are labeled above the lanes.
 const LANES = ["S1A", "S1C", "S1D", "S2A", "S2B", "S2C", "L8", "L9", "NISAR", "Terra", "Aqua", "SNPP", "N20", "N21", "S3A", "S3B"];
 export function timelineSVG(past, upcoming, color, { daysBack = HISTORY_DAYS, daysAhead = 30, width = 320 } = {}) {
   const now = Date.now(), pad = 8, labelW = 40, laneH = 14, top = 30;
@@ -437,7 +437,7 @@ export function timelineSVG(past, upcoming, color, { daysBack = HISTORY_DAYS, da
     if (!prev || d.gap > 18e5) seq.push(d);
   });
   const gaps = seq.slice(1).map((b, i) => ({ a: seq[i], b, ms: b.when - seq[i].when }));
-  // longest gaps first, so an unusual gap is always labelled when space runs out
+  // longest gaps first, so an unusual gap is always labeled when space runs out
   const used = [], charW = 4.9;
   const free = (l, w) => used.every(([a, b]) => l + w + 3 <= a || l >= b + 3);
   const labels = [...gaps].sort((p, q) => q.ms - p.ms).map(({ a, b, ms }) => {
@@ -459,7 +459,7 @@ export function timelineSVG(past, upcoming, color, { daysBack = HISTORY_DAYS, da
     <rect x="${x(now)}" y="${top - 2}" width="${x(t1) - x(now)}" height="${bottom - top + 4}" fill="var(--surface-2)"/>
     ${laneLines}
     <line x1="${x(now)}" x2="${x(now)}" y1="${top - 4}" y2="${bottom + 2}" stroke="var(--ink-2)" stroke-dasharray="2 2"/>
-    <text x="${labelW}" y="9" class="tl-l">recent (catalogue)</text><text x="${width - pad}" y="9" text-anchor="end" class="tl-l">planned</text>
+    <text x="${labelW}" y="9" class="tl-l">recent (catalog)</text><text x="${width - pad}" y="9" text-anchor="end" class="tl-l">planned</text>
     ${labels}${events.map(dot).join("")}${ticks}
   </svg>`;
 }
@@ -477,10 +477,10 @@ function nisarBrowse(rslc, gcov) {
 // with georef = {url, corners: [[lon, lat] x4 from the top-left, clockwise],
 // key} when the image can be draped on the map (north-up, known extent, and
 // served with CORS so WebGL may read it); key: "black"/"white", a background
-// colour to make transparent. Sources (all public, no login; NISAR's and
+// color to make transparent. Sources (all public, no login; NISAR's and
 // OPERA's exact extents come from the poller, see browseExtents):
 //   Sentinel-1  Planetary Computer's RTC (UTM) or GRD (lat/lon) preview of the
-//               same pass, in colour or one channel; failing those, OPERA's
+//               same pass, in color or one channel; failing those, OPERA's
 //               RTC-S1 browse of the burst (placed approximately); failing
 //               that, ASF's GRD browse (radar geometry, no CORS: listed, not
 //               placed on the map)
@@ -489,8 +489,8 @@ function nisarBrowse(rslc, gcov) {
 //   Landsat     Planetary Computer's rendered preview of the same scene, UTM
 //               (USGS's own thumbnails need a login; Planetary Computer is
 //               days behind, so the newest scenes may have none yet)
-//   NISAR       ASF's browse of the GCOV (UTM, colour or one channel), else
-//               of the RSLC (lat/lon, colour); S-band: Bhoonidhi's thumbnail
+//   NISAR       ASF's browse of the GCOV (UTM, color or one channel), else
+//               of the RSLC (lat/lon, color); S-band: Bhoonidhi's thumbnail
 //               of the GCOV (UTM, exact from the grid the poller looked up),
 //               else of the RSLC (radar geometry, placed approximately), read
 //               through an image proxy (Bhoonidhi sends no CORS)
@@ -518,7 +518,7 @@ export function fetchBrowse(b) {
   return browseCache.get(key);
 }
 
-// NASA Worldview (GIBS): the day's corrected-reflectance true colour of one
+// NASA Worldview (GIBS): the day's corrected-reflectance true color of one
 // platform, a WMS image in lat/lon (EPSG:4326) over a box, served with CORS.
 const GIBS_LAYER = {
   Terra: "MODIS_Terra_CorrectedReflectance_TrueColor", Aqua: "MODIS_Aqua_CorrectedReflectance_TrueColor",
@@ -560,7 +560,7 @@ const ringPoints = (g) => (g.type === "Polygon" ? g.coordinates : g.type === "Mu
 
 // The night layers of a MODIS/VIIRS pass: the day's mosaic of each, the
 // first shown, the others as channels. Their PNGs are transparent where
-// there is no data, so no colour is keyed out (the warm sea is dark).
+// there is no data, so no color is keyed out (the warm sea is dark).
 function gibsNight(b) {
   const layers = GIBS_NIGHT[b.platform];
   if (!layers || !b.bbox) return { note: "No Worldview night layer for this platform." };
@@ -576,7 +576,7 @@ function gibsNight(b) {
 }
 
 const BROWSE = {
-  // Sentinel-3: CDSE's quicklook of the frame (OLCI EFR: true colour). It is
+  // Sentinel-3: CDSE's quicklook of the frame (OLCI EFR: true color). It is
   // in the instrument's geometry (scan lines x across-track columns, no
   // lat/lon grid): map.js places it from the orbit (swathgeom.js
   // swathImageModel), within the footprint
@@ -584,7 +584,7 @@ const BROWSE = {
     return {
       thumb: b.url, full: b.url,
       source: `CDSE ${b.slstr ? "SLSTR quicklook (thermal infrared at night: cold cloud bright)" : "OLCI quicklook"} of ${b.name}, placed from the orbit (to a few km)`,
-      // SLSTR's is thermal at night: warm sea is near black, so no colour is
+      // SLSTR's is thermal at night: warm sea is near black, so no color is
       // keyed out (its margins are trimmed, and it is clipped to the footprint)
       georef: {
         url: b.url, corners: null, key: b.slstr ? null : "black", clip: b.clip,
@@ -633,7 +633,7 @@ const BROWSE = {
       const href = f.assets.rendered_preview.href;
       const p = f.properties, bb = p["proj:bbox"];
       const epsg = p["proj:epsg"] || parseEPSG(p["proj:code"]);
-      // RTC: UTM, its grid from proj:bbox (in metres); GRD: warped to lon/lat over its bbox
+      // RTC: UTM, its grid from proj:bbox (in meters); GRD: warped to lon/lat over its bbox
       const where = coll === "sentinel-1-rtc"
         ? (bb && epsg ? { kind: "utm", epsg, transform: [1, 0, bb[0], 0, -1, bb[3]], shape: [bb[3] - bb[1], bb[2] - bb[0]] } : null)
         : { kind: "latlon", bbox: bb && (epsg === 4326 || !epsg) ? bb : f.bbox };
@@ -675,7 +675,7 @@ const BROWSE = {
     const where = { kind: "utm", epsg: f.properties["proj:epsg"] || parseEPSG(f.properties["proj:code"]), transform: (f.assets.visual || {})["proj:transform"], shape: (f.assets.visual || {})["proj:shape"] };
     const corners = utmCorners(where.epsg, where.transform, where.shape);
     return {
-      thumb, full: thumb, source: `Element 84's preview of ${l2a} (true colour, L2A)`,
+      thumb, full: thumb, source: `Element 84's preview of ${l2a} (true color, L2A)`,
       links: [{ href: stacBrowser("sentinel-2-l2a", l2a), text: "the L2A in STAC Browser" }],
       georef: corners ? { url: thumb, corners, where, key: "black" } : null,
     };
@@ -695,10 +695,10 @@ const BROWSE = {
     };
   },
   // ASF's browse of the GCOV (each RSLC's, ~1 h later): geocoded on the
-  // GCOV's own grid (UTM, terrain-corrected), the colour composite and each
+  // GCOV's own grid (UTM, terrain-corrected), the color composite and each
   // channel (_NATIVE_A_HHHH.png: frequency A's HH); the grid's corners come
   // from the poller (browse_extents/nisar_gcov). Before the poller has them,
-  // or before the GCOV exists, the lat/lon colour composite of the GCOV or
+  // or before the GCOV exists, the lat/lon color composite of the GCOV or
   // RSLC, fitted to the CMR footprint (0-5 km off).
   async nisar(b) {
     const thumb = b.urls.find((u) => /_LATLON_thumbnail\.png$/.test(u)) || b.urls.find((u) => /thumbnail/i.test(u));
@@ -732,15 +732,15 @@ const BROWSE = {
     return {
       thumb: thumb || full, full: full || thumb, source: `ASF's geocoded browse of the ${gcov ? "GCOV" : "RSLC"}`,
       note: gcov
-        ? "The colour composite only, placed approximately (this site has not read the image's exact grid yet; the channels follow when it has)."
-        : "The RSLC's colour composite, placed approximately: the GCOV, with its channels, follows the RSLC by about an hour.",
+        ? "The color composite only, placed approximately (this site has not read the image's exact grid yet; the channels follow when it has)."
+        : "The RSLC's color composite, placed approximately: the GCOV, with its channels, follows the RSLC by about an hour.",
       // white around the frame, black along its jagged swath edges: both made
       // transparent. The bbox is the frame's; the image has a margin around it
       // (dataExtent: map.js fits the image's data, not its edges, to it).
       georef: full && corners ? { url: full, corners, where: { kind: "latlon", bbox: b.bbox }, key: "both", dataExtent: true } : null,
     };
   },
-  // NISAR S-band: Bhoonidhi's thumbnail (public JPEG, one channel, grey, the
+  // NISAR S-band: Bhoonidhi's thumbnail (public JPEG, one channel, gray, the
   // product decimated 20x) of the GCOV, else of the RSLC whose link the poller
   // keeps (b.url). Bhoonidhi sends no CORS, so the map reads it through the
   // wsrv.nl image proxy (which adds it). The GCOV's fills its UTM grid exactly:
@@ -791,7 +791,7 @@ function loads(url) {
   });
 }
 
-// One channel of a Planetary Computer Sentinel-1 item, grey: RTC is gamma0
+// One channel of a Planetary Computer Sentinel-1 item, gray: RTC is gamma0
 // (linear power), GRD amplitude (DN); the co-pol channel (VV, HH) is
 // brighter than the cross-pol one (VH, HV). GRD amplitudes differ by mode
 // (EW's run ~8x IW's), so a GRD is stretched by its own range (rescale).
@@ -802,10 +802,10 @@ export function singleBand(coll, id, pol, rescale = null) {
   return `${PC_DATA}/preview.png?collection=${coll}&item=${encodeURIComponent(id)}&assets=${a}&rescale=${rescale}&colormap_name=gray&format=png`;
 }
 
-// The previews of a Planetary Computer Sentinel-1 item: colour (co-pol, cross-
+// The previews of a Planetary Computer Sentinel-1 item: color (co-pol, cross-
 // pol, their ratio) and each channel. Planetary Computer's own rendered
 // preview names VV and VH whatever the item has, so it fails on HH/HV items
-// (all of EW, and IW/stripmap over ice): the colour image is built here.
+// (all of EW, and IW/stripmap over ice): the color image is built here.
 export async function s1Bands(coll, f, href) {
   const pols = (f.properties["sar:polarizations"] || []).filter((x) => f.assets[x.toLowerCase()]);
   const co = pols.find((x) => x === "VV" || x === "HH"), cross = pols.find((x) => x === "VH" || x === "HV");
@@ -819,17 +819,17 @@ export async function s1Bands(coll, f, href) {
   }
   const r = (x) => (range[x] ? `${Math.round(range[x][0])},${Math.round(range[x][1])}` : null);
   const id = encodeURIComponent(f.id), size = (u, n) => `${u}&max_size=${n}`;
-  let colour = null;
+  let color = null;
   if (co && cross && coll === "sentinel-1-rtc") {
-    colour = co === "VV" ? href : href.replace(/vv/g, "hh").replace(/vh/g, "hv");
+    color = co === "VV" ? href : href.replace(/vv/g, "hh").replace(/vh/g, "hv");
   } else if (co && cross) {
     const [c, x] = [co.toLowerCase(), cross.toLowerCase()];
     const ratio = range[co] && range[cross] ? (2 * range[co][2]) / range[cross][2] : 9;
     const scales = [r(co) || "0,600", r(cross) || "0,270", `0,${ratio.toFixed(1)}`];
-    colour = `${PC_DATA}/preview.png?collection=${coll}&item=${id}&assets=${c}&assets=${x}&expression=${encodeURIComponent(`${c};${x};${c}/${x}`)}&asset_as_band=True&${scales.map((v) => `rescale=${v}`).join("&")}&format=png`;
+    color = `${PC_DATA}/preview.png?collection=${coll}&item=${id}&assets=${c}&assets=${x}&expression=${encodeURIComponent(`${c};${x};${c}/${x}`)}&asset_as_band=True&${scales.map((v) => `rescale=${v}`).join("&")}&format=png`;
   }
   const singles = pols.map((x) => ({ label: x, url: singleBand(coll, f.id, x, r(x)) }));
-  const all = (colour ? [{ label: `${co}+${cross}`, url: colour }] : []).concat(singles);
+  const all = (color ? [{ label: `${co}+${cross}`, url: color }] : []).concat(singles);
   return all.map((b) => ({ label: b.label, thumb: size(b.url, 256), url: size(b.url, 1024) }));
 }
 

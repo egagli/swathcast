@@ -10,14 +10,14 @@ const R_KM = 6371.0088;
 // Where each instrument looks, as signed distances across the ground track
 // (km, positive to the right of the direction of travel), per mode:
 //   Sentinel-1 IW  incidence 29.1-46.0 deg, 250 km, right-looking: GRD
-//                  footprint centres 488-500 km right of the track (ephemeris.py)
+//                  footprint centers 488-500 km right of the track (ephemeris.py)
 //   Sentinel-1 EW  incidence 18.9-47.0 deg, 400 km
 //   Sentinel-1 SM  one of six 80 km beams between ~20 and 47 deg; the plan
 //                  does not say which, so the extent of all six is drawn
-//   NISAR          ~240 km swath, left-looking: frame centres 561-579 km left
+//   NISAR          ~240 km swath, left-looking: frame centers 561-579 km left
 //                  (plans.py NISAR_FRAME_OFFSET_KM = 567)
-//   Sentinel-2 MSI 290 km, centred on nadir
-//   Landsat OLI    185 km, centred on nadir
+//   Sentinel-2 MSI 290 km, centered on nadir
+//   Landsat OLI    185 km, centered on nadir
 //   MODIS, VIIRS   scanning across the track: 2,342 km and 3,036-3,096 km
 //                  (WIDE_SWATH_KM: measured on real granules, per platform)
 //   Sentinel-3     SLSTR nadir view -500 to +996 km, OLCI -336 to +975 km:
@@ -181,7 +181,7 @@ export function closestApproach(satrec, lon, lat, t0, t1, stepS = 10) {
     if (!best || d < best.d) best = { t, d };
   }
   if (!best || best.t - t0 < stepS * 1000 || t1 - best.t < stepS * 1000) return null;
-  // golden-section search between the neighbouring steps, to ~0.05 s
+  // golden-section search between the neighboring steps, to ~0.05 s
   let a = best.t - stepS * 1000, b = best.t + stepS * 1000;
   const g = (Math.sqrt(5) - 1) / 2, f = (t) => { const p = position(satrec, new Date(t)); return p ? hav(lon, lat, p.lon, p.lat) : Infinity; };
   let c = b - g * (b - a), e = a + g * (b - a), fc = f(c), fe = f(e);

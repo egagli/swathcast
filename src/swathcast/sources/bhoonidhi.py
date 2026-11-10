@@ -54,7 +54,7 @@ Both are ``"lon,lat,lon,lat,..."`` strings (8 numbers, 5 decimals).
 The universe is every ``NISAR_SSAR_RSLC`` item whose sensing time falls in the
 last :data:`LOOKBACK_DAYS`. ``updated`` is the provider timestamp, and a
 sighting is prompt when it comes within the tracker's tolerance of it, as for
-other catalogues. Items without one fall back to the listing gap: prompt only
+other catalogs. Items without one fall back to the listing gap: prompt only
 when the previous listing ran within :data:`PROMPT_GAP_HOURS` (the first run and
 the run after an outage list a backlog, which is excluded from the statistics).
 """
@@ -591,7 +591,7 @@ def fill_grids(session, table: pd.DataFrame, now: datetime) -> str | None:
 
 def gcov_name(rslc: str) -> str:
     """The GCOV of an RSLC: ``NISAR_S1_PR_RSLC_...`` -> ``NISAR_S2_PR_GCOV_...``
-    (same tail; seen on the live catalogue 2026-10-01)."""
+    (same tail; seen on the live catalog 2026-10-01)."""
     return re.sub(r"^NISAR_S1_", "NISAR_S2_", rslc).replace("_RSLC_", "_GCOV_", 1)
 
 

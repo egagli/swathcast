@@ -9,7 +9,7 @@ behind an Earthdata login (checked 2026-10-06):
   ``LatLonQuad`` of the granule's ``_NATIVE.kml`` (the same for every
   channel, checked 2026-10-14). The CMR footprint overshoots the image's data
   by 0-5 km on varying sides, and the grid moves up to ~5 km between repeat
-  passes of a frame, so it is kept per granule. (The ``_LATLON.png`` colour
+  passes of a frame, so it is kept per granule. (The ``_LATLON.png`` color
   composite's box is the quad's: to ~20 m.)
 - OPERA RTC-S1 ``_BROWSE*.png``: it spans the burst's UTM grid exactly,
   which is in the product's GeoTIFF header (and ``.iso.xml``). The grid is

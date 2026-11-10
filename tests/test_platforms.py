@@ -120,7 +120,7 @@ def test_the_shipped_registry_is_valid():
     from swathcast.tle import NORAD
 
     assert set(NORAD) - {"S1A"} <= set(reg)
-    # every satellite has its catalogue number (the CelesTrak link)
+    # every satellite has its catalog number (the CelesTrak link)
     assert all(isinstance(p.get("norad"), int) for p in reg.values())
     # the ended satellites listed for the record
     assert {"S1B", "SNPP"} <= set(platforms.retired())

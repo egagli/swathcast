@@ -32,7 +32,7 @@ const mul = (m, x, y, z) => [ // column-major 4x4 (gl-matrix) times [x, y, z, 1]
   m[2] * x + m[6] * y + m[10] * z + m[14], m[3] * x + m[7] * y + m[11] * z + m[15],
 ];
 
-// The camera position: the point the projection sends to w = 0 at the centre
+// The camera position: the point the projection sends to w = 0 at the center
 // of the view, i.e. M^-1 (0, 0, 1, 0) (third column of the inverse).
 function eyeOf(m) {
   const inv = invert4(m);
@@ -149,7 +149,7 @@ class Projector {
       };
       proj = geoProjection(raw).rotate([-c, 0]);
     }
-    // d3 shifts its output so that the projection's centre lands on
+    // d3 shifts its output so that the projection's center lands on
     // translate(): undo that, so the raw pixels come out as they are
     proj.scale(1).translate([0, 0]).precision(0.6);
     const [r0x, r0y] = proj.rotate();

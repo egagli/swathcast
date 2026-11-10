@@ -13,7 +13,7 @@ export function track(name, params = {}) {
 export const SCHEDULE_CADENCE_H = 24; // schedule.yml runs daily
 export const LATENCY_CADENCE_H = 1; // poll.yml runs hourly
 
-// Fixed categorical slot per source (colour follows the entity, never its rank).
+// Fixed categorical slot per source (color follows the entity, never its rank).
 export const SOURCE_SLOT = {
   cdse_grd: 1, cdse_slc: 7, asf_grd: 2, asf_slc: 8,
   pc_grd: 3, pc_rtc: 6, opera_rtc: 4, opera_cslc: 5,
@@ -25,7 +25,7 @@ export const SOURCE_SLOT = {
   // MODIS/VIIRS: LANCE near-real-time 1, standard Level-1B 2/8, snow 5 (NRT) and 4 (NSIDC)
   lance_modis_l1b: 1, laads_modis_l1b: 2, laads_modis_l1b_c7: 8, lance_modis_snow: 5, nsidc_modis_snow: 4,
   lance_viirs_l1b: 1, laads_viirs_l1b: 2, lance_viirs_snow: 5, nsidc_viirs_snow: 4,
-  // Sentinel-3: CDSE NRT 1/7, NTC 2/8, EUMETSAT 6, Level-2 5/4, Planetary Computer 3 (two products, labelled)
+  // Sentinel-3: CDSE NRT 1/7, NTC 2/8, EUMETSAT 6, Level-2 5/4, Planetary Computer 3 (two products, labeled)
   cdse_s3_efr: 1, cdse_s3_rbt: 7, cdse_s3_efr_ntc: 2, cdse_s3_rbt_ntc: 8, eumetsat_s3_efr: 6,
   cdse_s3_lfr: 5, cdse_s3_lst: 4, pc_s3_lfr: 3, pc_s3_lst: 3,
 };
@@ -130,7 +130,7 @@ export function expectedAvailability(begin, platform, sourceExpected) {
 // ------------------------------------------------------------ local time
 // "Local" means the civil time zone at the footprint (tz-lookup, CC0), not
 // the viewer's. If the lookup library cannot load, the viewer's zone is used
-// and labelled as such.
+// and labeled as such.
 const TZ_LOOKUP = "https://cdn.jsdelivr.net/npm/@photostructure/tz-lookup@11.7.0/+esm";
 let tzlookup = null;
 export const tzReady = import(TZ_LOOKUP).then((m) => { tzlookup = m.default; }).catch(() => null);
