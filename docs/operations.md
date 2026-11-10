@@ -1,7 +1,7 @@
 # Operations: keeping the scheduled jobs alive
 
 GitHub disables scheduled workflows in public repositories after 60 days without repository
-activity. swathcast guards against that, and against failing jobs, five ways:
+activity. swathcast guards against that, and against failing jobs, six ways:
 
 1. **Every poll is repository activity.** Each hourly `poll` run pushes to the `data` branch.
 2. **The watchdog re-enables the jobs.** The weekly `watchdog` workflow runs `gh workflow enable` on
@@ -14,6 +14,26 @@ activity. swathcast guards against that, and against failing jobs, five ways:
    or updates a `schedule-failed` issue. A plan file ESA lists but serves as a 404 is skipped (the
    run still succeeds, from the platform's older files) and opens a `plan-file-missing` issue naming
    it. Each closes itself on the first run that no longer has the problem.
+6. **A satellite (or one of its data streams) that goes silent opens an issue.** A source can answer
+   every hour with nothing new because its satellite stopped, or because the distributor moved its
+   products: `health.json` cannot see either. After each poll, `swathcast satellites`
+   (`satellites.py`) compares each platform's newest data, per stream, with that stream's p95
+   delivery time, its longest normal gap and the passes the schedule says were due. A platform is
+   `silent` when none of its streams has delivered for longer than max(48 h, 1.5 x its longest gap
+   over 60 days) past its delivery time while passes were due, and `stream_silent` when one stream
+   is silent while another still delivers (NISAR's L-band at ASF while its S-band arrives from
+   ISRO). One `satellite-status` issue lists them; it is edited and commented on only when the list
+   changes, and closed when it is empty. The site reads the same check (`satellites.json`): a
+   silent satellite's projection is paused and its passes carry the warning; a silent stream is
+   noted. Our own failing sources make the status `unknown`, not silent. Run it by hand with
+   `swathcast satellites --data-dir data --schedule-dir data/schedule`.
+
+   Its first run on real data (2026-11-09) found both kinds: Suomi NPP's VIIRS had delivered
+   nothing to LANCE or LAADS since 2026-11-02 15:24 UTC (`silent`); and ASF had moved NISAR to new
+   `V1` collections (L0B `C3622265756-ASF`, RSLC `C3622236985-ASF`, GSLC `C3622244601-ASF`, GCOV
+   `C3622241360-ASF`) around 2026-10-21, so the `PROVISIONAL` ones the poller lists had been empty
+   since (`stream_silent`, the satellite fine) while the source still reported "ok". The NISAR
+   sources were moved to the V1 collections on 2026-11-10 ([sources](sources.md)).
 
 If every scheduled workflow *is* disabled, the watchdog cannot run either. The signals are then the
 site's banner, the absence of new commits on the `data` branch, and GitHub's own email about the

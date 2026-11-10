@@ -20,7 +20,8 @@ applies documented post-processing:
 
 Beside ``upcoming_passes.parquet`` it writes the footprint grids the map loads
 lazily: ``wrs2_grid.parquet`` + ``landsat_scenes.parquet`` (per planned scene,
-timed from the orbit), ``s2_grid.parquet`` + ``s2_tile_passes.parquet``, and,
+timed from the orbit; the map carries its last 16-day cycle past the window,
+see :func:`landsat_projection`), ``s2_grid.parquet`` + ``s2_tile_passes.parquet``, and,
 for the wide-swath sensors that have no plan (:mod:`swathcast.wideswath`),
 ``sin_grid.parquet`` + ``modis_tile_passes.parquet`` / ``viirs_tile_passes.parquet``
 / ``s3_tile_passes.parquet``.
@@ -302,6 +303,14 @@ def orbital_elements() -> dict:
     return {p: s["omm"] for p, s in payload["satellites"].items()}
 
 
+#: Where each mission's plan is published (the site links each pass to it).
+PLAN_PAGES = {
+    "sentinel-1": "https://sentinels.copernicus.eu/web/sentinel/copernicus/sentinel-1/acquisition-plans",
+    "sentinel-2": "https://sentinels.copernicus.eu/web/sentinel/copernicus/sentinel-2/acquisition-plans",
+    "landsat": "https://landsat.usgs.gov/landsat_acq",
+    "nisar": "https://science.nasa.gov/mission/nisar/data/",
+}
+
 ALL_SENSORS = [
     "sentinel-1",
     "sentinel-2",
@@ -352,6 +361,43 @@ def build_wideswath(out_dir: Path, sensors, sats: dict, start, end, days: int) -
     return fixes
 
 
+def trim_to_base(gdf, keep_from: dict, default_from):
+    """Drop rows of the extra lookback: keep each platform's rows from the
+    earlier of ``default_from`` and its base cycle's start (``keep_from``)."""
+    import pandas as pd
+
+    first = gdf["platform"].map(
+        lambda p: min(pd.Timestamp(keep_from.get(p, default_from)), default_from)
+    )
+    return gdf[gdf["begin_time"] >= first]
+
+
+def projections(gdf, start, end, sensors, extra_ends: dict | None = None) -> dict:
+    """Each mission's projection (:func:`swathcast.projection.spec`), from
+    where each platform's plan ends: Sentinel-1/2 at their last datatake's
+    end; NISAR the day after the plan's last date; Landsat (USGS's calendar,
+    timed through the window), MODIS, VIIRS and Sentinel-3 (predicted from
+    the orbit through the window) at the window's end."""
+    import pandas as pd
+
+    from swathcast import projection
+
+    out = {}
+    for sensor in ("sentinel-1", "sentinel-2"):
+        rows = gdf[gdf["sensor"] == sensor]
+        if len(rows):
+            ends = rows.groupby("platform")["end_time"].max().to_dict()
+            out[sensor] = projection.spec(sensor, ends, start)
+    rows = gdf[gdf["sensor"] == "nisar"]
+    if len(rows):
+        last = pd.Timestamp(rows["begin_time"].max()).floor("D") + pd.Timedelta(days=1)
+        out["nisar"] = projection.spec("nisar", {"NISAR": last}, start)
+    for sensor, ends in (extra_ends or {}).items():
+        if sensor in sensors and ends:
+            out[sensor] = projection.spec(sensor, ends, start)
+    return {k: v for k, v in out.items() if v}
+
+
 def build(output: Path, days: int = 12, sensors: list[str] | None = None) -> Path:
     """Fetch the plans and write ``output`` (+ ``.meta.json`` sidecar and grids)."""
     import geopandas as gpd
@@ -359,7 +405,7 @@ def build(output: Path, days: int = 12, sensors: list[str] | None = None) -> Pat
     import requests
 
     from swathcast import outlines as outlines_mod
-    from swathcast import plans, s2grid
+    from swathcast import plans, projection, s2grid
 
     output = Path(output).resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -375,21 +421,43 @@ def build(output: Path, days: int = 12, sensors: list[str] | None = None) -> Pat
 
     for sensor in ("sentinel-1", "sentinel-2"):
         if sensor in sensors:
-            back = start - pd.Timedelta(days=LOOKBACK_DAYS[sensor])
+            # back far enough for each platform's last repeat cycle (a plan
+            # can end within days: S2B's ended a day after the window began),
+            # which the map repeats past the plan's end (projection.py)
+            prefix = "S1" if sensor == "sentinel-1" else "S2"
+            longest = max(
+                [projection.REPEAT_DAYS[sensor]]
+                + [
+                    d
+                    for p, d in projection.PLATFORM_REPEAT_DAYS.items()
+                    if p.startswith(prefix)
+                ]
+            )
+            back = start - pd.Timedelta(days=LOOKBACK_DAYS[sensor] + longest)
+            part = plans.sentinel_schedule(
+                sensor, back, end, session, cache, missing_plan_files
+            )
+            ends = part.groupby("platform")["end_time"].max()
+            keep_from = {
+                p: t - projection.repeat_of(sensor, p) for p, t in ends.items()
+            }
             parts.append(
-                plans.sentinel_schedule(
-                    sensor, back, end, session, cache, missing_plan_files
+                trim_to_base(
+                    part, keep_from, start - pd.Timedelta(days=LOOKBACK_DAYS[sensor])
                 )
             )
             sources[sensor] = plans.ESA_PAGES[sensor]
     if "nisar" in sensors:
         try:
+            # the plan's later dates too (to the horizon), timed by the
+            # repeat cycle; published per month, loaded as the dates need them
             nisar, url = plans.nisar_schedule(
                 start - pd.Timedelta(days=LOOKBACK_DAYS["nisar"]),
                 end,
                 session,
                 cache,
                 sats.get("NISAR"),
+                until=start + pd.Timedelta(days=projection.HORIZON_DAYS),
             )
             parts.append(nisar)
             sources["nisar"] = url
@@ -480,6 +548,17 @@ def build(output: Path, days: int = 12, sensors: list[str] | None = None) -> Pat
         LOGGER.warning("wide-swath passes unavailable: %s", exc)
         fixes["wideswath_error"] = str(exc)
 
+    extra = {}
+    if "landsat" in sensors and "landsat_scenes" in fixes:
+        extra["landsat"] = ["L8", "L9"]
+    for m in WIDESWATH_FILES:
+        got = fixes.get(f"{m}_tile_passes")
+        if isinstance(got, dict):
+            extra[m] = sorted(got)
+    # Landsat, MODIS, VIIRS and Sentinel-3 projected from the window's end
+    fixes["projections"] = projections(
+        gdf, start, end, sensors, {k: {p: end for p in v} for k, v in extra.items()}
+    )
     fixes["non_s1_simplified_deg"] = simplify_non_s1(gdf, SITE_SIMPLIFY_DEG)
     gdf.to_parquet(output, index=False, compression="zstd")
     if s2 is not None:
@@ -507,6 +586,7 @@ def build(output: Path, days: int = 12, sensors: list[str] | None = None) -> Pat
         "generated_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "days": days,
         "window": [start.isoformat(), end.isoformat()],
+        "plan_pages": {k: v for k, v in PLAN_PAGES.items() if k in sensors},
         "lookback_days": LOOKBACK_DAYS,
         "n_passes": int(len(gdf)),
         "sensors": {k: int(v) for k, v in gdf["sensor"].value_counts().items()},

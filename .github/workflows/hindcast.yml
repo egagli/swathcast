@@ -1,0 +1,72 @@
+name: hindcast
+
+# Monthly: measure how well each mission's projection (a plan carried past its
+# end by its repeat cycle, projection.py) predicted what came next, and publish
+# the result beside the schedule (data branch: hindcast/). The map shows it
+# next to projected passes; docs/methodology.md "Projection past a plan's end".
+# A failure opens (or comments on) a hindcast-failed issue; a success closes it.
+on:
+  schedule:
+    - cron: "23 5 3 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: data-branch
+  cancel-in-progress: false
+
+jobs:
+  hindcast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/pixi
+        with:
+          environment: default
+      # ESA plan files (~300 MB) and NASA's NISAR plan never change once
+      # published: kept between runs when the cache survives (GitHub drops a
+      # cache unused for 7 days, so a monthly run often starts empty and
+      # downloads them again).
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/swathcast
+          key: hindcast-plans-${{ github.run_id }}
+          restore-keys: hindcast-plans-
+      - name: Hindcast
+        run: pixi run swathcast hindcast --out "$RUNNER_TEMP/hindcast"
+      - uses: ./.github/actions/data-branch
+      - name: Stage hindcast
+        run: |
+          mkdir -p data/hindcast
+          cp "$RUNNER_TEMP/hindcast/hindcast.json" "$RUNNER_TEMP/hindcast/hindcast.md" data/hindcast/
+          cat data/hindcast/hindcast.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: ./.github/actions/push-data
+        with:
+          message: "data: hindcast ${{ github.run_id }}"
+      - name: Open or update the hindcast-failed issue
+        if: failure() && github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh label create hindcast-failed --color d93f0b --description "Opened by the hindcast workflow" --repo "$GITHUB_REPOSITORY" 2>/dev/null || true
+          existing=$(gh issue list --repo "$GITHUB_REPOSITORY" --label hindcast-failed --state open --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" --body "Failed again: $RUN_URL"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "Hindcast workflow is failing" --label hindcast-failed \
+              --body "The monthly projection hindcast failed: $RUN_URL. The map keeps showing the last published result; this issue closes itself when a run succeeds."
+          fi
+      - name: Close the hindcast-failed issue on recovery
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          for n in $(gh issue list --repo "$GITHUB_REPOSITORY" --label hindcast-failed --state open --json number --jq '.[].number'); do
+            gh issue close "$n" --repo "$GITHUB_REPOSITORY" --reason completed --comment "Hindcast succeeded again: $RUN_URL"
+          done

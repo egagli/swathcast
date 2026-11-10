@@ -111,6 +111,20 @@ def publish(
         (out_dir / f"latency_{key}.json").write_text(_dumps(mission_summary))
     publish_landsat_l1(data_dir, out_dir, now)
     publish_nisar_s(data_dir, out_dir, now)
+    # is each satellite still delivering (satellites.py): the map pauses the
+    # projection of a silent one and warns on its passes
+    try:
+        from swathcast.satellites import check as satellite_check
+
+        sched = Path(data_dir) / "schedule"
+        report = satellite_check(Path(data_dir), sched if sched.exists() else None, now)
+        (out_dir / "satellites.json").write_text(_dumps(report))
+    except Exception:  # noqa: BLE001 - a convenience; never fails the site
+        LOGGER.exception("satellite status check failed")
+    # the monthly hindcast (hindcast.yml): how well each projection held
+    hindcast = Path(data_dir) / "hindcast" / "hindcast.json"
+    if hindcast.exists():
+        shutil.copyfile(hindcast, out_dir / "hindcast.json")
     from swathcast.extents import publish_extents
 
     publish_extents(data_dir, out_dir)
@@ -288,13 +302,40 @@ def copy_schedule(schedule: Path, out_dir: Path) -> None:
 SCHEDULE_INDEX = "passes_index.json"
 
 
+#: The map's mission keys for the schedule's sensor names.
+SITE_KEYS = {
+    "sentinel-1": "s1",
+    "sentinel-2": "s2",
+    "landsat": "landsat",
+    "nisar": "nisar",
+    "modis": "modis",
+    "viirs": "viirs",
+    "sentinel-3": "s3",
+}
+
+
+def _window_end(out_dir: Path):
+    """The schedule window's end, from the sidecar (None without one)."""
+    meta = Path(out_dir) / "upcoming_passes.meta.json"
+    if not meta.exists():
+        return None
+    window = json.loads(meta.read_text()).get("window") or [None, None]
+    return parse_utc(window[1]) if window[1] else None
+
+
 def split_schedule(out_dir: Path) -> dict:
     """Write ``upcoming_passes.parquet`` again as one file per sensor
     (``passes_<sensor>.parquet``), plus ``passes_index.json``: for each sensor
     its file, row count, where each platform's plan ends, and its distinct
     polarization values. The map loads the index and the Sentinel-1/2 files
     first and NISAR's (most of the rows) only when NISAR is selected; the index
-    gives it the filters and plan ends of every sensor up front."""
+    gives it the filters and plan ends of every sensor up front.
+
+    Rows past the schedule's window (NISAR's plan reaches months further) go
+    to one file per month (``passes_<sensor>_YYYY-MM.parquet``, listed under
+    ``later``), which the map loads only when the dates asked for reach them;
+    ``schedule_end`` is the window's. ``projections`` and ``plan_pages`` come
+    from the sidecar (see :func:`projections_index`)."""
     import pyarrow as pa
     import pyarrow.compute as pc
     import pyarrow.parquet as pq
@@ -302,31 +343,38 @@ def split_schedule(out_dir: Path) -> dict:
     out_dir = Path(out_dir)
     table = pq.read_table(out_dir / "upcoming_passes.parquet")
     begin = pc.cast(table["begin_time"], pa.timestamp("us", tz="UTC"), safe=False)
+    window_end = _window_end(out_dir)
+    if window_end is not None:
+        inside = pc.less(begin, pa.scalar(window_end, pa.timestamp("us", tz="UTC")))
+    else:
+        inside = pa.array([True] * table.num_rows)
     index = {"schedule_end": None, "sensors": {}}
+    sort = lambda t: t.sort_by(  # noqa: E731
+        [
+            (c, "ascending")
+            for c in ("track", "frame", "begin_time")
+            if c in table.column_names
+        ]
+    )
     for sensor in sorted(set(table["sensor"].to_pylist())):
         mask = pc.equal(table["sensor"], sensor)
         # by track and frame: a frame's repeated outline then compresses away
-        part = table.filter(mask).sort_by(
-            [
-                (c, "ascending")
-                for c in ("track", "frame", "begin_time")
-                if c in table.column_names
-            ]
-        )
+        part = sort(table.filter(pc.and_(mask, inside)))
         name = f"passes_{sensor}.parquet"
         pq.write_table(part, out_dir / name, compression="zstd", compression_level=19)
+        everything = table.filter(mask)
         df = pd.DataFrame(
             {
-                "platform": part["platform"].to_pylist(),
+                "platform": everything["platform"].to_pylist(),
                 "begin": pc.filter(begin, mask).to_pylist(),
             }
         )
         pols = (
-            part["polarization"].to_pylist()
-            if "polarization" in part.column_names
+            everything["polarization"].to_pylist()
+            if "polarization" in everything.column_names
             else []
         )
-        index["sensors"][sensor] = {
+        entry = {
             "file": name,
             "rows": part.num_rows,
             "plan_ends": {
@@ -335,10 +383,87 @@ def split_schedule(out_dir: Path) -> dict:
             },
             "polarizations": sorted({str(p) for p in pols if p}),
         }
-    if table.num_rows:
-        index["schedule_end"] = to_iso(pc.max(begin).as_py())
+        later = table.filter(pc.and_(mask, pc.invert(inside)))
+        if later.num_rows:
+            lb = pd.to_datetime(
+                pc.cast(
+                    later["begin_time"], pa.timestamp("us", tz="UTC"), safe=False
+                ).to_pylist(),
+                utc=True,
+            )
+            months = lb.strftime("%Y-%m")
+            entry["later"] = []
+            for month in sorted(set(months)):
+                sel = pa.array(months == month)
+                chunk = sort(later.filter(sel))
+                fname = f"passes_{sensor}_{month}.parquet"
+                pq.write_table(
+                    chunk, out_dir / fname, compression="zstd", compression_level=19
+                )
+                t = lb[months == month]
+                entry["later"].append(
+                    {
+                        "file": fname,
+                        "rows": chunk.num_rows,
+                        "from": to_iso(t.min()),
+                        "to": to_iso(t.max()),
+                    }
+                )
+        index["sensors"][sensor] = entry
+    in_window = pc.filter(begin, inside)
+    if len(in_window):
+        index["schedule_end"] = to_iso(pc.max(in_window).as_py())
+    index["projections"] = projections_index(out_dir)
+    index["plan_pages"] = plan_pages_index(out_dir)
     (out_dir / SCHEDULE_INDEX).write_text(_dumps(index))
     return index
+
+
+def projections_index(out_dir: Path) -> dict:
+    """Each projected mission (projection.py), by the map's mission key, from
+    the schedule's sidecar: where the projection ends (``to``, one horizon for
+    all), and per platform where its plan ends (``from``), the start of the
+    base cycle repeated (``base_from``) and the repeat. The map's one date
+    filter reaches ``to``; it repeats each platform's base cycle past
+    ``from`` only when the dates run past it."""
+    meta = Path(out_dir) / "upcoming_passes.meta.json"
+    if not meta.exists():
+        return {}
+    specs = (
+        json.loads(meta.read_text()).get("postprocessing", {}).get("projections") or {}
+    )
+    out = {}
+    for sensor, spec in specs.items():
+        key = SITE_KEYS.get(sensor)
+        if (
+            not key
+            or not spec
+            or not (spec.get("platforms") or spec.get("not_projected"))
+        ):
+            continue
+        out[key] = {
+            "to": to_iso(parse_utc(spec["to"])),
+            "platforms": {
+                p: {
+                    "from": to_iso(parse_utc(v["from"])),
+                    "base_from": to_iso(parse_utc(v["base_from"])),
+                    "repeat_days": int(v["repeat_days"]),
+                }
+                for p, v in spec["platforms"].items()
+            },
+        }
+        if spec.get("not_projected"):
+            out[key]["not_projected"] = dict(spec["not_projected"])
+    return out
+
+
+def plan_pages_index(out_dir: Path) -> dict:
+    """Where each mission's plan is published, by the map's mission key."""
+    meta = Path(out_dir) / "upcoming_passes.meta.json"
+    if not meta.exists():
+        return {}
+    pages = json.loads(meta.read_text()).get("plan_pages") or {}
+    return {SITE_KEYS[k]: v for k, v in pages.items() if k in SITE_KEYS}
 
 
 #: Lazily loaded footprint grids written next to the schedule.
@@ -488,6 +613,7 @@ def check_site(site_dir: Path) -> list[str]:
 
     problems += _check_s2(data)
     problems += _check_landsat(data)
+    problems += _check_projections(data)
     problems += _check_landsat_l1(data)
     problems += _check_nisar_s(data)
     problems += _check_wideswath(data)
@@ -572,6 +698,41 @@ def _check_landsat(data: Path) -> list[str]:
         if unknown
         else []
     )
+
+
+def _check_projections(data: Path) -> list[str]:
+    """passes_index.json's projections (optional): one horizon, each platform
+    projected from its plan's end after a whole base cycle, before the
+    horizon; NISAR's later files exist."""
+    index = data / SCHEDULE_INDEX
+    if not index.exists():
+        return []
+    idx = json.loads(index.read_text())
+    problems = []
+    tos = set()
+    for key, spec in (idx.get("projections") or {}).items():
+        try:
+            to = parse_utc(spec["to"])
+            tos.add(to)
+            for p, v in spec["platforms"].items():
+                start, base = parse_utc(v["from"]), parse_utc(v["base_from"])
+                if start - base != timedelta(days=int(v["repeat_days"])):
+                    problems.append(
+                        f"passes_index.json {key} {p}: base is not one cycle"
+                    )
+                if start >= to:
+                    problems.append(
+                        f"passes_index.json {key} {p}: projected from after the horizon"
+                    )
+        except (KeyError, TypeError, ValueError, AttributeError):
+            problems.append(f"passes_index.json {key} projection is malformed")
+    if len(tos) > 1:
+        problems.append("passes_index.json projections have more than one horizon")
+    for entry in (idx.get("sensors") or {}).values():
+        for chunk in entry.get("later", []):
+            if not (data / chunk["file"]).exists():
+                problems.append(f"passes_index.json lists missing {chunk['file']}")
+    return problems
 
 
 def _check_landsat_l1(data: Path) -> list[str]:

@@ -5,8 +5,11 @@ Where every number on the site comes from. Three uses:
 - **Planned**: upcoming acquisitions (the map's colours, the "Upcoming" list in a footprint's popup).
   Built once a day by the `schedule` job (`plans.py`, `schedule.py`), up to 30 days ahead where the
   plan reaches that far: on 2026-10-01 Sentinel-1 to 21–22 Oct and Sentinel-2 to 12–19 Oct (ESA
-  publishes no further), Landsat and NISAR all 30 days. Nothing past a plan's end is extrapolated
-  ([methodology](methodology.md#horizon-and-gaps)). MODIS, VIIRS and Sentinel-3 have no plans (they
+  publishes no further), Landsat all 30 days, NISAR to its plan's end (31 Dec 2026). Every pass
+  links to the plan it comes from. Past a plan's end every mission is *projected* for a year (each
+  platform's last cycle repeated, Terra and Aqua excepted), labelled as projected and subject to
+  change, and measured monthly against what came next
+  ([methodology](methodology.md#projection-past-a-plans-end)). MODIS, VIIRS and Sentinel-3 have no plans (they
   image on every orbit): their passes are predicted from the orbit for all 30 days
   ([methodology](methodology.md#modis-viirs-and-sentinel-3-timing)).
 - **History**: a footprint's recent acquisitions (the popup's "Recent acquisitions", last 90 days).
@@ -77,11 +80,12 @@ Details and validation: [methodology](methodology.md) (timing, footprints, polar
 | [NASA NISAR observation plan](https://science.nasa.gov/mission/nisar/data/) (KMZ) | Planned | linked from [`science.nasa.gov/mission/nisar/data/`](https://science.nasa.gov/mission/nisar/data/) (ROP358) | frames, dates, radar modes (per band); blank modes carried from the frame's last listed one |
 | CelesTrak elements | Planned | as above | frame times (SGP4, the frame ~567 km left of the track) |
 | [ISRO NISAR ROP](https://bhoonidhi.nrsc.gov.in/NISAR/ROP.html) (GeoServer) | Checked against, not used yet | `bhoonidhi.nrsc.gov.in/geoserver/NISAR_ROP/ows` (WFS, one layer per cycle; listed by `POST /NISAR/ROP {"action":"GetAllLayers"}`) | datatake segments with planned start/end times, RCID, application; see methodology |
-| NASA CMR, ASF L1 RSLC | Planned (outlines) | `cmr.earthdata.nasa.gov/search/granules.json` ([`C2853145197-ASF`](https://cmr.earthdata.nasa.gov/search/concepts/C2853145197-ASF.html), last 13 days) | each (track, frame, direction)'s latest RSLC footprint replaces the plan's frame (7-11 km off) |
-| NASA CMR, ASF L1 RSLC | History (frames) | `cmr.earthdata.nasa.gov/search/granules.umm_json` ([`C2853145197-ASF`](https://cmr.earthdata.nasa.gov/search/concepts/C2853145197-ASF.html), `TRACK_NUMBER`, `FRAME_NUMBER`) | sensing time, polarizations per frequency, full or partial frame |
-| NASA CMR, ASF L2 GCOV | History (previews) | as above, [`C2854338529-ASF`](https://cmr.earthdata.nasa.gov/search/concepts/C2854338529-ASF.html) | each RSLC's GCOV (same cycle, track, direction, frame and start minute), for its browse images |
-| [ASF](https://nisar-docs.asf.alaska.edu/access-overview/) via CMR | Latency (reference) | [`C2853089814-ASF`](https://cmr.earthdata.nasa.gov/search/concepts/C2853089814-ASF.html) (L0B), [`C2853145197-ASF`](https://cmr.earthdata.nasa.gov/search/concepts/C2853145197-ASF.html) (RSLC) | listed by `created_at` |
-| [ASF](https://nisar-docs.asf.alaska.edu/access-overview/) via CMR | Latency | [`C2854338529-ASF`](https://cmr.earthdata.nasa.gov/search/concepts/C2854338529-ASF.html) (GCOV) | matched on the RSLC name |
+| NASA CMR, ASF L1 RSLC | Planned (outlines) | `cmr.earthdata.nasa.gov/search/granules.json` ([`C3622236985-ASF`](https://cmr.earthdata.nasa.gov/search/concepts/C3622236985-ASF.html) V1 and [`C2853145197-ASF`](https://cmr.earthdata.nasa.gov/search/concepts/C2853145197-ASF.html) PROVISIONAL_V1, last 13 days) | each (track, frame, direction)'s latest RSLC footprint replaces the plan's frame (7-11 km off) |
+| NASA CMR, ASF L1 RSLC | History (frames) | `cmr.earthdata.nasa.gov/search/granules.umm_json` ([`C3622236985-ASF`](https://cmr.earthdata.nasa.gov/search/concepts/C3622236985-ASF.html) V1 + [`C2853145197-ASF`](https://cmr.earthdata.nasa.gov/search/concepts/C2853145197-ASF.html) before 2026-10-21, `TRACK_NUMBER`, `FRAME_NUMBER`) | sensing time, polarizations per frequency, full or partial frame |
+| NASA CMR, ASF L2 GCOV | History (previews) | as above, [`C3622241360-ASF`](https://cmr.earthdata.nasa.gov/search/concepts/C3622241360-ASF.html) V1 + [`C2854338529-ASF`](https://cmr.earthdata.nasa.gov/search/concepts/C2854338529-ASF.html) | each RSLC's GCOV (same cycle, track, direction, frame and start minute), for its browse images |
+| [ASF](https://nisar-docs.asf.alaska.edu/access-overview/) via CMR | Latency (reference) | [`C3622265756-ASF`](https://cmr.earthdata.nasa.gov/search/concepts/C3622265756-ASF.html) (L0B), [`C3622236985-ASF`](https://cmr.earthdata.nasa.gov/search/concepts/C3622236985-ASF.html) (RSLC), V1 since 2026-10-21; [`C2853089814-ASF`](https://cmr.earthdata.nasa.gov/search/concepts/C2853089814-ASF.html), [`C2853145197-ASF`](https://cmr.earthdata.nasa.gov/search/concepts/C2853145197-ASF.html) PROVISIONAL_V1 before | listed by `created_at` (both) |
+| [ASF](https://nisar-docs.asf.alaska.edu/access-overview/) via CMR | Latency | [`C3622241360-ASF`](https://cmr.earthdata.nasa.gov/search/concepts/C3622241360-ASF.html) (GCOV, V1), [`C2854338529-ASF`](https://cmr.earthdata.nasa.gov/search/concepts/C2854338529-ASF.html) (before) | matched on the RSLC name |
+| [ASF](https://nisar-docs.asf.alaska.edu/access-overview/) via CMR | Latency | [`C2887499907-ASF`](https://cmr.earthdata.nasa.gov/search/concepts/C2887499907-ASF.html) (NISAR_UR_L1, urgent-response RSLC) | matched on the RSLC's frame and start second; requested frames only (learned coverage) |
 
 ## NISAR (S-band, ISRO radar)
 

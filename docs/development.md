@@ -5,8 +5,9 @@
 | Workflow | When | What |
 |---|---|---|
 | [`schedule.yml`](../.github/workflows/schedule.yml) | daily | plans for the next 30 days, as far as each is published (ESA, USGS, NASA), orbit-predicted MODIS/VIIRS/Sentinel-3 passes, footprint grids and orbit timing → `data` branch |
-| [`poll.yml`](../.github/workflows/poll.yml) | hourly | latency poller → `data` branch; fails if every source failed or one has failed > 24 h |
+| [`poll.yml`](../.github/workflows/poll.yml) | hourly | latency poller → `data` branch; fails if every source failed or one has failed > 24 h; opens/updates/closes the `satellite-status` issue (a satellite or data stream gone silent, [operations](operations.md)) |
 | [`pages.yml`](../.github/workflows/pages.yml) | after each poll/schedule, and on code changes | summarise, check the data contract, deploy Pages |
+| [`hindcast.yml`](../.github/workflows/hindcast.yml) | monthly | how well each projection (a plan carried past its end) predicted what came next → `data` branch `hindcast/`, the site's `hindcast.json`; opens a `hindcast-failed` issue on failure |
 | [`watchdog.yml`](../.github/workflows/watchdog.yml) | weekly | opens/updates a `stale-data` issue if data is stale or a source is failing; closes it on recovery |
 | [`ci.yml`](../.github/workflows/ci.yml) | push / PR | ruff, pytest (offline, recorded fixtures), site data-contract check |
 
@@ -28,6 +29,9 @@ in Google Earth and compare with a box drawn over the same area on the map.
 src/swathcast/
   plans.py         the agencies' plans: ESA KMLs (newest wins), USGS Landsat calendar, NISAR plan
   schedule.py      assembles the schedule and the footprint grids (+ documented fixes)
+  projection.py    plans carried past their end by their repeat cycle (projected passes)
+  hindcast.py      how well that predicted what came next (swathcast hindcast)
+  satellites.py    is each satellite still delivering? (swathcast satellites)
   ephemeris.py     SGP4 sub-satellite points and closest-approach timing
   s2grid.py        ESA's Sentinel-2 tiling grid and per-tile times
   wideswath.py     MODIS/VIIRS/Sentinel-3: no plans; passes on the sinusoidal tiles from the orbit

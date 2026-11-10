@@ -1,4 +1,4 @@
-"""Command line: ``swathcast {schedule,poll,extents,tle,summarize,viewer,check-site,watchdog}``."""
+"""Command line: ``swathcast {schedule,poll,extents,tle,summarize,viewer,check-site,watchdog,hindcast,satellites}``."""
 
 from __future__ import annotations
 
@@ -15,6 +15,29 @@ def _cmd_schedule(args) -> int:
     from swathcast.schedule import build
 
     build(args.output, days=args.days, sensors=args.sensors)
+    return 0
+
+
+def _cmd_hindcast(args) -> int:
+    from swathcast.hindcast import ALL, run
+
+    run(args.out, sensors=args.sensors or ALL, since=args.since)
+    print((args.out / "hindcast.md").read_text())
+    return 0
+
+
+def _cmd_satellites(args) -> int:
+    from swathcast.satellites import check, issue_body
+
+    report = check(args.data_dir, args.schedule_dir)
+    if args.out:
+        args.out.write_text(json.dumps(report, indent=1) + "\n")
+    marker, body = issue_body(report, args.run_url or "")
+    if args.issue_body:
+        args.issue_body.write_text(body)
+    for p, v in report["platforms"].items():
+        print(f"{p:6s} {v['status']:14s} last data {v['last_seen']}  {v['note']}")
+    print(marker)
     return 0
 
 
@@ -122,6 +145,33 @@ def main(argv: list[str] | None = None) -> int:
         help="default: sentinel-1 sentinel-2 landsat nisar modis viirs sentinel-3",
     )
     p.set_defaults(func=_cmd_schedule)
+
+    p = sub.add_parser(
+        "hindcast",
+        help="measure how well plans carried forward by their repeat cycle "
+        "predicted what came next (writes hindcast.json and hindcast.md)",
+    )
+    p.add_argument("--out", type=Path, default=Path("hindcast"))
+    p.add_argument(
+        "--sensors",
+        nargs="+",
+        default=None,
+        help="default: landsat sentinel-1 sentinel-2 nisar modis viirs sentinel-3",
+    )
+    p.add_argument("--since", help="ESA plan files issued from this date (ISO)")
+    p.set_defaults(func=_cmd_hindcast)
+
+    p = sub.add_parser(
+        "satellites",
+        help="is each satellite still delivering? (last data per platform vs "
+        "its delivery time and its planned passes; never fails)",
+    )
+    p.add_argument("--data-dir", type=Path, default=Path("data"))
+    p.add_argument("--schedule-dir", type=Path, default=None)
+    p.add_argument("--out", type=Path, default=None, help="write the report (JSON)")
+    p.add_argument("--issue-body", type=Path, default=None)
+    p.add_argument("--run-url", default="")
+    p.set_defaults(func=_cmd_satellites)
 
     p = sub.add_parser(
         "poll", help="run one latency-poller pass over the data directory"

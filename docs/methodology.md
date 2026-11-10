@@ -261,25 +261,147 @@ none:
 
 ### Horizon and gaps
 
-The schedule is built 30 days ahead (`schedule --days 30`), but only from published plans, so it
-reaches only as far as each agency publishes. As of 2026-10-01:
+The schedule is built 30 days ahead (`schedule --days 30`) from published plans, so it is
+*planned* only as far as each agency publishes. Past that, every pass is *projected* for a year
+from today ([Projection](#projection-past-a-plans-end)), labelled so and never shown as planned.
+As of 2026-10-01 (plan ends) and 2026-11-09 (NISAR's plan):
 
-| Mission | Plan published by | Reaches | Why it stops there |
+| Mission | Plan published by | Planned to | Then |
 |---|---|---|---|
-| Sentinel-1C/1D | ESA, a new KML most days, each ~20–22 days long | 22 Oct (S1C), 21 Oct (S1D) | ESA plans ~3 weeks ahead. One S1D file is named for 15 Sep–5 Dec (`s1d_mp_user_20260915t185252_20261205t204800`) but its datatakes end on 9 Oct, so it adds nothing |
-| Sentinel-2A/2B/2C | ESA, a KML per platform every 2 weeks, each 18 days long | 19 Oct (S2A, S2C), 12 Oct (S2B) | S2B's newest file was issued 24 Sep; the next one extends it |
-| Landsat 8/9 | USGS acquisition calendar (paths per day, a fixed 16-day cycle) | all 30 days | |
-| NISAR | NASA observation plan (KMZ) | all 30 days | the plan covers the whole of 2026 |
-| MODIS, VIIRS, Sentinel-3 | no plan: predicted from the orbit | all 30 days | elements propagated up to 30 days; the schedule is rebuilt daily |
+| Sentinel-1C/1D | ESA, a new KML most days, each ~20–22 days long | 22 Oct (S1C), 21 Oct (S1D) | projected. One S1D file is named for 15 Sep–5 Dec (`s1d_mp_user_20260915t185252_20261205t204800`) but its datatakes end on 9 Oct, so it adds nothing |
+| Sentinel-2A/2B/2C | ESA, a KML per platform every 2 weeks, each 18 days long | 19 Oct (S2A, S2C), 12 Oct (S2B) | projected (S2A on a 20-day repeat) |
+| Landsat 8/9 | USGS acquisition calendar (paths per day, a fixed 16-day cycle) | the 30-day window | projected (the calendar's own dates; see below) |
+| NISAR | NASA observation plan (KMZ, `ObservationPlan_CY2026`) | the plan's end, 31 Dec 2026, beyond the 30-day window | projected |
+| MODIS, VIIRS, Sentinel-3 | no plan: *predicted* from the orbit | the 30-day window | projected, except Terra and Aqua |
 
-Nothing past a plan's end is filled in: extending a 12-day (S1) or 5-day (S2) repeat would be a
-guess, since ESA re-plans datatakes in every file. The daily schedule job picks up each new file, so
-the Sentinel horizon rolls forward by itself. A footprint's popup says where each platform's plan
-ends, so "nothing planned" after that date is not read as "no pass". Its timeline writes the gap
+NISAR's plan past the 30-day window is still *planned* (NASA published it), so the schedule keeps
+it to the plan's end: those rows are timed by repeating the same frame's orbit-timed acquisition of
+the window by whole 12-day cycles (`timing` "repeat"; "formula" for a frame the window does not
+image), and are published one file a month (`passes_nisar_YYYY-MM.parquet`, listed under
+`later` in `passes_index.json`) that the map loads only when the dates reach them.
+
+Each planned pass links to the plan it comes from: the ESA KML file (`plan_url` on every
+Sentinel-1/2 row and Sentinel-2 tile pass), NASA's KMZ, or USGS's calendar page; a predicted pass
+to its satellite's orbital elements at CelesTrak; a projected pass to the plan file whose last
+cycle it repeats. The daily schedule job picks up each new plan file, so the planned horizon rolls
+forward by itself. A footprint's popup says where each platform's plan ends. Its timeline writes the gap
 (Δ) between consecutive acquisitions, recent ones from the catalogue and upcoming ones from the plan
 (the gap across "now" runs from the last real one to the first planned one). Where they do not all
 fit (Sentinel-2 tiles see a pass every 1–2 days), the longest gaps are labelled first and every
 dot's tooltip carries its gap.
+
+### Projection past a plan's end
+
+A *projected* acquisition is a planned (or predicted) one carried forward by whole repeat cycles
+past the end of its plan: each platform's last cycle, repeated (`projection.py`). It is in no
+published plan and is subject to change. It is a fourth kind of pass beside observed (in a
+catalogue), planned (in an agency's plan) and predicted (from the orbit, for the missions without a
+plan), and the map never shows it as planned: the popups, the AOI list and the detail card tag it
+*projected* and say what it is, which plan it repeats (linked) and, once the monthly hindcast is
+published, how well that held at this lead for this platform; the timeline draws it dotted; a
+footprint whose next pass is projected is drawn half as opaque and outlined dashed; the CSV has
+`basis` (`planned`, `predicted`, `projected`), `source` (the plan or elements) and
+`projected_cycles` columns, and each calendar event starts "PROJECTED, NOT PLANNED". There is one
+date filter, and it reaches the projection's horizon: a year from the schedule's start
+(`HORIZON_DAYS`).
+
+How each mission is projected:
+
+| Mission | Repeat | From | Base cycle | Time of a projected pass |
+|---|---|---|---|---|
+| Sentinel-1 | 12 d | each platform's last planned datatake | its last 12 days of datatakes | the datatake shifted; bursts timed on it as on planned ones (ANX lattice) |
+| Sentinel-2 | 10 d (S2A 20 d) | each platform's last planned datatake | its last 10 (20) days | tile times shifted |
+| Landsat 8/9 | 16 d | the window's end | the window's last 16 days | scene times shifted (the dates are USGS's calendar) |
+| NISAR | 12 d | the day after the plan's last date | its last 12 days | frame times shifted |
+| VIIRS, Sentinel-3 | 16 d, 27 d | the window's end (predicted) | the last 16 (27) days | at the AOI: timed from the orbit at the base pass, then shifted |
+
+The schedule publishes each platform's start, base and repeat in `passes_index.json` →
+`projections` (not rows: a year of them would be millions); the map repeats the base cycle of the
+footprints it shows, only for the dates asked. The schedule keeps each Sentinel-1/2 platform's base
+cycle even when it started before the window (S2B's plan ended a day into it). Projected times keep
+the time of day of the (orbit-timed) base cycle instead of propagating elements months ahead, which
+the Landsat hindcast shows drifts.
+
+**Terra and Aqua are not projected**: they left their constellations' maintained orbits in
+2022–23 and no longer repeat. The same MODIS granule start (UTC) 16 days later images ground
+550–900 s along track and 230–780 km across from the first (median, at every lead up to a year),
+where NOAA-21's VIIRS moves 7 s and 2 km. Their passes are predicted from the orbit for the 30-day
+window only; the legend says so.
+
+#### Hindcast
+
+Which missions are projected, and what the map says about each, comes from a **hindcast**
+(`swathcast hindcast`, `hindcast.py`), run monthly by the `hindcast` workflow (data branch
+`hindcast/`, published as the site's `hindcast.json`): old plans projected forward and scored
+against what came next. Results of 2026-11-09:
+
+**Landsat 8/9.** USGS's calendar is a fixed 16-day cycle, so repeating the window's last cycle gives
+exactly the calendar's later dates (a unit test checks this). Against USGS Level-1 STAC
+(`landsat-c2l1`) for 40 randomly drawn daytime WRS-2 path/rows over a year (2025-11-09 to
+2026-11-08, 1,777 scenes):
+
+- every acquired scene fell on a calendar date, and 97.1 % of calendar dates were acquired
+  (L8 95.4 %, L9 98.8 %);
+- **times**: shifting a scene by whole 16-day cycles predicts the later scene's time to within
+  5 s (median) one cycle ahead and at most 36 s (median) / 72 s (p99) at any lead up to a year: the
+  orbit is held on its ground track, so the error stays bounded;
+- SGP4 with the newest elements, by contrast, is 0.3 s off within 15 days of the elements' epoch,
+  11 s at 15–30 days, 51 s at 30–60 days, 2 min at 60–120 days, and beyond 120 days does not find
+  the pass at all (propagated *back* from today's elements, as a stand-in for ahead).
+
+USGS's calendar itself reaches any date: the dates past the 30-day window are USGS's published
+calendar, but USGS also keeps a separate list of pending acquisitions and can change either, and the
+times there are ours, so they are labelled projected like the rest. What the hindcast cannot see:
+USGS changing its calendar (Landsat 8 is past its design life).
+
+**Sentinel-1 and Sentinel-2.** ESA keeps months of old plan files online (S1 from 2026-02-10, S2
+from 2025-04-16). Each old file (S1: one per platform per week, 72 files; S2: all 133) was
+projected past its own end and compared with what ESA *later* planned for those days. Scores are
+time-weighted (on a repeat orbit, time along a pass is position along the ground track):
+*precision* is the share of projected acquisition time that was later planned; *recall* the share
+of later-planned time the projection covered. Sentinel-1 "same mode" also asks for the same mode
+and polarization (wave mode excluded); Sentinel-2 is NOBS datatakes.
+
+| Platform (repeat) | 0–30 d | 30–60 d | 60–90 d | 90–120 d |
+|---|---|---|---|---|
+| S1C (12 d), precision / recall, same mode | 87 % / 77 % | 73 % / 65 % | 56 % / 49 % | 33 % / 27 % |
+| S1D (12 d), same mode | 91 % / 84 % | 83 % / 78 % | 74 % / 72 % | 70 % / 68 % |
+| S2B (10 d) | 94 % / 95 % | 90 % / 91 % | 87 % / 88 % | 84 % / 85 % |
+| S2C (10 d) | 96 % / 94 % | 93 % / 92 % | 89 % / 89 % | 87 % / 87 % |
+| S2A (20 d) | 87 % / 76 % | 78 % / 67 % | 70 % / 60 % | 62 % / 53 % |
+
+The spread between base files is wide for Sentinel-1 (the worst 10 % of S1C bases: 48 % precision
+at 0–30 days, 17–18 % beyond) and for S2A. S2A, in an extended campaign since S2C took its place,
+follows a **20-day** pattern, not its 10-day orbit repeat: on a 10-day repeat, one cycle ahead,
+46 % of its projected time was later planned, on a 20-day repeat 90 % (`PLATFORM_REPEAT_DAYS`).
+Sentinel-1 is projected too, as asked, but its projected passes carry these numbers: past a month,
+S1C's are more often wrong than right.
+
+**NISAR.** NASA has published one plan (2025-09-23 to 2026-12-31), so there is no later re-plan to
+score against; instead the plan is scored against itself: for a base date every 30 days, its 12
+days before repeated forward against what the plan has on those days, as (day, track, frame,
+direction). 97–99 % of projected frames are in the plan (0–120 days), 87–93 % with the same radar
+mode (p10 over bases 85–90 %). This says the plan repeats; not that NASA will keep it.
+
+**MODIS, VIIRS, Sentinel-3** (no plan). MODIS and VIIRS Level-1B granules start on a fixed UTC grid
+(MODIS 5 min, VIIRS 6 min; LAADS archive collections, CMR), so the same granule start 16 k days
+later images the same ground if the orbit repeats: how far its footprint moved, along track (as
+seconds) and across. Sentinel-3: the same SLSTR frame (relative orbit, seconds after the node,
+CDSE) 27 k days later, and the error of its sensing start. Median, over a year:
+
+| Platform | 0–30 d | 30–60 d | 60–120 d | 120–240 d | 240–400 d |
+|---|---|---|---|---|---|
+| NOAA-21 (VIIRS) | 7 s, 2 km | 16 s, 5 km | 23 s, 11 km | 34 s, 10 km | 40 s, 10 km |
+| NOAA-20 (VIIRS) | 19 s, 3 km | 47 s, 8 km | 108 s, 16 km | 224 s, 36 km | 352 s, 76 km |
+| Suomi NPP (VIIRS) | 23 s, 3 km | 57 s, 7 km | 129 s, 15 km | 304 s, 38 km | 439 s, 68 km |
+| S3A, S3B | 1–2 s | 1.5–2 s | 2–3 s | 4–5 s | 3–7 s |
+| Terra, Aqua (MODIS) | 700–900 s, 240–460 km | 550–900 s, 230–440 km | 640–700 s, 300–350 km | 640–650 s, 320–490 km | 650–700 s, 480–780 km |
+
+The JPSS drift (NOAA-20, Suomi NPP) is steady and grows with lead; for a 3,000 km swath a few
+minutes and tens of km still give the day and roughly the time, which is what the map then says.
+
+The full tables: `swathcast hindcast --out <dir>` writes `hindcast.md` and `hindcast.json` (ESA
+plans are cached under `$SWATHCAST_CACHE`; the first run downloads ~300 MB).
 
 ### ISRO's NISAR ROP
 
@@ -491,7 +613,7 @@ rows, learned coverage, timeouts) are unchanged. Only the universes and matching
 |---|---|---|---|
 | Sentinel-2 | CDSE L1C and L2A by `PublicationDate`, **1-in-8 MGRS tile sample** (`crc32(tile) % 8 == 0`) | Earth Search L1C and L2A; Planetary Computer L2A; HLS S30 | ESA name (`s2:product_uri`; PC id without `_Nxxxx`; HLS `PRODUCT_URI`) |
 | Landsat 8/9 | USGS STAC `landsat-c2l1` and `landsat-c2l2-sr`, by `created` | Earth Search and Planetary Computer `landsat-c2-l2`; HLS L30 | L2 id without processing date and `_SR`; HLS `LANDSAT_PRODUCT_ID` = the L1 id |
-| NISAR (L-band) | CMR L0B RRSD and L1 RSLC (ASF, PROVISIONAL_V1), by `created_at` | GCOV | the RSLC name with the product prefix swapped (`InputGranules` confirms) |
+| NISAR (L-band) | CMR L0B RRSD and L1 RSLC (ASF, V1 since 2026-10-21 and PROVISIONAL_V1 before), by `created_at` | GCOV | the RSLC name with the product prefix swapped (`InputGranules` confirms) |
 | NISAR S-band | ISRO Bhoonidhi `NISAR_SSAR_RSLC` sensed in the last 10 days (needs a login) | Bhoonidhi GCOV | the RSLC name with `L1`→`L2`, `RSLC`→`GCOV` (assumed, see below) |
 | MODIS | LANCE NRT Level-1B 1 km (`MOD021KM`, `MYD021KM`) by CMR `created_at` | LAADS Level-1B collections 6.1 and 7; snow cover `MOD10_L2`/`MYD10_L2` at LANCE (NRT) and NSIDC | platform + granule start stamp `AYYYYDDD.HHMM` |
 | VIIRS | LANCE NRT Level-1B 750 m (`VNP02MOD`, `VJ102MOD`, `VJ202MOD`) by CMR `created_at` | LAADS Level-1B; snow cover `VNP10`/`VJ110`/`VJ210` at LANCE (NRT) and NSIDC | platform + granule start stamp |

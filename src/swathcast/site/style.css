@@ -202,3 +202,14 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   .tour h3 { font-size: 19px; }
   .tour-label { font-size: 13.5px; max-width: 200px; padding: 6px 10px; }
 }
+
+/* Projected passes: a plan carried past its end by its repeat cycle (map.js, PROJECTED_NOTE) */
+.tag.proj { display: inline-block; padding: 0 5px; border: 1px dashed var(--muted); border-radius: 4px; font-size: 0.85em; font-weight: 500; color: var(--ink-2, var(--muted)); vertical-align: 1px; white-space: nowrap; }
+tr.projected td.when, .pass-list tr.item.projected td.when { font-style: italic; }
+.pass-list tr.item.projected td:not(.status) { color: var(--ink-2, var(--muted)); }
+.proj-ink { color: var(--ink-2, var(--muted)); font-style: italic; }
+.sub.proj { border-bottom: 1px dashed var(--muted); }
+.detail-card .dc-basis { margin: 4px 0 2px; font-size: 12px; line-height: 1.4; }
+.detail-card .dc-basis.proj { padding: 6px 8px; border: 1px dashed var(--muted); border-radius: 6px; color: var(--ink-2, var(--ink)); background: var(--surface-2, transparent); }
+.hist-table a.proj { font-style: italic; border-bottom: 1px dashed var(--muted); text-decoration: none; }
+.detail-card .dc-basis.sat-warn { padding: 6px 8px; border-radius: 6px; background: var(--warn-bg); color: var(--warn-ink); }

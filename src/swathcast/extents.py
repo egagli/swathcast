@@ -55,7 +55,16 @@ OPERA_PRODUCTS = "https://cumulus.asf.earthdatacloud.nasa.gov/OPERA/OPERA_L2_RTC
 GCOV_NAME = re.compile(
     r"^NISAR_L2_(PR|OP)_GCOV_\d{3}_(\d{3})_[AD]_\d{3}_.*_(\d{8})T\d{6}_"
 )
-NISAR_COLLECTION = {"PR": "NISAR_L2_GCOV_PROVISIONAL_V1"}
+#: Where a GCOV's KML is, by collection: V1 (since 2026-10-21) keeps it with
+#: the browse images, PROVISIONAL_V1 kept it with the product; the name does
+#: not say which, so both are tried, V1 first.
+NISAR_BROWSE = "https://nisar.asf.earthdatacloud.nasa.gov/BROWSE"
+NISAR_KML_DIRS = {
+    "PR": (
+        f"{NISAR_BROWSE}/NISAR_L2_GCOV_V1",
+        f"{NISAR_PRODUCTS}/NISAR_L2_GCOV_PROVISIONAL_V1",
+    )
+}
 #: OPERA_L2_RTC-S1_T137-292398-IW2_20261001T020133Z_...
 OPERA_NAME = re.compile(r"^OPERA_L2_RTC-S1_(T(\d{3})-\d{6}-IW\d)_")
 
@@ -65,7 +74,8 @@ NISAR_MAX_TRIES = 3
 #: burst is seen within a 12-day repeat
 BACKFILL = {
     "nisar_gcov": (
-        {"collection_concept_id": "C2854338529-ASF"},
+        # V1 since 2026-10-21, PROVISIONAL_V1 before (requests repeats the key)
+        {"collection_concept_id": ["C3622241360-ASF", "C2854338529-ASF"]},
         NISAR_DAYS,
         timedelta(days=2),
     ),
@@ -135,10 +145,16 @@ def tiff_grid(head: bytes) -> tuple[int, float, float, float, float]:
     return int(epsg), x0, y1 - h * sy, x0 + w * sx, y1
 
 
-def nisar_kml_url(granule: str) -> str | None:
+def nisar_kml_urls(granule: str) -> list[str]:
+    """Where the GCOV's KML may be (see NISAR_KML_DIRS), in the order tried."""
     m = GCOV_NAME.match(granule)
-    coll = m and NISAR_COLLECTION.get(m[1])
-    return f"{NISAR_PRODUCTS}/{coll}/{granule}/{granule}_NATIVE.kml" if coll else None
+    dirs = NISAR_KML_DIRS.get(m[1], ()) if m else ()
+    return [f"{d}/{granule}/{granule}_NATIVE.kml" for d in dirs]
+
+
+def nisar_kml_url(granule: str) -> str | None:
+    urls = nisar_kml_urls(granule)
+    return urls[0] if urls else None
 
 
 def opera_mask_url(granule: str) -> str:
@@ -274,7 +290,13 @@ def update_nisar(
     ]
 
     def fetch(g):
-        return kml_quad(_get(session, nisar_kml_url(g)).text)
+        urls = nisar_kml_urls(g)
+        for url in urls[:-1]:
+            try:
+                return kml_quad(_get(session, url).text)
+            except (OSError, ValueError):
+                continue
+        return kml_quad(_get(session, urls[-1]).text)
 
     results = _parallel(fetch, todo, deadline, workers)
     rows = []

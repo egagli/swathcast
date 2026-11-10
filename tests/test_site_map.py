@@ -273,3 +273,56 @@ out.hh = hi.singleBand("sentinel-1-grd", "S1A_Y", "HH");
     assert "assets=vh" in out["vh"] and "rescale=0,0.12" in out["vh"]
     assert "colormap_name=gray" in out["vh"]
     assert "assets=hh" in out["hh"] and "rescale=0,600" in out["hh"]
+
+
+def test_projection_helpers(tmp_path):
+    """A plan carried past its end (passes_index.json "projections"): parsed
+    per platform, the base cycle picked, and each base acquisition repeated
+    by whole cycles of its own platform inside the window."""
+    out = run_node(
+        tmp_path,
+        """
+const P = (from, base, days) => ({ from, base_from: base, repeat_days: days });
+const idx = { projections: {
+  s2: { to: "2027-01-20T00:00:00Z", not_projected: { X: "why" }, platforms: {
+    S2B: P("2026-12-09T00:00:00Z", "2026-11-29T00:00:00Z", 10),
+    S2A: P("2026-12-15T00:00:00Z", "2026-11-25T00:00:00Z", 20),
+    BAD: P("2026-12-15T00:00:00Z", "2026-11-25T00:00:00Z", 10),
+  } },
+  broken: { to: "x", platforms: {} },
+} };
+const pr = c.parseProjections(idx);
+out.keys = Object.keys(pr);
+out.platforms = Object.keys(pr.s2.platforms).sort();
+out.notProjected = pr.s2.notProjected;
+out.none = c.parseProjections(null);
+const times = [
+  { when: new Date("2026-11-30T10:00:00Z"), platform: "S2B" },
+  { when: new Date("2026-12-10T10:00:00Z"), platform: "S2B" },
+  { when: new Date("2026-12-01T11:00:00Z"), platform: "S2A" },
+  { when: new Date("2026-12-01T12:00:00Z"), platform: "S2C" },
+];
+const base = c.baseOf(times, pr.s2);
+out.base = base.map((t) => t.platform + " " + t.when.toISOString().slice(0, 10));
+const rep = c.repeatCycle(base, pr.s2, Date.parse("2027-12-31T00:00:00Z"));
+out.rep = rep.map((x) => [x.when.toISOString().slice(0, 10), x.src.platform, x.cycles, x.shiftMs / 864e5]);
+out.cut = c.repeatCycle(base, pr.s2, Date.parse("2026-12-25T00:00:00Z")).length;
+""",
+    )
+    assert out["keys"] == ["s2"]
+    # a platform whose base is not one cycle is left out
+    assert out["platforms"] == ["S2A", "S2B"]
+    assert out["notProjected"] == {"X": "why"}
+    assert out["none"] == {}
+    # S2B's base is [Nov 29, Dec 9), S2A's [Nov 25, Dec 15); S2C is not projected
+    assert out["base"] == ["S2B 2026-11-30", "S2A 2026-12-01"]
+    assert out["rep"] == [
+        ["2026-12-10", "S2B", 1, 10],
+        ["2026-12-20", "S2B", 2, 20],
+        ["2026-12-21", "S2A", 1, 20],
+        ["2026-12-30", "S2B", 3, 30],
+        ["2027-01-09", "S2B", 4, 40],
+        ["2027-01-10", "S2A", 2, 40],
+        ["2027-01-19", "S2B", 5, 50],
+    ]
+    assert out["cut"] == 3

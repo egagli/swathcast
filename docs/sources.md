@@ -205,8 +205,30 @@ with `curl` and the package's own source classes. The recorded responses are in 
   and `revision_date` include re-revisions of old granules (55,430 S30 "updated" on one day), so they
   are not a first-publication stream. ProviderDates Insert − sensing (2026-09-28): S30 median 40.2 h,
   L30 44.2 h. In checks, 13 of 36 sampled L1C tiles and 43 of 100 L9 L1 scenes had HLS granules.
-- **NISAR** (ASF, CMR, PROVISIONAL_V1): L0B RRSD `C2853089814-ASF`, L1 RSLC `C2853145197-ASF`, L2 GCOV
-  `C2854338529-ASF` (also GSLC, GUNW and others, not tracked). `created_at` windows work (106 RSLC,
+- **NISAR** (ASF, CMR): **V1 since 2026-10-21**: L0B RRSD `C3622265756-ASF`, L1 RSLC
+  `C3622236985-ASF`, L2 GCOV `C3622241360-ASF` (also GSLC `C3622244601-ASF` and others, not
+  tracked; and `C2887499907-ASF` NISAR_UR_L1, urgent-response RSLCs, not tracked). Before that,
+  PROVISIONAL_V1: L0B `C2853089814-ASF`, RSLC `C2853145197-ASF`, GCOV `C2854338529-ASF`, whose last
+  products were sensed 2026-10-21 20:37 UTC (V1's first: 17:07 that day). Checked 2026-11-09: same
+  names (the processing letters after the CRID differ, e.g. `_N_P_J_` vs `_N_F_J_`), same
+  `AdditionalAttributes`, same ProviderDates Insert; a GCOV's KML moved from the product folder
+  (`NISAR/NISAR_L2_GCOV_PROVISIONAL_V1/…`) to the browse folder (`BROWSE/NISAR_L2_GCOV_V1/…`). The
+  poller lists and looks up both (V1 first). It had listed only PROVISIONAL until 2026-11-10, so it
+  tracked no NISAR L-band product created 2026-10-21 to 2026-11-10 (the per-satellite check found
+  it: [operations](operations.md)); those are not backfilled, since their arrival was not observed.
+  V1 RSLC/GCOV arrived 4-15 days after sensing on 2026-11-09 (median ~13 d, a backlog since the
+  move; L0B ~6 h), and the poller ignores products first listed > 14 days after sensing
+  (`max_new_age_days`), so the slowest few percent are skipped until it clears.
+- **NISAR urgent response** (ASF, CMR, `C2887499907-ASF` NISAR_UR_L1, since 2026-06-17): JPL's
+  urgent-response pipeline, products made for named requests (`URGENT_REQUEST_ID`, e.g. a cyclone
+  study): RSLC (`NISAR_L1_UR_RSLC_…`, ~50 a day in Oct–Nov 2026), RIFG, RUNW, ROFF, from the same
+  L0B as the standard ones. Tracked as the source `asf_nisar_rslc_ur` of the standard RSLC,
+  matched on frame and start second (cycle, track, direction, frame, `YYYYMMDDTHHMMSS`; mode,
+  polarization, end and processing letters can differ) by a CMR name pattern
+  (`options[readable_granule_name][pattern]`). Checked 2026-11-10 on 2026-10-25..31: 250 of 2,262
+  standard RSLCs had a UR twin (the pattern lookup found exactly the 250 a local match did); the
+  UR one was in CMR first for 94 % of twins (median 175 h earlier). Learned coverage (only requested
+  frames); timeout 16 days. `created_at` windows work (106 RSLC,
   24 L0B in a two-hour window). Names: `NISAR_L1_PR_RSLC_<cycle>_<track>_<A|D>_<frame>_<mode>_<pol>_A_<start>_<end>_…`;
   the GCOV of a frame has the same name after `NISAR_L2_PR_GCOV_`, and each RSLC's `InputGranules` is
   its L0B. ProviderDates Insert − start (2026-09-28): L0B median 6.5 h, RSLC 44.2 h, GCOV 45.9 h.
@@ -283,7 +305,7 @@ with `curl` and the package's own source classes. The recorded responses are in 
 - **NASA NISAR** (`science.nasa.gov/mission/nisar/data/`) links the observation plan
   (`NISAR_ROP358_TFDB_ObservationPlan_CY2026-20260305.kmz`, 17 MB) and a released-data KMZ. Placemarks
   `T<track>_F<frame>` with an HTML table of dates and radar modes. CMR has the NISAR science
-  collections (e.g. L1 RSLC `C2853145197-ASF`; names `NISAR_L1_PR_RSLC_<cycle>_<track>_<A|D>_<frame>_<mode>_<pol>_…`),
+  collections (e.g. L1 RSLC `C3622236985-ASF`, V1; `C2853145197-ASF` before 2026-10-21; names `NISAR_L1_PR_RSLC_<cycle>_<track>_<A|D>_<frame>_<mode>_<pol>_…`),
   searchable anonymously; downloads redirect to Earthdata login.
 
 ## Sentinel-2 tiling grid and tile sensing times (for the map, not a latency source)

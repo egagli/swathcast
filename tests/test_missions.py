@@ -120,6 +120,72 @@ def test_nisar_names_and_gcov_mapping():
     assert rslc.centroid_lat is not None and -90 <= rslc.centroid_lat <= 90
 
 
+def test_nisar_v1_collections_parse_the_same():
+    """ASF moved NISAR to V1 collections on 2026-10-21 (fixture recorded
+    2026-11-10): the same names, attributes and GCOV mapping."""
+    fx = load_fixture("cmr_nisar_v1_umm.json")
+    assert fx["RSLC"]["meta"]["collection-concept-id"] == nisar.COLLECTIONS["RSLC"][0]
+    assert fx["L0B"]["meta"]["collection-concept-id"] == nisar.COLLECTIONS["L0B"][0]
+    assert fx["GCOV"]["meta"]["collection-concept-id"] == nisar.GCOV[0]
+    rslc = nisar.acquisition(fx["RSLC"], "RSLC")
+    assert (rslc.relative_orbit, rslc.orbit_direction, rslc.datatake_id) == (
+        40,
+        "descending",
+        "084",
+    )
+    assert rslc.provider_timestamp is not None
+    assert nisar.gcov_name(rslc.granule_id) == fx["GCOV"]["umm"]["GranuleUR"]
+    l0b = nisar.acquisition(fx["L0B"], "L0B")
+    assert (l0b.product_type, l0b.datatake_id) == ("L0B", "156S")
+    assert any(g.startswith(l0b.granule_id) for g in fx["RSLC"]["umm"]["InputGranules"])
+
+
+def test_nisar_lists_and_looks_up_both_collections(monkeypatch):
+    seen = []
+    monkeypatch.setattr(
+        nisar, "search_umm", lambda session, params: seen.append(params) or []
+    )
+    concepts = lambda: {v for p in seen for k, v in p if k == "collection_concept_id"}  # noqa: E731
+    nisar.NISARCatalog(session=None).list_new((NOW - timedelta(hours=1), NOW))
+    assert concepts() == set(nisar.COLLECTIONS["RSLC"]) | set(nisar.COLLECTIONS["L0B"])
+    seen.clear()
+    nisar.NISARCatalog(session=None).lookup(["NISAR_L1_PR_RSLC_x"])
+    assert concepts() == set(nisar.COLLECTIONS["RSLC"]) | set(nisar.COLLECTIONS["L0B"])
+    seen.clear()
+    nisar.NISARGCOV(session=None).lookup(["NISAR_L1_PR_RSLC_x"])
+    assert concepts() == set(nisar.GCOV)
+
+
+def test_nisar_urgent_response_rslc_is_matched_on_frame_and_start(monkeypatch):
+    pr = "NISAR_L1_PR_RSLC_034_015_D_057_2005_DHDH_M_20261025T055219_20261025T055255_P05036_N_F_J_001"
+    other = "NISAR_L1_PR_RSLC_034_015_D_058_2005_DHDH_M_20261025T055255_20261025T055330_P05036_N_F_J_001"
+    assert nisar.ur_pattern(pr) == "NISAR_L1_UR_RSLC_034_015_D_057_*_20261025T055219_*"
+    seen = []
+
+    def fake(session, params):
+        seen.append(params)
+        return [
+            {
+                "umm": {
+                    # its mode, polarization and end differ from the standard one
+                    "GranuleUR": "NISAR_L1_UR_RSLC_034_015_D_057_2005_QPDH_A_20261025T055219_20261025T055228_P05036_F_P_J_001",
+                    "ProviderDates": [
+                        {"Type": "Insert", "Date": "2026-10-28T08:00:00Z"}
+                    ],
+                }
+            }
+        ]
+
+    monkeypatch.setattr(nisar, "search_umm", fake)
+    got = nisar.NISARRSLCUrgent(session=None).lookup([pr, other])
+    assert set(got) == {pr}
+    assert got[pr].provider_id.startswith("NISAR_L1_UR_RSLC_034_015_D_057_")
+    assert ("collection_concept_id", nisar.UR_L1) in seen[0]
+    assert ("options[readable_granule_name][pattern]", "true") in seen[0]
+    assert nisar.NISARRSLCUrgent.coverage == "learned"
+    assert nisar.NISARRSLCUrgent in nisar.SOURCES
+
+
 # ---------------------------------------------------------------- tracker
 NOW = datetime(2026, 9, 29, 12, 0, tzinfo=UTC)
 

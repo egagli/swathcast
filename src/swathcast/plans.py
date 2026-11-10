@@ -87,6 +87,8 @@ SCHEDULE_COLUMNS = [
     "swath",
     "timing",
     "mode_source",
+    # the published plan the row comes from (ESA KML, NASA KMZ): its URL
+    "plan_url",
 ]
 
 #: Agency polarisation code -> channels. ESA S1 plan ``Polarisation`` and the
@@ -298,6 +300,7 @@ def sentinel_schedule(
             "swath": df["Swath"] if s1 else None,
             "timing": "plan",
             "mode_source": "plan",
+            "plan_url": [f"{ESA}/documents/d/sentinel/{n}" for n in df["plan_file"]],
         }
     )
     geoms = [Polygon(r) if r and len(r) >= 4 else None for r in df["ring"]]
@@ -697,15 +700,57 @@ def nisar_times(df, sat) -> tuple[np.ndarray, np.ndarray]:
     return when, dist
 
 
-def nisar_schedule(start, end, session, cache_dir: Path, sat=None):
-    import geopandas as gpd
-    from shapely.geometry import Polygon
+#: NISAR's repeat cycle (173 orbits): the plan's later dates are timed by
+#: shifting the same frame's orbit-timed acquisition of the window by whole
+#: cycles (SGP4 drifts months ahead; see projection.py and the hindcast).
+NISAR_REPEAT = pd.Timedelta(days=12)
 
+
+def nisar_plan(session, cache_dir: Path):
+    """NASA's current NISAR observation plan: (frames per day, its URL)."""
     url = nisar_plan_url(get(session, NISAR_DATA_PAGE).text)
     name = re.sub(r"[^A-Za-z0-9_.-]", "_", url.rsplit("/", 1)[-1].split("?")[0])
     df = parse_nisar_kmz(cached(session, url, cache_dir / "nisar", name).read_bytes())
     df["day"] = pd.to_datetime(df["day"], utc=True)
-    df = df[(df["day"] >= start.floor("D") - pd.Timedelta(days=1)) & (df["day"] < end)]
+    return df, url
+
+
+def repeat_times(later: pd.DataFrame, base: pd.DataFrame, keys: list, repeat):
+    """For each row of ``later`` (a ``day``), the time of the same ``keys``'s
+    row in ``base`` (``day``, ``time``) a whole number of ``repeat`` earlier,
+    shifted by them (the latest such base row); NaT where there is none."""
+    out = pd.Series(pd.NaT, index=later.index, dtype="datetime64[ns, UTC]")
+    if later.empty or base.empty:
+        return out
+    b = base.sort_values("day").drop_duplicates(keys + ["day"], keep="last")
+    lookup = {}
+    for row in b.itertuples(index=False):
+        lookup.setdefault(tuple(getattr(row, k) for k in keys), []).append(
+            (row.day, row.time)
+        )
+    rep = pd.Timedelta(repeat)
+    for i, row in zip(later.index, later.itertuples(index=False), strict=True):
+        for day, t in reversed(lookup.get(tuple(getattr(row, k) for k in keys), [])):
+            n = (row.day - day) / rep
+            if n >= 1 and abs(n - round(n)) < 1e-9:
+                out.at[i] = t + round(n) * rep
+                break
+    return out
+
+
+def nisar_schedule(start, end, session, cache_dir: Path, sat=None, until=None):
+    """NASA's plan in [start, end) timed from the orbit, and (with ``until``)
+    the plan's later dates up to ``until`` timed by the repeat cycle from the
+    window's acquisitions of the same frame (``timing`` "repeat"; "formula"
+    for a frame the window does not image)."""
+    import geopandas as gpd
+    from shapely.geometry import Polygon
+
+    plan, url = nisar_plan(session, cache_dir)
+    later = plan[(plan["day"] >= end) & (plan["day"] < (until or end))]
+    df = plan[
+        (plan["day"] >= start.floor("D") - pd.Timedelta(days=1)) & (plan["day"] < end)
+    ]
     df = df.reset_index(drop=True)
     centres = [lonlat_centre(r) for r in df["ring"]]
     formula = [
@@ -735,12 +780,64 @@ def nisar_schedule(start, end, session, cache_dir: Path, sat=None):
             "absolute_orbit": np.nan,
             "swath": None,
             "timing": timing,
+            "plan_url": url,
         }
     )
     keep = ((out["begin_time"] >= start) & (out["begin_time"] < end)).to_numpy()
     out = out[keep]
     geoms = [Polygon(r) for r, k in zip(df["ring"], keep, strict=True) if k]
-    LOGGER.info("NISAR: %d frame acquisitions from %s", len(out), name)
+    if len(later):
+        base = pd.DataFrame(
+            {
+                "track": df["track"].to_numpy()[keep],
+                "frame": df["frame"].to_numpy()[keep],
+                "direction": df["direction"].to_numpy()[keep],
+                "day": df["day"].to_numpy()[keep],
+                "time": out["begin_time"].to_numpy(),
+            }
+        )
+        base["day"] = pd.to_datetime(base["day"], utc=True)
+        base["time"] = pd.to_datetime(base["time"], utc=True)
+        later = later.reset_index(drop=True)
+        t = repeat_times(later, base, ["track", "frame", "direction"], NISAR_REPEAT)
+        formula = pd.Series(
+            [
+                formula_time(
+                    d,
+                    lonlat_centre(r)[0],
+                    dr if dr in NISAR_LST_H else "descending",
+                    NISAR_LST_H,
+                )
+                for d, r, dr in zip(
+                    later["day"], later["ring"], later["direction"], strict=True
+                )
+            ],
+            dtype="datetime64[ns, UTC]",
+        )
+        lt = t.fillna(formula)
+        more = pd.DataFrame(
+            {
+                "sensor": "nisar",
+                "platform": "NISAR",
+                "mode": later["mode"].astype(str).to_numpy(),
+                "orbit_direction": later["direction"].to_numpy(),
+                "track": later["track"].to_numpy(),
+                "begin_time": lt.to_numpy(),
+                "end_time": lt.to_numpy(),
+                "time_is_estimated": True,
+                "frame": later["frame"].to_numpy(),
+                "polarization": [nisar_polarization(m) for m in later["mode"]],
+                "mode_source": later["mode_source"].to_numpy(),
+                "datatake_id": None,
+                "absolute_orbit": np.nan,
+                "swath": None,
+                "timing": np.where(t.isna(), "formula", "repeat"),
+                "plan_url": url,
+            }
+        )
+        out = pd.concat([out, more], ignore_index=True)
+        geoms += [Polygon(r) for r in later["ring"]]
+    LOGGER.info("NISAR: %d frame acquisitions from %s", len(out), url)
     return gpd.GeoDataFrame(
         out.reset_index(drop=True), geometry=geoms, crs="EPSG:4326"
     ), url

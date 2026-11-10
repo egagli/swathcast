@@ -20,7 +20,7 @@ export const SOURCE_SLOT = {
   // other missions: same slot = same distributor role (reference 1/7, ESA-side mirror 2/8, PC 3, NASA HLS 4)
   cdse_s2_l1c: 1, cdse_s2_l2a: 7, es_s2_l1c: 2, es_s2_l2a: 8, pc_s2_l2a: 3, hls_s30: 4,
   usgs_landsat_l1: 1, usgs_landsat_l2: 7, es_landsat_l2: 8, pc_landsat_l2: 3, hls_l30: 4,
-  asf_nisar_l0b: 1, asf_nisar_rslc: 7, asf_nisar_gcov: 5,
+  asf_nisar_l0b: 1, asf_nisar_rslc: 7, asf_nisar_gcov: 5, asf_nisar_rslc_ur: 6,
   bhoonidhi_nisar_s_rslc: 7, bhoonidhi_nisar_s_gcov: 5,
   // MODIS/VIIRS: LANCE near-real-time 1, standard Level-1B 2/8, snow 5 (NRT) and 4 (NSIDC)
   lance_modis_l1b: 1, laads_modis_l1b: 2, laads_modis_l1b_c7: 8, lance_modis_snow: 5, nsidc_modis_snow: 4,
@@ -240,4 +240,50 @@ export function forgetSettings() {
   try {
     Object.keys(localStorage).filter((k) => k.startsWith("swathcast.") || k.startsWith("s1lat.")).forEach((k) => localStorage.removeItem(k));
   } catch { /* storage unavailable */ }
+}
+
+// ---------------------------------------------------------------- projection
+// A plan carried past its end by its repeat cycle (projection.py). The
+// passes_index.json "projections" entries, as ms: {key: {to, platforms:
+// {platform: {from, baseFrom, repeatMs}}, notProjected: {platform: why}}};
+// a malformed platform or entry is left out.
+export function parseProjections(idx) {
+  const out = {};
+  Object.entries((idx && idx.projections) || {}).forEach(([key, p]) => {
+    const to = Date.parse(p && p.to);
+    if (!Number.isFinite(to)) return;
+    const platforms = {};
+    Object.entries(p.platforms || {}).forEach(([plat, v]) => {
+      const from = Date.parse(v.from), baseFrom = Date.parse(v.base_from), repeatMs = v.repeat_days * 864e5;
+      if (Number.isFinite(from) && Number.isFinite(baseFrom) && repeatMs > 0 && from < to && from - baseFrom === repeatMs) platforms[plat] = { from, baseFrom, repeatMs };
+    });
+    if (Object.keys(platforms).length || Object.keys(p.not_projected || {}).length) out[key] = { to, platforms, notProjected: p.not_projected || {} };
+  });
+  return out;
+}
+// The acquisitions ({when: Date, platform}) of each platform's base cycle:
+// its plan's last cycle, [baseFrom, from).
+export function baseOf(times, spec) {
+  if (!spec) return [];
+  return times.filter((t) => {
+    const ps = spec.platforms[t.platform], w = t.when.getTime();
+    return ps && w >= ps.baseFrom && w < ps.from;
+  });
+}
+// Each base acquisition repeated by whole cycles of its platform into
+// [from, min(t1, to)), soonest first: {src, when, cycles, shiftMs}.
+export function repeatCycle(base, spec, t1) {
+  const out = [];
+  if (!spec) return out;
+  const stop = Math.min(t1, spec.to);
+  base.forEach((src) => {
+    const ps = spec.platforms[src.platform];
+    if (!ps || stop <= ps.from) return;
+    for (let k = 1; ; k++) {
+      const shiftMs = k * ps.repeatMs, w = src.when.getTime() + shiftMs;
+      if (w >= stop) break;
+      if (w >= ps.from) out.push({ src, when: new Date(w), cycles: k, shiftMs });
+    }
+  });
+  return out.sort((a, b) => a.when - b.when);
 }

@@ -1,0 +1,590 @@
+{
+ "RSLC": {
+  "meta": {
+   "concept-id": "G4406322331-ASF",
+   "collection-concept-id": "C3622236985-ASF"
+  },
+  "umm": {
+   "GranuleUR": "NISAR_L1_PR_RSLC_035_040_D_084_4005_DHDH_A_20261107T234445_20261107T234518_P05036_N_F_J_001",
+   "TemporalExtent": {
+    "RangeDateTime": {
+     "BeginningDateTime": "2026-11-07T23:44:45.000000Z",
+     "EndingDateTime": "2026-11-07T23:45:18.999342Z"
+    }
+   },
+   "SpatialExtent": {
+    "GranuleLocalities": [
+     "Land",
+     "North America"
+    ],
+    "HorizontalSpatialDomain": {
+     "Geometry": {
+      "GPolygons": [
+       {
+        "Boundary": {
+         "Points": [
+          {
+           "Latitude": 10.11639,
+           "Longitude": -80.26785
+          },
+          {
+           "Latitude": 8.08943,
+           "Longitude": -80.73949
+          },
+          {
+           "Latitude": 7.57433,
+           "Longitude": -78.51581
+          },
+          {
+           "Latitude": 9.59329,
+           "Longitude": -78.03362
+          },
+          {
+           "Latitude": 10.11639,
+           "Longitude": -80.26785
+          }
+         ]
+        }
+       }
+      ]
+     }
+    }
+   },
+   "ProviderDates": [
+    {
+     "Type": "Insert",
+     "Date": "2026-11-09T09:30:40.221485Z"
+    },
+    {
+     "Type": "Update",
+     "Date": "2026-11-09T09:30:40.221485Z"
+    }
+   ],
+   "InputGranules": [
+    "NISAR_L0_PR_RRSD_035_040_D_156S_20261107T234441_20261107T234447_P05036_F_J_001.h5",
+    "NISAR_L0_PR_RRSD_035_040_D_238S_20261107T234447_20261107T234449_P05036_F_J_001.h5",
+    "NISAR_L0_PR_RRSD_035_040_D_238S_20261107T234449_20261107T234504_P05036_F_J_001.h5",
+    "NISAR_L0_PR_RRSD_035_040_D_238S_20261107T234504_20261107T234506_P05036_F_J_001.h5",
+    "NISAR_L0_PR_RRSD_035_040_D_156S_20261107T234506_20261107T234533_P05036_F_J_001.h5"
+   ],
+   "AdditionalAttributes": [
+    {
+     "Name": "ASCENDING_DESCENDING",
+     "Values": [
+      "DESCENDING"
+     ]
+    },
+    {
+     "Name": "FRAME_NUMBER",
+     "Values": [
+      "84"
+     ]
+    },
+    {
+     "Name": "FREQUENCIES",
+     "Values": [
+      "A",
+      "B"
+     ]
+    },
+    {
+     "Name": "FREQUENCY_A_POLARIZATION",
+     "Values": [
+      "HH",
+      "HV"
+     ]
+    },
+    {
+     "Name": "FREQUENCY_A_POLARIZATION_CONCAT",
+     "Values": [
+      "HH+HV"
+     ]
+    },
+    {
+     "Name": "FREQUENCY_A_RANGE_BANDWIDTH",
+     "Values": [
+      "40"
+     ]
+    },
+    {
+     "Name": "FREQUENCY_B_POLARIZATION",
+     "Values": [
+      "HH",
+      "HV"
+     ]
+    },
+    {
+     "Name": "FREQUENCY_B_POLARIZATION_CONCAT",
+     "Values": [
+      "HH+HV"
+     ]
+    },
+    {
+     "Name": "FREQUENCY_B_RANGE_BANDWIDTH",
+     "Values": [
+      "5"
+     ]
+    },
+    {
+     "Name": "FULL_FRAME",
+     "Values": [
+      "TRUE"
+     ]
+    },
+    {
+     "Name": "INPUT_RCID",
+     "Values": [
+      "156",
+      "238"
+     ]
+    },
+    {
+     "Name": "JOINT_OBSERVATION",
+     "Values": [
+      "TRUE"
+     ]
+    },
+    {
+     "Name": "ORBIT_TYPE",
+     "Values": [
+      "MOE"
+     ]
+    },
+    {
+     "Name": "PROCESSING_CENTER",
+     "Values": [
+      "JPL"
+     ]
+    },
+    {
+     "Name": "PROCESSING_LEVEL",
+     "Values": [
+      "L1"
+     ]
+    },
+    {
+     "Name": "PRODUCTION_PIPELINE",
+     "Values": [
+      "PR"
+     ]
+    },
+    {
+     "Name": "PRODUCT_TYPE",
+     "Values": [
+      "RSLC"
+     ]
+    },
+    {
+     "Name": "PRODUCT_TYPE_DESC",
+     "Values": [
+      "Range Doppler Single Look Complex"
+     ]
+    },
+    {
+     "Name": "PRODUCT_VERSION",
+     "Values": [
+      "1.0.20"
+     ]
+    },
+    {
+     "Name": "RANGE_BANDWIDTH_CONCAT",
+     "Values": [
+      "40+5"
+     ]
+    },
+    {
+     "Name": "STACK_ID",
+     "Values": [
+      "040_D_084"
+     ]
+    },
+    {
+     "Name": "TRACK_NUMBER",
+     "Values": [
+      "40"
+     ]
+    }
+   ]
+  }
+ },
+ "GCOV": {
+  "meta": {
+   "concept-id": "G4406353405-ASF",
+   "collection-concept-id": "C3622241360-ASF"
+  },
+  "umm": {
+   "GranuleUR": "NISAR_L2_PR_GCOV_035_040_D_084_4005_DHDH_A_20261107T234445_20261107T234518_P05036_N_F_J_001",
+   "TemporalExtent": {
+    "RangeDateTime": {
+     "BeginningDateTime": "2026-11-07T23:44:45.000000Z",
+     "EndingDateTime": "2026-11-07T23:45:18.999342Z"
+    }
+   },
+   "SpatialExtent": {
+    "GranuleLocalities": [
+     "Land",
+     "North America"
+    ],
+    "HorizontalSpatialDomain": {
+     "Geometry": {
+      "GPolygons": [
+       {
+        "Boundary": {
+         "Points": [
+          {
+           "Latitude": 10.11639,
+           "Longitude": -80.26785
+          },
+          {
+           "Latitude": 8.08943,
+           "Longitude": -80.73949
+          },
+          {
+           "Latitude": 7.57433,
+           "Longitude": -78.51581
+          },
+          {
+           "Latitude": 9.59329,
+           "Longitude": -78.03362
+          },
+          {
+           "Latitude": 10.11639,
+           "Longitude": -80.26785
+          }
+         ]
+        }
+       }
+      ]
+     }
+    }
+   },
+   "ProviderDates": [
+    {
+     "Type": "Insert",
+     "Date": "2026-11-09T10:17:47.264431Z"
+    },
+    {
+     "Type": "Update",
+     "Date": "2026-11-09T10:17:47.264431Z"
+    }
+   ],
+   "InputGranules": [
+    "NISAR_L1_PR_RSLC_035_040_D_084_4005_DHDH_A_20261107T234445_20261107T234518_P05036_N_F_J_001.h5"
+   ],
+   "AdditionalAttributes": [
+    {
+     "Name": "ASCENDING_DESCENDING",
+     "Values": [
+      "DESCENDING"
+     ]
+    },
+    {
+     "Name": "FRAME_NUMBER",
+     "Values": [
+      "84"
+     ]
+    },
+    {
+     "Name": "FREQUENCIES",
+     "Values": [
+      "A",
+      "B"
+     ]
+    },
+    {
+     "Name": "FREQUENCY_A_POLARIZATION",
+     "Values": [
+      "HH",
+      "HV"
+     ]
+    },
+    {
+     "Name": "FREQUENCY_A_POLARIZATION_CONCAT",
+     "Values": [
+      "HH+HV"
+     ]
+    },
+    {
+     "Name": "FREQUENCY_A_RANGE_BANDWIDTH",
+     "Values": [
+      "40"
+     ]
+    },
+    {
+     "Name": "FREQUENCY_B_POLARIZATION",
+     "Values": [
+      "HH",
+      "HV"
+     ]
+    },
+    {
+     "Name": "FREQUENCY_B_POLARIZATION_CONCAT",
+     "Values": [
+      "HH+HV"
+     ]
+    },
+    {
+     "Name": "FREQUENCY_B_RANGE_BANDWIDTH",
+     "Values": [
+      "5"
+     ]
+    },
+    {
+     "Name": "FULL_FRAME",
+     "Values": [
+      "TRUE"
+     ]
+    },
+    {
+     "Name": "JOINT_OBSERVATION",
+     "Values": [
+      "TRUE"
+     ]
+    },
+    {
+     "Name": "ORBIT_TYPE",
+     "Values": [
+      "MOE"
+     ]
+    },
+    {
+     "Name": "PROCESSING_CENTER",
+     "Values": [
+      "JPL"
+     ]
+    },
+    {
+     "Name": "PROCESSING_LEVEL",
+     "Values": [
+      "L2"
+     ]
+    },
+    {
+     "Name": "PRODUCTION_PIPELINE",
+     "Values": [
+      "PR"
+     ]
+    },
+    {
+     "Name": "PRODUCT_TYPE",
+     "Values": [
+      "GCOV"
+     ]
+    },
+    {
+     "Name": "PRODUCT_TYPE_DESC",
+     "Values": [
+      "Geocoded Polarimetric Covariance"
+     ]
+    },
+    {
+     "Name": "PRODUCT_VERSION",
+     "Values": [
+      "1.0.20"
+     ]
+    },
+    {
+     "Name": "RANGE_BANDWIDTH_CONCAT",
+     "Values": [
+      "40+5"
+     ]
+    },
+    {
+     "Name": "STACK_ID",
+     "Values": [
+      "040_D_084"
+     ]
+    },
+    {
+     "Name": "TRACK_NUMBER",
+     "Values": [
+      "40"
+     ]
+    }
+   ]
+  }
+ },
+ "L0B": {
+  "meta": {
+   "concept-id": "G4405202647-ASF",
+   "collection-concept-id": "C3622265756-ASF"
+  },
+  "umm": {
+   "GranuleUR": "NISAR_L0_PR_RRSD_035_040_D_156S_20261107T234441_20261107T234447_P05036_F_J_001",
+   "TemporalExtent": {
+    "RangeDateTime": {
+     "BeginningDateTime": "2026-11-07T23:44:41.324914Z",
+     "EndingDateTime": "2026-11-07T23:44:47.181709Z"
+    }
+   },
+   "SpatialExtent": {
+    "GranuleLocalities": [
+     "Land",
+     "North America"
+    ],
+    "HorizontalSpatialDomain": {
+     "Geometry": {
+      "GPolygons": [
+       {
+        "Boundary": {
+         "Points": [
+          {
+           "Latitude": 10.19601,
+           "Longitude": -80.17116
+          },
+          {
+           "Latitude": 9.84694,
+           "Longitude": -80.25326
+          },
+          {
+           "Latitude": 9.30505,
+           "Longitude": -78.04232
+          },
+          {
+           "Latitude": 9.65275,
+           "Longitude": -77.9583
+          },
+          {
+           "Latitude": 10.19601,
+           "Longitude": -80.17116
+          }
+         ]
+        }
+       }
+      ]
+     }
+    }
+   },
+   "ProviderDates": [
+    {
+     "Type": "Insert",
+     "Date": "2026-11-08T02:58:01.349722Z"
+    },
+    {
+     "Type": "Update",
+     "Date": "2026-11-08T02:58:01.349722Z"
+    }
+   ],
+   "InputGranules": [
+    "NISAR_L0_RRST_VC25_20261108T005658_20261108T005703_P05036_J_001.bin",
+    "NISAR_L0_RRST_VC28_20261108T005658_20261108T005703_P05036_J_001.bin",
+    "NISAR_L0_RRST_VC25_20261108T005703_20261108T005708_P05036_J_001.bin",
+    "NISAR_L0_RRST_VC28_20261108T005703_20261108T005708_P05036_J_001.bin"
+   ],
+   "AdditionalAttributes": [
+    {
+     "Name": "ASCENDING_DESCENDING",
+     "Values": [
+      "DESCENDING"
+     ]
+    },
+    {
+     "Name": "FREQUENCIES",
+     "Values": [
+      "A",
+      "B"
+     ]
+    },
+    {
+     "Name": "FREQUENCY_A_POLARIZATION",
+     "Values": [
+      "HH",
+      "HV"
+     ]
+    },
+    {
+     "Name": "FREQUENCY_A_POLARIZATION_CONCAT",
+     "Values": [
+      "HH+HV"
+     ]
+    },
+    {
+     "Name": "FREQUENCY_A_RANGE_BANDWIDTH",
+     "Values": [
+      "40"
+     ]
+    },
+    {
+     "Name": "FREQUENCY_B_POLARIZATION",
+     "Values": [
+      "HH",
+      "HV"
+     ]
+    },
+    {
+     "Name": "FREQUENCY_B_POLARIZATION_CONCAT",
+     "Values": [
+      "HH+HV"
+     ]
+    },
+    {
+     "Name": "FREQUENCY_B_RANGE_BANDWIDTH",
+     "Values": [
+      "5"
+     ]
+    },
+    {
+     "Name": "JOINT_OBSERVATION",
+     "Values": [
+      "FALSE"
+     ]
+    },
+    {
+     "Name": "ORBIT_TYPE",
+     "Values": [
+      "FOE"
+     ]
+    },
+    {
+     "Name": "PROCESSING_CENTER",
+     "Values": [
+      "JPL"
+     ]
+    },
+    {
+     "Name": "PROCESSING_LEVEL",
+     "Values": [
+      "L0B"
+     ]
+    },
+    {
+     "Name": "PRODUCTION_PIPELINE",
+     "Values": [
+      "PR"
+     ]
+    },
+    {
+     "Name": "PRODUCT_TYPE",
+     "Values": [
+      "RRSD"
+     ]
+    },
+    {
+     "Name": "PRODUCT_TYPE_DESC",
+     "Values": [
+      "Radar Raw Signal Data"
+     ]
+    },
+    {
+     "Name": "PRODUCT_VERSION",
+     "Values": [
+      "1.0.20"
+     ]
+    },
+    {
+     "Name": "RANGE_BANDWIDTH_CONCAT",
+     "Values": [
+      "40+5"
+     ]
+    },
+    {
+     "Name": "TRACK_NUMBER",
+     "Values": [
+      "40"
+     ]
+    }
+   ]
+  }
+ },
+ "_recorded": "2026-11-10 from CMR, NISAR V1 collections"
+}

@@ -54,7 +54,13 @@ snowmelt, for example), field campaigns, and coordination between missions.
   altitude, with its orbit and the strip of ground its instrument sees (side-looking for the radars),
   filled while the plan has it imaging. Zoomed out, Sentinel-1/2 show their planned datatake swaths,
   and the legend says, per mission, what is shown, from which zoom its footprints appear and where
-  its plan ends. The globe draws footprints up to the poles; the flat map stops at 85°. Basemaps are
+  its plan ends. Every planned pass links to the plan file it comes from. Past the end of its
+  plan, every mission is *projected* for a year (each platform's last repeat cycle carried forward;
+  Terra and Aqua excepted, as they no longer repeat), labelled projected and subject to change
+  everywhere, with how well it held in a monthly hindcast
+  ([methodology](docs/methodology.md#projection-past-a-plans-end)). An hourly check flags a satellite that stops
+  delivering (its projection is paused and its passes warned) and opens an issue
+  ([operations](docs/operations.md)). The globe draws footprints up to the poles; the flat map stops at 85°. Basemaps are
   Esri Gray Canvas (the default), Esri World Imagery (with or without labels), Esri World Topographic
   and OpenStreetMap.
 - **Share and export**: the page's state (AOI, missions, filters, dates, the list's tab, the selected
