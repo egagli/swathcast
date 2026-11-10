@@ -20,9 +20,12 @@ from pathlib import Path
 REGISTRY_PATH = Path(__file__).parent / "site" / "platforms.json"
 #: states whose platform delivers no new data
 RETIRED = frozenset({"retired", "decommissioned", "data_ended"})
-STATES = frozenset(
-    {"operational", "extended", "drifting", "degraded", "commissioning", "other"}
-) | RETIRED
+STATES = (
+    frozenset(
+        {"operational", "extended", "drifting", "degraded", "commissioning", "other"}
+    )
+    | RETIRED
+)
 
 
 @cache
@@ -49,7 +52,7 @@ def is_retired(code: str, path: Path = REGISTRY_PATH) -> bool:
 
 
 def retired_note(code: str, path: Path = REGISTRY_PATH) -> str:
-    """"decommissioned: data ended 2026-11-02 (NOAA)" (or "" if active)."""
+    """ "decommissioned: data ended 2026-11-02 (NOAA)" (or "" if active)."""
     p = retired(path).get(code)
     if not p:
         return ""
@@ -81,7 +84,9 @@ def check(path: Path = REGISTRY_PATH) -> list[str]:
             seen.add(code)
             s = p.get("status", {})
             if s.get("state") not in STATES:
-                problems.append(f"platforms.json {code}: unknown state {s.get('state')!r}")
+                problems.append(
+                    f"platforms.json {code}: unknown state {s.get('state')!r}"
+                )
             if not s.get("source"):
                 problems.append(f"platforms.json {code}: status without a source")
             for key in ("launch",):
@@ -89,8 +94,15 @@ def check(path: Path = REGISTRY_PATH) -> list[str]:
                 if d and not day.match(d):
                     problems.append(f"platforms.json {code}: bad {key} date {d!r}")
             if s.get("since") and not day.match(s["since"]):
-                problems.append(f"platforms.json {code}: bad status date {s['since']!r}")
+                problems.append(
+                    f"platforms.json {code}: bad status date {s['since']!r}"
+                )
             for n in p.get("notices", []):
-                if not (day.match(str(n.get("date", ""))) and str(n.get("url", "")).startswith("https://")):
-                    problems.append(f"platforms.json {code}: notice without a date or https URL")
+                if not (
+                    day.match(str(n.get("date", "")))
+                    and str(n.get("url", "")).startswith("https://")
+                ):
+                    problems.append(
+                        f"platforms.json {code}: notice without a date or https URL"
+                    )
     return problems

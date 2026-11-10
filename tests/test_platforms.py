@@ -22,7 +22,10 @@ def _reg(tmp_path, state="decommissioned", **extra):
                     {
                         "code": "SNPP",
                         "name": "Suomi NPP",
-                        "launch": {"date": "2011-10-28", "source": "https://example.org/a"},
+                        "launch": {
+                            "date": "2011-10-28",
+                            "source": "https://example.org/a",
+                        },
                         "status": {
                             "state": state,
                             "since": "2026-11-02",
@@ -30,13 +33,22 @@ def _reg(tmp_path, state="decommissioned", **extra):
                             "summary": "Data delivery ended.",
                             "source": "https://example.org/b",
                         },
-                        "notices": [{"date": "2026-10-19", "title": "Cessation", "url": "https://example.org/c"}],
+                        "notices": [
+                            {
+                                "date": "2026-10-19",
+                                "title": "Cessation",
+                                "url": "https://example.org/c",
+                            }
+                        ],
                         **extra,
                     },
                     {
                         "code": "N21",
                         "name": "NOAA-21",
-                        "status": {"state": "operational", "source": "https://example.org/d"},
+                        "status": {
+                            "state": "operational",
+                            "source": "https://example.org/d",
+                        },
                     },
                 ],
             }
@@ -53,7 +65,10 @@ def test_registry_retired_and_notes(tmp_path):
     assert set(platforms.platforms(p)) == {"SNPP", "N21"}
     assert set(platforms.retired(p)) == {"SNPP"}
     assert platforms.is_retired("SNPP", p) and not platforms.is_retired("N21", p)
-    assert platforms.retired_note("SNPP", p) == "decommissioned: data ended 2026-11-02 (NOAA)"
+    assert (
+        platforms.retired_note("SNPP", p)
+        == "decommissioned: data ended 2026-11-02 (NOAA)"
+    )
     assert platforms.retired_note("N21", p) == ""
     assert platforms.check(p) == []
 
@@ -80,22 +95,29 @@ def test_a_retired_platform_is_not_projected(monkeypatch, tmp_path):
     monkeypatch.setattr(platforms, "REGISTRY_PATH", p)
     monkeypatch.setattr(platforms.retired_note, "__defaults__", (p,))
     end = pd.Timestamp("2026-12-09", tz="UTC")
-    out = projection.spec("viirs", {"SNPP": end, "N21": end}, pd.Timestamp("2026-11-09", tz="UTC"))
+    out = projection.spec(
+        "viirs", {"SNPP": end, "N21": end}, pd.Timestamp("2026-11-09", tz="UTC")
+    )
     assert set(out["platforms"]) == {"N21"}
     assert out["not_projected"]["SNPP"].startswith("decommissioned")
 
 
 def test_a_retired_platform_is_not_silent(monkeypatch, tmp_path):
-    from test_satellites import _hourly, _obs, _write
-
     from swathcast import satellites
+    from test_satellites import _hourly, _obs, _write
 
     p = _reg(tmp_path)
     monkeypatch.setattr(platforms.retired_note, "__defaults__", (p,))
     d = tmp_path / "data"
     _write(
         d / "missions" / "viirs",
-        _obs("SNPP", _hourly(datetime(2026, 10, 20, tzinfo=UTC), datetime(2026, 11, 2, 15, tzinfo=UTC))),
+        _obs(
+            "SNPP",
+            _hourly(
+                datetime(2026, 10, 20, tzinfo=UTC),
+                datetime(2026, 11, 2, 15, tzinfo=UTC),
+            ),
+        ),
     )
     r = satellites.check(d, None, NOW)["platforms"]["SNPP"]
     assert r["status"] == "retired" and "data ended 2026-11-02" in r["note"]
@@ -109,7 +131,20 @@ def test_retired_platforms_are_not_predicted(monkeypatch, tmp_path):
     p = _reg(tmp_path)
     monkeypatch.setattr(platforms.is_retired, "__defaults__", (p,))
     called = []
-    monkeypatch.setattr(wideswath, "tile_passes", lambda sat, platform, *a, **k: called.append(platform) or pd.DataFrame({"i": [], "time": [], "ascending": [], "xtrack_km": []}))
+    monkeypatch.setattr(
+        wideswath,
+        "tile_passes",
+        lambda sat, platform, *a, **k: (
+            called.append(platform)
+            or pd.DataFrame({"i": [], "time": [], "ascending": [], "xtrack_km": []})
+        ),
+    )
     grid = pd.DataFrame({"tile": [], "lon": [], "lat": []})
-    wideswath.sin_tile_passes(grid, {"SNPP": object(), "N21": object(), "N20": object()}, "viirs", pd.Timestamp("2026-11-10", tz="UTC"), pd.Timestamp("2026-11-11", tz="UTC"))
+    wideswath.sin_tile_passes(
+        grid,
+        {"SNPP": object(), "N21": object(), "N20": object()},
+        "viirs",
+        pd.Timestamp("2026-11-10", tz="UTC"),
+        pd.Timestamp("2026-11-11", tz="UTC"),
+    )
     assert "SNPP" not in called and "N21" in called
