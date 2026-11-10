@@ -17,7 +17,8 @@ import { ASF, CMR, ES as EARTH_SEARCH, ODATA, PC as PC_STAC, getJSON, iso, plat 
 import { sunElevation } from "./common.js";
 import { gcovGrid } from "./drape.js";
 
-const NISAR_RSLC = "C2853145197-ASF", NISAR_GCOV = "C2854338529-ASF";
+// V1 since 2026-10-21, PROVISIONAL_V1 before (sources/nisar.py): both queried
+const NISAR_RSLC = ["C3622236985-ASF", "C2853145197-ASF"], NISAR_GCOV = ["C3622241360-ASF", "C2854338529-ASF"];
 const vertex = (scene) => `https://search.asf.alaska.edu/#/?searchType=List%20Search&searchList=${encodeURIComponent(scene)}`;
 const stacBrowser = (collection, id) => `https://radiantearth.github.io/stac-browser/#/external/earth-search.aws.element84.com/v1/collections/${collection}/items/${encodeURIComponent(id)}`;
 const earthdata = (collection, granule) => `https://search.earthdata.nasa.gov/search/granules?p=${collection}&pg[0][id]=${encodeURIComponent(granule)}`;
@@ -220,8 +221,8 @@ function quadOf(v) {
 }
 
 async function nisarFrame(c, since) {
-  const query = (coll) => new URLSearchParams([
-    ["collection_concept_id", coll], ["attribute[]", `int,TRACK_NUMBER,${c.track}`], ["attribute[]", `int,FRAME_NUMBER,${c.frame}`],
+  const query = (colls) => new URLSearchParams([
+    ...colls.map((c) => ["collection_concept_id", c]), ["attribute[]", `int,TRACK_NUMBER,${c.track}`], ["attribute[]", `int,FRAME_NUMBER,${c.frame}`],
     ["temporal[]", `${iso(since)},`], ["sort_key", "-start_date"], ["page_size", "200"],
   ]);
   const [d, gc, sband] = await Promise.all([
@@ -232,7 +233,7 @@ async function nisarFrame(c, since) {
   // each RSLC's GCOV (made for every RSLC, ~1 h later): its browse images are
   // geocoded and come one per channel
   const gcov = new Map((gc.items || []).map(({ umm: u }) => [nisarKey(u.GranuleUR), u]));
-  const items = (d.items || []).map(({ umm: u }) => {
+  const items = (d.items || []).map(({ meta, umm: u }) => {
     const a = Object.fromEntries((u.AdditionalAttributes || []).map((x) => [x.Name, x.Values]));
     // frequency A (main band) and B (5 MHz side band): their channels together,
     // named as the plan names the mode (A HH + B VV is quasi-dual HH+VV)
@@ -242,7 +243,7 @@ async function nisarFrame(c, since) {
       direction: (a.ASCENDING_DESCENDING || [""])[0].toLowerCase(), pol: pol ? `L ${pol}` : null,
       bandwidth: (a.RANGE_BANDWIDTH_CONCAT || [])[0] || null,
       partial: (a.FULL_FRAME || [""])[0] === "FALSE", id: u.GranuleUR,
-      links: [{ href: earthdata(NISAR_RSLC, u.GranuleUR), text: "Earthdata Search", title: u.GranuleUR }],
+      links: [{ href: earthdata((meta && meta["collection-concept-id"]) || NISAR_RSLC[0], u.GranuleUR), text: "Earthdata Search", title: u.GranuleUR }],
       browse: nisarBrowse(u, gcov.get(nisarKey(u.GranuleUR))),
     };
   });

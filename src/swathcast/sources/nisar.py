@@ -1,7 +1,12 @@
 """NISAR at ASF (via NASA CMR): L0B and RSLC as reference, GCOV as a source.
 
-Verified 2026-09-29 (docs/sources.md): the current science collections are
-PROVISIONAL_V1 and searchable anonymously (downloads need Earthdata login).
+Verified 2026-09-29 and 2026-11-09 (docs/sources.md): searchable anonymously
+(downloads need Earthdata login). ASF moved NISAR from its ``*_PROVISIONAL_V1``
+collections to ``*_V1`` ones on 2026-10-21 (the last PROVISIONAL product was
+sensed 20:37 UTC, the first V1 one 17:07 UTC that day): same granule names,
+attributes and ProviderDates, a new collection id and download folder. Both
+are listed and looked up (V1 first), so granules tracked before the move still
+resolve and the latency history runs on across it.
 The universe is every L0B RRSD (the first product, per datatake segment) and
 every L1 RSLC (per frame) that CMR lists by ``created_at``. A GCOV frame has
 the same name as its RSLC after the product prefix
@@ -20,8 +25,12 @@ from swathcast.timeutil import parse_utc, to_iso
 
 LOGGER = logging.getLogger(__name__)
 
-COLLECTIONS = {"L0B": "C2853089814-ASF", "RSLC": "C2853145197-ASF"}
-GCOV = "C2854338529-ASF"
+#: product -> (V1, PROVISIONAL_V1) collection ids
+COLLECTIONS = {
+    "L0B": ("C3622265756-ASF", "C2853089814-ASF"),  # NISAR_L0B_RRSD_V1, _PROVISIONAL_V1
+    "RSLC": ("C3622236985-ASF", "C2853145197-ASF"),  # NISAR_L1_RSLC_V1, _PROVISIONAL_V1
+}
+GCOV = ("C3622241360-ASF", "C2854338529-ASF")  # NISAR_L2_GCOV_V1, _PROVISIONAL_V1
 #: NISAR_L1_PR_RSLC_031_134_D_059_2005_DHDH_A_20260927T115943_20260927T120019_P05023_N_F_J_001
 RSLC_RE = re.compile(
     r"^NISAR_L1_PR_RSLC_(?P<cycle>\d{3})_(?P<track>\d{3})_(?P<dir>[AD])_(?P<frame>\d{3})_(?P<mode>\d{4})_(?P<pol>[A-Z]{4})_"
@@ -95,9 +104,8 @@ class NISARCatalog(ReferenceCatalog):
     def list_new(self, window) -> list[Acquisition]:
         start, end = window
         out = []
-        for ptype, concept in COLLECTIONS.items():
-            params = [
-                ("collection_concept_id", concept),
+        for ptype, concepts in COLLECTIONS.items():
+            params = [("collection_concept_id", c) for c in concepts] + [
                 ("created_at", f"{to_iso(start)},{to_iso(end)}"),
             ]
             for item in search_umm(self.session, params):
@@ -111,7 +119,9 @@ class NISARCatalog(ReferenceCatalog):
         found: dict[str, Found] = {}
         for batch in chunks(sorted(set(ids)), 100):
             params = [("readable_granule_name[]", g) for g in batch]
-            params += [("collection_concept_id", c) for c in COLLECTIONS.values()]
+            params += [
+                ("collection_concept_id", c) for cs in COLLECTIONS.values() for c in cs
+            ]
             for item in search_umm(self.session, params):
                 umm = item.get("umm", {})
                 insert = provider_insert_date(umm)
@@ -143,7 +153,7 @@ class NISARGCOV(Source):
         by_name = {gcov_name(g): g for g in ids}
         found: dict[str, Found] = {}
         for batch in chunks(sorted(by_name), self.batch_size):
-            params = [("collection_concept_id", GCOV)] + [
+            params = [("collection_concept_id", c) for c in GCOV] + [
                 ("readable_granule_name[]", g) for g in batch
             ]
             for item in search_umm(self.session, params):

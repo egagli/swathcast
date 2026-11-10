@@ -32,7 +32,8 @@ activity. swathcast guards against that, and against failing jobs, six ways:
    nothing to LANCE or LAADS since 2026-11-02 15:24 UTC (`silent`); and ASF had moved NISAR to new
    `V1` collections (L0B `C3622265756-ASF`, RSLC `C3622236985-ASF`, GSLC `C3622244601-ASF`, GCOV
    `C3622241360-ASF`) around 2026-10-21, so the `PROVISIONAL` ones the poller lists had been empty
-   since (`stream_silent`, the satellite fine) while the source still reported "ok".
+   since (`stream_silent`, the satellite fine) while the source still reported "ok". The NISAR
+   sources were moved to the V1 collections on 2026-11-10 ([sources](sources.md)).
 
 If every scheduled workflow *is* disabled, the watchdog cannot run either. The signals are then the
 site's banner, the absence of new commits on the `data` branch, and GitHub's own email about the

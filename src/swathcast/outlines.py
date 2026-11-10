@@ -25,7 +25,8 @@ from datetime import datetime, timedelta
 LOGGER = logging.getLogger(__name__)
 
 CMR_JSON = "https://cmr.earthdata.nasa.gov/search/granules.json"
-NISAR_RSLC = "C2853145197-ASF"
+#: NISAR L1 RSLC: V1 (since 2026-10-21) and PROVISIONAL_V1 (before)
+NISAR_RSLC = ["C3622236985-ASF", "C2853145197-ASF"]
 USGS_STAC = "https://landsatlook.usgs.gov/stac-server/search"
 NISAR_DAYS = 13
 LANDSAT_DAYS = 17

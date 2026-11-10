@@ -613,7 +613,7 @@ rows, learned coverage, timeouts) are unchanged. Only the universes and matching
 |---|---|---|---|
 | Sentinel-2 | CDSE L1C and L2A by `PublicationDate`, **1-in-8 MGRS tile sample** (`crc32(tile) % 8 == 0`) | Earth Search L1C and L2A; Planetary Computer L2A; HLS S30 | ESA name (`s2:product_uri`; PC id without `_Nxxxx`; HLS `PRODUCT_URI`) |
 | Landsat 8/9 | USGS STAC `landsat-c2l1` and `landsat-c2l2-sr`, by `created` | Earth Search and Planetary Computer `landsat-c2-l2`; HLS L30 | L2 id without processing date and `_SR`; HLS `LANDSAT_PRODUCT_ID` = the L1 id |
-| NISAR (L-band) | CMR L0B RRSD and L1 RSLC (ASF, PROVISIONAL_V1), by `created_at` | GCOV | the RSLC name with the product prefix swapped (`InputGranules` confirms) |
+| NISAR (L-band) | CMR L0B RRSD and L1 RSLC (ASF, V1 since 2026-10-21 and PROVISIONAL_V1 before), by `created_at` | GCOV | the RSLC name with the product prefix swapped (`InputGranules` confirms) |
 | NISAR S-band | ISRO Bhoonidhi `NISAR_SSAR_RSLC` sensed in the last 10 days (needs a login) | Bhoonidhi GCOV | the RSLC name with `L1`→`L2`, `RSLC`→`GCOV` (assumed, see below) |
 | MODIS | LANCE NRT Level-1B 1 km (`MOD021KM`, `MYD021KM`) by CMR `created_at` | LAADS Level-1B collections 6.1 and 7; snow cover `MOD10_L2`/`MYD10_L2` at LANCE (NRT) and NSIDC | platform + granule start stamp `AYYYYDDD.HHMM` |
 | VIIRS | LANCE NRT Level-1B 750 m (`VNP02MOD`, `VJ102MOD`, `VJ202MOD`) by CMR `created_at` | LAADS Level-1B; snow cover `VNP10`/`VJ110`/`VJ210` at LANCE (NRT) and NSIDC | platform + granule start stamp |

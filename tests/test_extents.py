@@ -66,9 +66,13 @@ def test_parsers():
     box = "<LatLonBox><north>2</north><south>1</south><east>4</east><west>3</west></LatLonBox>"
     assert x.kml_quad(box) == [3, 2, 4, 2, 4, 1, 3, 1]
     assert x.tiff_grid(geotiff()) == (32610, 477180.0, 5239260.0, 580350.0, 5286150.0)
-    assert x.nisar_kml_url(GCOV).endswith(
-        f"NISAR_L2_GCOV_PROVISIONAL_V1/{GCOV}/{GCOV}_NATIVE.kml"
-    )
+    # V1 (since 2026-10-21) keeps the KML with the browse images; before, it
+    # was with the product: both are tried, V1 first
+    assert x.nisar_kml_urls(GCOV) == [
+        f"{x.NISAR_BROWSE}/NISAR_L2_GCOV_V1/{GCOV}/{GCOV}_NATIVE.kml",
+        f"{x.NISAR_PRODUCTS}/NISAR_L2_GCOV_PROVISIONAL_V1/{GCOV}/{GCOV}_NATIVE.kml",
+    ]
+    assert x.nisar_kml_url(GCOV) == x.nisar_kml_urls(GCOV)[0]
     assert x.nisar_kml_url("NISAR_L1_PR_RSLC_x") is None
     assert x.OPERA_NAME.match(OPERA)[1] == "T137-292398-IW2"
 
@@ -154,3 +158,16 @@ def test_no_login_skips(tmp_path, monkeypatch):
     monkeypatch.delenv("EARTHDATA_USERNAME", raising=False)
     assert x.update(tmp_path, now=NOW) == {"skipped": "no Earthdata login"}
     assert x.publish_extents(tmp_path, tmp_path / "site") == {}
+
+
+def test_a_provisional_granules_kml_is_found_in_its_old_place(tmp_path, monkeypatch):
+    class OldPlace(FakeEDL):
+        def get(self, url, **kw):
+            if url.endswith(".kml") and "/BROWSE/" in url:
+                return Resp(404)
+            return super().get(url, **kw)
+
+    s = OldPlace()
+    monkeypatch.setattr(x, "edl_session", lambda session=None: s)
+    report = x.update(tmp_path, now=NOW, budget_s=60)
+    assert report["nisar_new"] == 1 and report["nisar_failed"] == 0
