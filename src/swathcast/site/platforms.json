@@ -1,0 +1,749 @@
+{
+ "reviewed": "2026-11-10",
+ "note": "Curated from the agencies' own notices; each status, date and notice was read at its source on the review date. Satellites marked retired, decommissioned or data_ended are not planned, predicted or projected.",
+ "missions": [
+  {
+   "key": "s1",
+   "label": "Sentinel-1",
+   "operator": "ESA for the European Commission (Copernicus)",
+   "pages": [
+    {
+     "text": "Mission (SentiWiki)",
+     "href": "https://sentiwiki.copernicus.eu/web/s1-mission"
+    },
+    {
+     "text": "Sentinel-1 news (CDSE)",
+     "href": "https://dataspace.copernicus.eu/news?satellite%5B8%5D=8"
+    },
+    {
+     "text": "Sentinel Operations Dashboard (events)",
+     "href": "https://operations.dashboard.copernicus.eu/events.html"
+    }
+   ],
+   "platforms": [
+    {
+     "code": "S1C",
+     "name": "Sentinel-1C",
+     "launch": {
+      "date": "2024-12-05",
+      "source": "https://sentiwiki.copernicus.eu/web/s1-mission"
+     },
+     "operations": {
+      "date": "2025-03-26",
+      "what": "User data opening",
+      "source": "https://dataspace.copernicus.eu/news/2025-3-25-sentinel-1c-user-data-opening-26th-march"
+     },
+     "status": {
+      "state": "operational",
+      "since": "2026-06-24",
+      "by": "ESA",
+      "summary": "Paired with Sentinel-1D 180° apart; the 6-day repeat was restored on 24 June 2026.",
+      "source": "https://dataspace.copernicus.eu/news/2026-6-24-s1cd-final-orbital-configuration-achieved"
+     },
+     "notices": [
+      {
+       "date": "2026-06-24",
+       "title": "S1C/D Final Orbital Configuration Achieved",
+       "url": "https://dataspace.copernicus.eu/news/2026-6-24-s1cd-final-orbital-configuration-achieved"
+      },
+      {
+       "date": "2026-05-11",
+       "title": "S-1C unavailability notice (unrecoverable data loss on 9 May 2026)",
+       "url": "https://dataspace.copernicus.eu/news/2026-5-11-s-1c-unavailability-notice"
+      },
+      {
+       "date": "2025-05-21",
+       "title": "Sentinel-1C products are now calibrated",
+       "url": "https://dataspace.copernicus.eu/news/2025-5-21-sentinel-1c-products-are-now-calibrated"
+      },
+      {
+       "date": "2025-03-25",
+       "title": "Sentinel-1C User Data Opening from 26th of March",
+       "url": "https://dataspace.copernicus.eu/news/2025-3-25-sentinel-1c-user-data-opening-26th-march"
+      }
+     ],
+     "status_page": "https://dataspace.copernicus.eu/news?satellite%5B8%5D=8",
+     "reviewed": "2026-11-10"
+    },
+    {
+     "code": "S1D",
+     "name": "Sentinel-1D",
+     "launch": {
+      "date": "2025-11-04",
+      "source": "https://sentiwiki.copernicus.eu/web/s1-mission"
+     },
+     "operations": {
+      "date": "2026-04-17",
+      "what": "User data opening",
+      "source": "https://dataspace.copernicus.eu/news/2026-4-16-sentinel-1d-user-data-opening-17042026"
+     },
+     "status": {
+      "state": "operational",
+      "since": "2026-04-17",
+      "by": "ESA",
+      "summary": "Operational with Sentinel-1C. Satellite issues on 26–27 and 28–29 Oct 2026 each caused an unrecoverable loss of data; no later notice reports a continuing outage.",
+      "source": "https://dataspace.copernicus.eu/news/2026-10-30-copernicus-sentinel-1d-data-unavailability-28-october-2026"
+     },
+     "notices": [
+      {
+       "date": "2026-10-30",
+       "title": "Copernicus Sentinel-1D Data Unavailability on 28 October 2026",
+       "url": "https://dataspace.copernicus.eu/news/2026-10-30-copernicus-sentinel-1d-data-unavailability-28-october-2026"
+      },
+      {
+       "date": "2026-10-27",
+       "title": "Copernicus Sentinel-1D Data Unavailability on 26 October 2026",
+       "url": "https://dataspace.copernicus.eu/news/2026-10-27-copernicus-sentinel-1d-data-unavailability-26-october-2026"
+      },
+      {
+       "date": "2026-06-04",
+       "title": "Sentinel-1D SAR Data Quality Degradation (29 May – 1 Jun 2026)",
+       "url": "https://dataspace.copernicus.eu/news/2026-6-4-sentinel-1d-sar-data-quality-degradation"
+      },
+      {
+       "date": "2026-04-16",
+       "title": "Sentinel-1D User Data Opening from 17/04/2026",
+       "url": "https://dataspace.copernicus.eu/news/2026-4-16-sentinel-1d-user-data-opening-17042026"
+      }
+     ],
+     "status_page": "https://dataspace.copernicus.eu/news?satellite%5B8%5D=8",
+     "reviewed": "2026-11-10"
+    },
+    {
+     "code": "S1A",
+     "name": "Sentinel-1A",
+     "launch": {
+      "date": "2014-04-03",
+      "source": "https://sentiwiki.copernicus.eu/web/s1-mission"
+     },
+     "operations": {
+      "date": "2014-10-03",
+      "what": "Online data access opened",
+      "source": "https://sentiwiki.copernicus.eu/web/s1-mission"
+     },
+     "status": {
+      "state": "retired",
+      "since": "2026-06-29",
+      "by": "ESA",
+      "summary": "Operational duties ended on 29 June 2026, after Sentinel-1C and 1D restored the 6-day repeat; a disposal phase follows.",
+      "source": "https://www.esa.int/Applications/Observing_the_Earth/Copernicus/Sentinel-1/Time_to_say_goodbye_to_Sentinel-1A"
+     },
+     "notices": [
+      {
+       "date": "2026-06-30",
+       "title": "Time to say goodbye to Sentinel-1A (ESA)",
+       "url": "https://www.esa.int/Applications/Observing_the_Earth/Copernicus/Sentinel-1/Time_to_say_goodbye_to_Sentinel-1A"
+      },
+      {
+       "date": "2026-06-30",
+       "title": "Copernicus Sentinel-1A Satellite End of Operations After 12 Years of Service",
+       "url": "https://dataspace.copernicus.eu/news/2026-6-30-copernicus-sentinel-1a-satellite-end-operations-after-12-years-service"
+      }
+     ],
+     "status_page": "https://dataspace.copernicus.eu/news?satellite%5B8%5D=8",
+     "reviewed": "2026-11-10"
+    }
+   ]
+  },
+  {
+   "key": "s2",
+   "label": "Sentinel-2",
+   "operator": "ESA for the European Commission (Copernicus)",
+   "pages": [
+    {
+     "text": "Mission (SentiWiki)",
+     "href": "https://sentiwiki.copernicus.eu/web/s2-mission"
+    },
+    {
+     "text": "Sentinel-2 news (CDSE)",
+     "href": "https://dataspace.copernicus.eu/news?satellite%5B9%5D=9"
+    },
+    {
+     "text": "Sentinel Operations Dashboard (events)",
+     "href": "https://operations.dashboard.copernicus.eu/events.html"
+    }
+   ],
+   "platforms": [
+    {
+     "code": "S2B",
+     "name": "Sentinel-2B",
+     "launch": {
+      "date": "2017-03-07",
+      "source": "https://www.esa.int/Applications/Observing_the_Earth/Copernicus/Sentinel-2/Facts_and_figures"
+     },
+     "operations": null,
+     "status": {
+      "state": "operational",
+      "since": null,
+      "by": "ESA",
+      "summary": "In the nominal constellation with Sentinel-2C. Products sensed 20–22 Oct 2026 have significant geolocation errors and are being removed while reprocessing is investigated (unresolved as of 3 Nov).",
+      "source": "https://dataspace.copernicus.eu/news/2026-11-3-temporary-geolocation-issue-affecting-sentinel-2b-products"
+     },
+     "notices": [
+      {
+       "date": "2026-11-03",
+       "title": "Temporary Geolocation Issue Affecting Sentinel-2B Products",
+       "url": "https://dataspace.copernicus.eu/news/2026-11-3-temporary-geolocation-issue-affecting-sentinel-2b-products"
+      },
+      {
+       "date": "2026-08-24",
+       "title": "Copernicus Sentinel-2B Temporary Data Delay on 15-16 August 2026",
+       "url": "https://dataspace.copernicus.eu/news/2026-8-24-copernicus-sentinel-2b-temporary-data-delay-15-16-august-2026"
+      },
+      {
+       "date": "2026-03-30",
+       "title": "Sentinel-2B MSI decontamination between 30 and 31 March 2026",
+       "url": "https://dataspace.copernicus.eu/news/2026-3-30-sentinel-2b-msi-decontamination-between-30-and-31-march-2026"
+      },
+      {
+       "date": "2026-01-26",
+       "title": "Copernicus Sentinel-2B Data Unavailability on 14/15-01-2026",
+       "url": "https://dataspace.copernicus.eu/news/2026-1-26-copernicus-sentinel-2b-data-unavailability-1415-01-2026"
+      }
+     ],
+     "status_page": "https://dataspace.copernicus.eu/news?satellite%5B9%5D=9",
+     "reviewed": "2026-11-10"
+    },
+    {
+     "code": "S2C",
+     "name": "Sentinel-2C",
+     "launch": {
+      "date": "2024-09-05",
+      "source": "https://www.esa.int/Applications/Observing_the_Earth/Copernicus/Sentinel-2/Facts_and_figures"
+     },
+     "operations": {
+      "date": "2025-01-21",
+      "what": "Took over from Sentinel-2A in the nominal constellation",
+      "source": "https://dataspace.copernicus.eu/news/2025-1-8-copernicus-sentinel-2-mission-update-transfer-duty-sentinel-2a-sentinel-2c-21-january"
+     },
+     "status": {
+      "state": "operational",
+      "since": "2025-01-21",
+      "by": "ESA",
+      "summary": "In the nominal Sentinel-2B/2C constellation.",
+      "source": "https://dataspace.copernicus.eu/news/2025-1-8-copernicus-sentinel-2-mission-update-transfer-duty-sentinel-2a-sentinel-2c-21-january"
+     },
+     "notices": [
+      {
+       "date": "2026-09-02",
+       "title": "Copernicus Sentinel-2C Tandem Data Reprocessing Campaign Completed",
+       "url": "https://dataspace.copernicus.eu/news/2026-9-2-copernicus-sentinel-2c-tandem-data-reprocessing-campaign-completed"
+      },
+      {
+       "date": "2025-08-08",
+       "title": "Sentinel-2C Unavailability on 08 August 2025",
+       "url": "https://dataspace.copernicus.eu/news/2025-8-8-sentinel-2c-unavailability-08-august-2025"
+      },
+      {
+       "date": "2025-01-08",
+       "title": "Transfer of Duty from Sentinel-2A to Sentinel-2C on 21 January 2025",
+       "url": "https://dataspace.copernicus.eu/news/2025-1-8-copernicus-sentinel-2-mission-update-transfer-duty-sentinel-2a-sentinel-2c-21-january"
+      }
+     ],
+     "status_page": "https://dataspace.copernicus.eu/news?satellite%5B9%5D=9",
+     "reviewed": "2026-11-10"
+    },
+    {
+     "code": "S2A",
+     "name": "Sentinel-2A",
+     "launch": {
+      "date": "2015-06-23",
+      "source": "https://www.esa.int/Applications/Observing_the_Earth/Copernicus/Sentinel-2/Facts_and_figures"
+     },
+     "operations": null,
+     "status": {
+      "state": "extended",
+      "since": "2025-03-13",
+      "by": "ESA",
+      "summary": "Extension campaign since 13 Mar 2025, after Sentinel-2C took its place (10-day revisit over Europe, 20-day elsewhere); extended through 31 Dec 2027.",
+      "source": "https://dataspace.copernicus.eu/news/2026-10-9-sentinel-2a-extension-campaign-continue-until-end-2027"
+     },
+     "notices": [
+      {
+       "date": "2026-10-09",
+       "title": "Sentinel-2A Extension Campaign to Continue Until the End of 2027",
+       "url": "https://dataspace.copernicus.eu/news/2026-10-9-sentinel-2a-extension-campaign-continue-until-end-2027"
+      },
+      {
+       "date": "2026-05-15",
+       "title": "Sentinel-2A Extension Campaign Prolonged Until the End of 2026",
+       "url": "https://dataspace.copernicus.eu/news/2026-5-15-sentinel-2a-extension-campaign-prolonged-until-end-2026"
+      },
+      {
+       "date": "2025-12-19",
+       "title": "Sentinel-2A and Sentinel-2B Tandem Acquisitions",
+       "url": "https://dataspace.copernicus.eu/news/2025-12-19-sentinel-2a-and-sentinel-2b-tandem-acquisitions"
+      },
+      {
+       "date": "2025-02-28",
+       "title": "Sentinel-2A: Extended Campaign Starting March 13, 2025",
+       "url": "https://dataspace.copernicus.eu/news/2025-2-28-sentinel-2a-extended-campaign-starting-march-13-2025"
+      }
+     ],
+     "status_page": "https://dataspace.copernicus.eu/news?satellite%5B9%5D=9",
+     "reviewed": "2026-11-10"
+    }
+   ]
+  },
+  {
+   "key": "landsat",
+   "label": "Landsat 8/9",
+   "operator": "USGS and NASA",
+   "pages": [
+    {
+     "text": "Landsat missions (USGS)",
+     "href": "https://www.usgs.gov/landsat-missions"
+    },
+    {
+     "text": "EROS data notifications",
+     "href": "https://www.usgs.gov/centers/eros/data-notifications"
+    },
+    {
+     "text": "Acquisition calendar",
+     "href": "https://landsat.usgs.gov/landsat_acq"
+    }
+   ],
+   "platforms": [
+    {
+     "code": "L9",
+     "name": "Landsat 9",
+     "launch": {
+      "date": "2021-09-27",
+      "source": "https://www.usgs.gov/landsat-missions/landsat-9"
+     },
+     "operations": {
+      "date": "2022-02-10",
+      "what": "USGS began distributing data",
+      "source": "https://www.usgs.gov/landsat-missions/landsat-9"
+     },
+     "status": {
+      "state": "operational",
+      "since": "2025-10-24",
+      "by": "USGS",
+      "summary": "Back to normal operations on 24 Oct 2025 after a safehold from 17 Oct 2025; products from that period were released on 6 Apr 2026.",
+      "source": "https://www.usgs.gov/landsat-missions/news/landsat-9-returns-normal-operations-following-brief-safehold"
+     },
+     "notices": [
+      {
+       "date": "2026-10-20",
+       "title": "Newly acquired Landsat 8 and 9 data unavailable (caught up by 26 Oct 2026)",
+       "url": "https://www.usgs.gov/centers/eros/2026-10-20-new-landsat-8-9-product-availability-interruption"
+      },
+      {
+       "date": "2026-04-06",
+       "title": "Landsat 9 products impacted by 2025 safehold now available",
+       "url": "https://www.usgs.gov/landsat-missions/news/landsat-9-products-impacted-2025-safehold-now-available"
+      },
+      {
+       "date": "2025-11-19",
+       "title": "Landsat 9 Returns to Normal Operations Following Brief Safehold",
+       "url": "https://www.usgs.gov/landsat-missions/news/landsat-9-returns-normal-operations-following-brief-safehold"
+      }
+     ],
+     "status_page": "https://www.usgs.gov/landsat-missions/landsat-mission-headlines",
+     "reviewed": "2026-11-10"
+    },
+    {
+     "code": "L8",
+     "name": "Landsat 8",
+     "launch": {
+      "date": "2013-02-11",
+      "source": "https://www.usgs.gov/landsat-missions/landsat-8"
+     },
+     "operations": {
+      "date": "2013-05-30",
+      "what": "Data publicly available; USGS took operational control",
+      "source": "https://www.usgs.gov/landsat-missions/may-30-2013-landsat-8-data-available"
+     },
+     "status": {
+      "state": "operational",
+      "since": "2013-05-30",
+      "by": "USGS",
+      "summary": "Acquiring; no orbit or mission change announced in 2025–2026. The latest notice is a ground-side interruption of new data, 20–26 Oct 2026.",
+      "source": "https://www.usgs.gov/centers/eros/2026-10-20-new-landsat-8-9-product-availability-interruption"
+     },
+     "notices": [
+      {
+       "date": "2026-10-20",
+       "title": "Newly acquired Landsat 8 and 9 data unavailable (caught up by 26 Oct 2026)",
+       "url": "https://www.usgs.gov/centers/eros/2026-10-20-new-landsat-8-9-product-availability-interruption"
+      },
+      {
+       "date": "2026-10-19",
+       "title": "Processing Delay: Landsat 8 and 9 Level-2, U.S. ARD and Level-3 products",
+       "url": "https://www.usgs.gov/centers/eros/2026-10-19-landsat-8-9-level-2-level-3-and-us-ard-product-delay"
+      },
+      {
+       "date": "2025-06-09",
+       "title": "Upcoming processing to adjust framing of some Landsat 8 scenes",
+       "url": "https://www.usgs.gov/landsat-missions/news/upcoming-processing-adjust-framing-some-landsat-8-scenes"
+      }
+     ],
+     "status_page": "https://www.usgs.gov/centers/eros/data-notifications",
+     "reviewed": "2026-11-10"
+    }
+   ]
+  },
+  {
+   "key": "nisar",
+   "label": "NISAR",
+   "operator": "NASA and ISRO",
+   "pages": [
+    {
+     "text": "Mission (NASA)",
+     "href": "https://science.nasa.gov/mission/nisar/"
+    },
+    {
+     "text": "Data availability (ASF)",
+     "href": "https://nisar-docs.asf.alaska.edu/availability-overview/"
+    },
+    {
+     "text": "Earthdata alerts",
+     "href": "https://www.earthdata.nasa.gov/data/alerts-outages"
+    }
+   ],
+   "platforms": [
+    {
+     "code": "NISAR",
+     "name": "NISAR",
+     "launch": {
+      "date": "2025-07-30",
+      "source": "https://science.nasa.gov/mission/nisar/mission-overview/"
+     },
+     "operations": {
+      "date": "2026-07-20",
+      "what": "L-band science data public",
+      "source": "https://www.earthdata.nasa.gov/data/alerts-outages/nisar-l-band-data-now-publicly-available"
+     },
+     "status": {
+      "state": "operational",
+      "since": "2026-11-06",
+      "by": "NASA",
+      "summary": "Fully validated Level 0–2 L-band products (CRID P05036) released on 6 Nov 2026, after provisional production was paused from 23:53 UTC on 23 Oct for a software upgrade. S-band products come from ISRO.",
+      "source": "https://www.earthdata.nasa.gov/data/alerts-outages/nisar-validated-l-band-data-products-now-available"
+     },
+     "notices": [
+      {
+       "date": "2026-11-07",
+       "title": "NISAR validated L-band data products are now available",
+       "url": "https://www.earthdata.nasa.gov/data/alerts-outages/nisar-validated-l-band-data-products-now-available"
+      },
+      {
+       "date": "2026-10-30",
+       "title": "NISAR Provisional Data Production Paused Oct. 23 – Nov. 6, 2026",
+       "url": "https://www.earthdata.nasa.gov/data/alerts-outages/nisar-provisional-data-production-paused-oct.-23-nov.-6-2026"
+      },
+      {
+       "date": "2026-07-21",
+       "title": "NISAR L-Band Data Now Publicly Available",
+       "url": "https://www.earthdata.nasa.gov/data/alerts-outages/nisar-l-band-data-now-publicly-available"
+      },
+      {
+       "date": "2025-11-28",
+       "title": "NISAR Mission enters Science Phase (ISRO)",
+       "url": "https://www.isro.gov.in/ISRO_EN/NISAR_Mission_Science_Phase.html"
+      }
+     ],
+     "status_page": "https://nisar-docs.asf.alaska.edu/availability-overview/",
+     "reviewed": "2026-11-10"
+    }
+   ]
+  },
+  {
+   "key": "modis",
+   "label": "MODIS",
+   "operator": "NASA",
+   "pages": [
+    {
+     "text": "MODIS (Earthdata)",
+     "href": "https://www.earthdata.nasa.gov/data/instruments/modis"
+    },
+    {
+     "text": "Earthdata alerts",
+     "href": "https://www.earthdata.nasa.gov/data/alerts-outages"
+    }
+   ],
+   "platforms": [
+    {
+     "code": "Terra",
+     "name": "Terra (MODIS)",
+     "launch": {
+      "date": "1999-12-18",
+      "source": "https://science.nasa.gov/mission/terra/"
+     },
+     "operations": null,
+     "status": {
+      "state": "drifting",
+      "since": "2022-10-19",
+      "by": "NASA",
+      "summary": "Lowered out of the morning constellation in Oct 2022 and drifting to earlier crossing times; power limits have turned off ASTER TIR (16 Jan 2026) and MOPITT, while MODIS, MISR and CERES-Fore collect. NASA expects MODIS collection to end in late 2026/early 2027. Not projected: it no longer repeats its ground track.",
+      "source": "https://science.nasa.gov/blogs/science-news/2026/02/12/terra-adjusts-instrument-operations-to-extend-mission-life/"
+     },
+     "notices": [
+      {
+       "date": "2026-03-26",
+       "title": "Terra MODIS Placed in Standby Mode",
+       "url": "https://www.earthdata.nasa.gov/data/alerts-outages/terra-modis-placed-standby-mode"
+      },
+      {
+       "date": "2026-02-12",
+       "title": "Terra Adjusts Instrument Operations to Extend Mission Life",
+       "url": "https://science.nasa.gov/blogs/science-news/2026/02/12/terra-adjusts-instrument-operations-to-extend-mission-life/"
+      },
+      {
+       "date": "2025-05-02",
+       "title": "Transition from MODIS to VIIRS (Terra and Aqua shutting down in late 2026/early 2027)",
+       "url": "https://www.earthdata.nasa.gov/data/alerts-outages/transition-from-modis-viirs"
+      }
+     ],
+     "status_page": "https://terra.nasa.gov/about/instrumentupdatearchive",
+     "reviewed": "2026-11-10"
+    },
+    {
+     "code": "Aqua",
+     "name": "Aqua (MODIS)",
+     "launch": {
+      "date": "2002-05-04",
+      "source": "https://science.nasa.gov/mission/aqua/"
+     },
+     "operations": null,
+     "status": {
+      "state": "drifting",
+      "since": null,
+      "by": "NASA",
+      "summary": "In free drift since its last drag-makeup manoeuvres (Dec 2021), sinking below the A-Train toward later crossing times. NASA expects MODIS collection to end in late 2026/early 2027. Not projected: it no longer repeats its ground track.",
+      "source": "https://www.earthdata.nasa.gov/data/alerts-outages/transition-from-modis-viirs"
+     },
+     "notices": [
+      {
+       "date": "2025-05-02",
+       "title": "Transition from MODIS to VIIRS (Terra and Aqua shutting down in late 2026/early 2027)",
+       "url": "https://www.earthdata.nasa.gov/data/alerts-outages/transition-from-modis-viirs"
+      }
+     ],
+     "status_page": "https://science.nasa.gov/mission/aqua/",
+     "reviewed": "2026-11-10"
+    }
+   ]
+  },
+  {
+   "key": "viirs",
+   "label": "VIIRS",
+   "operator": "NOAA and NASA (JPSS)",
+   "pages": [
+    {
+     "text": "VIIRS (Earthdata)",
+     "href": "https://www.earthdata.nasa.gov/data/instruments/viirs"
+    },
+    {
+     "text": "OSPO operational messages",
+     "href": "https://www.ospo.noaa.gov/operations/messages.html"
+    },
+    {
+     "text": "Earthdata alerts",
+     "href": "https://www.earthdata.nasa.gov/data/alerts-outages"
+    }
+   ],
+   "platforms": [
+    {
+     "code": "N21",
+     "name": "NOAA-21 (JPSS-2)",
+     "launch": {
+      "date": "2022-11-10",
+      "source": "https://nesdis.noaa.gov/news/jpss-2-launches-space"
+     },
+     "operations": {
+      "date": "2024-03-13",
+      "what": "Primary JPSS satellite",
+      "source": "https://www.nesdis.noaa.gov/news/noaa-21-now-the-primary-satellite-the-jpss-fleet"
+     },
+     "status": {
+      "state": "operational",
+      "since": "2024-03-13",
+      "by": "NOAA",
+      "summary": "Primary JPSS satellite. Recent issues were short: VIIRS gaps on 5–6 Nov 2026, an LWIR quality-flag anomaly on 28–29 Jul 2026, gaps on 29–30 Mar 2026.",
+      "source": "https://www.nesdis.noaa.gov/news/noaa-21-now-the-primary-satellite-the-jpss-fleet"
+     },
+     "notices": [
+      {
+       "date": "2026-11-09",
+       "title": "VIIRS data gaps and processing delays from November 5, 2026",
+       "url": "https://www.earthdata.nasa.gov/data/alerts-outages/viirs-data-gaps-processing-delays-from-november-5-2026"
+      },
+      {
+       "date": "2026-07-30",
+       "title": "VIIRS NOAA-21 Data Anomaly",
+       "url": "https://www.earthdata.nasa.gov/data/alerts-outages/viirs-noaa-21-data-anomaly"
+      },
+      {
+       "date": "2026-03-29",
+       "title": "NOAA-21 Data Gaps on March 29-30",
+       "url": "https://www.earthdata.nasa.gov/data/alerts-outages/noaa-21-data-gaps-march-29-30"
+      }
+     ],
+     "status_page": "https://www.ospo.noaa.gov/operations/messages.html",
+     "reviewed": "2026-11-10"
+    },
+    {
+     "code": "N20",
+     "name": "NOAA-20 (JPSS-1)",
+     "launch": {
+      "date": "2017-11-18",
+      "source": "https://nesdis.noaa.gov/news/noaas-newest-polar-orbiting-satellite-celebrates-milestone"
+     },
+     "operations": {
+      "date": "2018-05-30",
+      "what": "Declared fully operational",
+      "source": "https://nesdis.noaa.gov/news/noaas-newest-polar-orbiting-satellite-celebrates-milestone"
+     },
+     "status": {
+      "state": "operational",
+      "since": "2024-03-13",
+      "by": "NOAA",
+      "summary": "Secondary JPSS satellite since NOAA-21 became primary; VIIRS gaps on 5–7 Nov 2026.",
+      "source": "https://www.nesdis.noaa.gov/news/noaa-21-now-the-primary-satellite-the-jpss-fleet"
+     },
+     "notices": [
+      {
+       "date": "2026-11-09",
+       "title": "VIIRS data gaps and processing delays from November 5, 2026",
+       "url": "https://www.earthdata.nasa.gov/data/alerts-outages/viirs-data-gaps-processing-delays-from-november-5-2026"
+      }
+     ],
+     "status_page": "https://www.ospo.noaa.gov/operations/messages.html",
+     "reviewed": "2026-11-10"
+    },
+    {
+     "code": "SNPP",
+     "name": "Suomi NPP",
+     "launch": {
+      "date": "2011-10-28",
+      "source": "https://science.nasa.gov/mission/suomi-npp/"
+     },
+     "operations": null,
+     "status": {
+      "state": "decommissioned",
+      "since": "2026-11-02",
+      "by": "NOAA",
+      "summary": "NOAA ended delivery of all S-NPP data to users at 15:40 UTC on 2 Nov 2026; it is to be lowered from 1 Dec and re-enter over the South Pacific around 12 Dec. NOAA points users to NOAA-21 (primary) and NOAA-20.",
+      "source": "https://www.nesdis.noaa.gov/news/update-4-cessation-of-suomi-national-polar-orbiting-partnership-s-npp-data-users-november-02-2026-1540-utc-and-decommissioning-issued-november-2-2026-1800-utc"
+     },
+     "notices": [
+      {
+       "date": "2026-11-02",
+       "title": "Update #4 – Cessation of S-NPP data to users on November 02, 2026 1540 UTC and Decommissioning",
+       "url": "https://www.nesdis.noaa.gov/news/update-4-cessation-of-suomi-national-polar-orbiting-partnership-s-npp-data-users-november-02-2026-1540-utc-and-decommissioning-issued-november-2-2026-1800-utc"
+      },
+      {
+       "date": "2026-10-19",
+       "title": "Update #2 – Cessation of S-NPP data to users and Decommissioning",
+       "url": "https://www.nesdis.noaa.gov/news/administrative-update-2-cessation-of-suomi-national-polar-orbiting-partnership-s-npp-data-users-november-02-2026-1300-utc-and-decommissioning-issued-october-19-2026-1400-utc"
+      },
+      {
+       "date": "2026-10-19",
+       "title": "NOAA to Deorbit the Suomi NPP Satellite after More than 15 Years in Service",
+       "url": "https://www.nesdis.noaa.gov/news/noaa-deorbit-the-suomi-npp-satellite-after-more-15-years-service"
+      }
+     ],
+     "status_page": "https://www.ospo.noaa.gov/operations/messages.html",
+     "reviewed": "2026-11-10"
+    }
+   ]
+  },
+  {
+   "key": "s3",
+   "label": "Sentinel-3",
+   "operator": "ESA and EUMETSAT for the European Commission (Copernicus)",
+   "pages": [
+    {
+     "text": "Mission (SentiWiki)",
+     "href": "https://sentiwiki.copernicus.eu/web/s3-mission"
+    },
+    {
+     "text": "Sentinel-3 news (CDSE)",
+     "href": "https://dataspace.copernicus.eu/news?satellite%5B10%5D=10"
+    },
+    {
+     "text": "Sentinel Operations Dashboard (events)",
+     "href": "https://operations.dashboard.copernicus.eu/events.html"
+    }
+   ],
+   "platforms": [
+    {
+     "code": "S3A",
+     "name": "Sentinel-3A",
+     "launch": {
+      "date": "2016-02-16",
+      "source": "https://sentiwiki.copernicus.eu/web/s3-mission"
+     },
+     "operations": null,
+     "status": {
+      "state": "operational",
+      "since": null,
+      "by": "ESA/EUMETSAT",
+      "summary": "Operational; recent notices are routine calibrations and manoeuvres (OLCI calibration 11 Nov 2026) and short anomalies.",
+      "source": "https://dataspace.copernicus.eu/news/2026-11-9-copernicus-sentinel-3a-unavailability-notice-olci-s09-calibration-planned-11"
+     },
+     "notices": [
+      {
+       "date": "2026-11-09",
+       "title": "Sentinel-3A unavailability notice for the OLCI S09 Calibration planned on 11 November 2026",
+       "url": "https://dataspace.copernicus.eu/news/2026-11-9-copernicus-sentinel-3a-unavailability-notice-olci-s09-calibration-planned-11"
+      },
+      {
+       "date": "2026-10-07",
+       "title": "Sentinel-3A unavailability notice for OLCI soft reset on 07/10/2026",
+       "url": "https://dataspace.copernicus.eu/news/2026-10-7-copernicus-sentinel-3a-unavailability-notice-olci-soft-reset-unplanned-07102026-doy"
+      },
+      {
+       "date": "2026-03-05",
+       "title": "Sentinel-3A unavailability notice for GNSS anomaly on 02 March 2026",
+       "url": "https://dataspace.copernicus.eu/news/2026-3-5-copernicus-sentinel-3a-unavailability-notice-gnss-anomaly-occurred-02-march-2026-doy"
+      }
+     ],
+     "status_page": "https://dataspace.copernicus.eu/news?satellite%5B10%5D=10",
+     "reviewed": "2026-11-10"
+    },
+    {
+     "code": "S3B",
+     "name": "Sentinel-3B",
+     "launch": {
+      "date": "2018-04-25",
+      "source": "https://sentiwiki.copernicus.eu/web/s3-mission"
+     },
+     "operations": {
+      "date": "2018-12-17",
+      "what": "OLCI Level-1 products public",
+      "source": "https://sentinels.copernicus.eu/web/sentinel/-/copernicus-sentinel-3b-olci-level-1-nrt-and-ntc-products-available-on-open-hub"
+     },
+     "status": {
+      "state": "operational",
+      "since": null,
+      "by": "ESA/EUMETSAT",
+      "summary": "Operational; recent notices are routine manoeuvres and lunar calibrations (26 and 29 Oct 2026) and short OLCI anomalies.",
+      "source": "https://dataspace.copernicus.eu/news/2026-10-30-copernicus-sentinel-3b-unavailability-notice-oop-manoeuvre-planned-29102026-doy-302"
+     },
+     "notices": [
+      {
+       "date": "2026-10-30",
+       "title": "Sentinel-3B unavailability notice for OOP manoeuvre planned on 29/10/2026",
+       "url": "https://dataspace.copernicus.eu/news/2026-10-30-copernicus-sentinel-3b-unavailability-notice-oop-manoeuvre-planned-29102026-doy-302"
+      },
+      {
+       "date": "2026-10-23",
+       "title": "Sentinel-3B unavailability notice for Lunar Calibration planned on 26 October 2026",
+       "url": "https://dataspace.copernicus.eu/news/2026-10-23-copernicus-sentinel-3b-unavailability-notice-lunar-calibration-planned-26-october"
+      },
+      {
+       "date": "2026-08-27",
+       "title": "Sentinel-3B unavailability notice for the Ground Segment Anomaly on 18/08/2026",
+       "url": "https://dataspace.copernicus.eu/news/2026-8-27-copernicus-sentinel-3b-unavailability-notice-ground-segment-anomaly-occurred"
+      }
+     ],
+     "status_page": "https://dataspace.copernicus.eu/news?satellite%5B10%5D=10",
+     "reviewed": "2026-11-10"
+    }
+   ]
+  }
+ ]
+}

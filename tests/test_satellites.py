@@ -101,12 +101,12 @@ def test_failing_sources_make_it_unknown(tmp_path):
     d = tmp_path / "data"
     _write(
         d / "missions" / "viirs",
-        _obs("SNPP", _hourly(NOW - timedelta(days=20), NOW - timedelta(days=7))),
+        _obs("N20", _hourly(NOW - timedelta(days=20), NOW - timedelta(days=7))),
     )
     _health(
         d / "missions" / "viirs" / "health.json", failing_since="2026-11-02T00:00:00Z"
     )
-    r = satellites.check(d, None, NOW)["platforms"]["SNPP"]
+    r = satellites.check(d, None, NOW)["platforms"]["N20"]
     assert r["status"] == "unknown" and "failing" in r["note"]
 
 

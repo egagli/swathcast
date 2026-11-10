@@ -179,8 +179,8 @@ def test_spec_leaves_out_platforms_that_do_not_repeat():
     out = projection.spec("modis", {"Terra": end, "Aqua": end}, T("2026-11-09"))
     # neither repeats: nothing projected, but why is kept
     assert out["platforms"] == {} and set(out["not_projected"]) == {"Terra", "Aqua"}
-    out = projection.spec("viirs", {"SNPP": end, "N20": end}, T("2026-11-09"))
-    assert set(out["platforms"]) == {"SNPP", "N20"} and "not_projected" not in out
+    out = projection.spec("viirs", {"N21": end, "N20": end}, T("2026-11-09"))
+    assert set(out["platforms"]) == {"N21", "N20"} and "not_projected" not in out
     mixed = projection.spec("modis", {"Terra": end, "X": end}, T("2026-11-09"))
     assert set(mixed["platforms"]) == {"X"} and "Terra" in mixed["not_projected"]
 

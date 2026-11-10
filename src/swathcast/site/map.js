@@ -319,6 +319,12 @@ async function load() {
   legend();
   applyRegistry(await platformRegistry);
   state.projections = parseProjections(idx);
+  // nor projected (the schedule's own projections may predate its retirement)
+  Object.values(state.projections).forEach((spec) => Object.keys(spec.platforms).forEach((p) => {
+    if (!state.retired[p]) return;
+    delete spec.platforms[p];
+    spec.notProjected = { ...spec.notProjected, [p]: "retired (see Satellites)" };
+  }));
   applySatelliteStatus(await satelliteStatus);
   state.planPages = (idx && idx.plan_pages) || {};
   const s = document.getElementById("date-start"), e = document.getElementById("date-end");
@@ -915,6 +921,9 @@ function timeOK(t, f) {
 // The same, without the dates (for acquisitions in the recent past).
 function filterOK(t, f) {
   const key = missionOf(t.platform), mf = state.mf[key];
+  // a retired platform (platforms.json): its past stays, nothing ahead is
+  // shown, even from a schedule built before it was retired
+  if (state.retired[t.platform] && t.when instanceof Date && t.when.getTime() > Date.now()) return false;
   return mf.platforms.has(t.platform)
     && (!mf.dirs || !t.direction || mf.dirs.has(t.direction))
     && (!mf.modes || !t.mode || mf.modes.has(t.mode))
