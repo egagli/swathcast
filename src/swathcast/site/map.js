@@ -2387,23 +2387,49 @@ function listItems() {
 
 // ---------------------------------------------------------------- AOI timeline
 // Along the bottom of the map while there is an AOI: the list's items from
-// 30 days back to 30 ahead, one lane per satellite, in its mission's colour
+// 30 days back to the end of the dates chosen (at least 30 days ahead; up to
+// the projections' year), one lane per satellite, in its mission's colour
 // (filled: in a catalogue; hollow: planned; dashed: planned, in no
-// catalogue yet). A lane is hatched after its plan's end (nothing is known
-// there). Clicking a marker (or Enter on it) selects its row; arrow keys move
-// between markers.
+// catalogue yet; dotted: projected). A lane is hatched after its plan's end:
+// projected there, or nothing known (a platform not projected). Clicking a
+// marker (or Enter on it) selects its row; arrow keys move between markers.
 const TL_DAYS = 30;
 const tlBox = document.getElementById("aoi-timeline");
 const LANE_ORDER = ["S1A", "S1C", "S1D", "S1", "S2A", "S2B", "S2C", "S2", "L8", "L9", "L8/9", "NISAR", "Terra", "Aqua", "MODIS", "SNPP", "N20", "N21", "VIIRS", "S3A", "S3B", "S3"];
 // products whose platform the catalogue does not give (HLS, for one)
 const LANE_UNKNOWN = { s1: "S1", s2: "S2", landsat: "L8/9", nisar: "NISAR", modis: "MODIS", viirs: "VIIRS", s3: "S3" };
 let tlItems = [];
+// The strip's span: 30 days back, and ahead to the end of the dates chosen.
+function timelineSpan(now = Date.now()) {
+  const end = state.end ? new Date(`${state.end}T23:59:59Z`).getTime() : 0;
+  return [now - TL_DAYS * 864e5, Math.max(now + TL_DAYS * 864e5, end)];
+}
+// Its date ticks: every day (short spans) with a label every 5-15 days, or a
+// label at each month's start (long spans: the year where it changes).
+function timelineTicks(t0, t1, pxPerDay, x, H) {
+  const out = [], day = 864e5, monthly = pxPerDay * 5 < 34;
+  const first = Math.ceil(t0 / day) * day;
+  const every = pxPerDay * 5 >= 60 ? 5 : pxPerDay * 10 >= 60 ? 10 : 15;
+  const daily = pxPerDay >= 4;
+  for (let t = first; t <= t1; t += day) {
+    const dt = new Date(t), d = Math.round((t - first) / day);
+    const major = monthly ? dt.getUTCDate() === 1 : d % every === 0;
+    if (!major && !daily && !(monthly && dt.getUTCDate() === 15)) continue;
+    out.push(`<line x1="${x(t).toFixed(1)}" x2="${x(t).toFixed(1)}" y1="${H - 22}" y2="${H - (major ? 16 : 19)}" stroke="var(--muted)" stroke-width="1"/>`);
+    if (!major) continue;
+    const mon = fmtWhen(dt).split(" ")[2];
+    const text = monthly ? `${mon}${dt.getUTCMonth() === 0 ? ` ${dt.getUTCFullYear()}` : ""}` : `${dt.getUTCDate()} ${mon}`;
+    const anchor = x(t) - x(t0) < 20 ? "start" : x(t1) - x(t) < 20 ? "end" : "middle";
+    out.push(`<text x="${x(t).toFixed(1)}" y="${H - 5}" text-anchor="${anchor}">${text}</text>`);
+  }
+  return out;
+}
 function renderTimeline() {
   const on = Boolean(state.aoi);
   tlBox.hidden = !on;
   document.body.classList.toggle("has-timeline", on);
   if (!on) return;
-  const now = Date.now(), t0 = now - TL_DAYS * 864e5, t1 = now + TL_DAYS * 864e5;
+  const now = Date.now(), [t0, t1] = timelineSpan(now);
   const items = listItems().filter((it) => it.when.getTime() >= t0 && it.when.getTime() <= t1);
   tlItems = items;
   // on a phone: one lane for every satellite (the strip sits above the sheet)
@@ -2414,37 +2440,31 @@ function renderTimeline() {
   const H = top + Math.max(1, lanes.length) * laneH + 24;
   const x = (t) => labelW + ((t - t0) / (t1 - t0)) * (W - labelW - 6);
   const yOf = (p) => top + lanes.indexOf(p) * laneH + laneH / 2;
-  const ticks = [];
-  // a date every 5 days, or every 10 where the strip is narrow
-  const every = W > 640 ? 5 : W > 300 ? 10 : 15;
-  for (let d = -TL_DAYS; d <= TL_DAYS; d++) {
-    const t = now + d * 864e5, major = d % every === 0;
-    ticks.push(`<line x1="${x(t).toFixed(1)}" x2="${x(t).toFixed(1)}" y1="${H - 22}" y2="${H - (major ? 16 : 19)}" stroke="var(--muted)" stroke-width="1"/>`);
-    if (major && d !== 0) {
-      const dt = new Date(t);
-      ticks.push(`<text x="${x(t).toFixed(1)}" y="${H - 5}" text-anchor="${d === -TL_DAYS ? "start" : d === TL_DAYS ? "end" : "middle"}">${dt.getUTCDate()} ${fmtWhen(dt).split(" ")[2]}</text>`);
-    }
-  }
-  // hatched after each platform's plan end
+  const pxPerDay = (W - labelW - 6) / ((t1 - t0) / 864e5);
+  const ticks = timelineTicks(t0, t1, pxPerDay, x, H);
+  // a lane's markers shrink where they would overlap (a year of daily passes)
+  const r = pxPerDay < 3 ? 3.5 : 5;
+  // hatched after each platform's plan end: projected there, or unknown
   const ends = compact ? "" : lanes.map((p) => {
     const end = (state.planEnds[missionOf(p)] || {})[p];
     if (!end || end.getTime() >= t1) return "";
     const xe = Math.max(x(now), x(end.getTime()));
-    const pr = state.projections[missionOf(p)];
-    const why = pr ? `the plan ends ${fmtBoth(end, aoiCenter())}; after it, passes are projected (the plan repeated every ${Math.round(pr.repeatMs / 864e5)} days)` : `the plan ends ${fmtBoth(end, aoiCenter())}; nothing is known after it`;
-    return `<rect x="${xe.toFixed(1)}" y="${yOf(p) - laneH / 2 + 2}" width="${(x(t1) - xe).toFixed(1)}" height="${laneH - 4}" fill="url(#tl-hatch)"><title>${esc(p)}: ${why}</title></rect>`;
+    const pr = state.projections[missionOf(p)], ps = pr && pr.platforms[p];
+    const why = ps ? `${isWide(missionOf(p)) ? "the orbit prediction" : "the plan"} ends ${fmtBoth(end, aoiCenter())}; after it, passes are projected (its last ${Math.round(ps.repeatMs / 864e5)}-day cycle repeated): in no published plan, subject to change`
+      : `the ${isWide(missionOf(p)) ? "orbit prediction" : "plan"} ends ${fmtBoth(end, aoiCenter())}; nothing is known after it${pr && pr.notProjected[p] ? ` (not projected: ${pr.notProjected[p]})` : ""}`;
+    return `<rect x="${xe.toFixed(1)}" y="${yOf(p) - laneH / 2 + 2}" width="${(x(t1) - xe).toFixed(1)}" height="${laneH - 4}" fill="url(#tl-hatch)"><title>${esc(p)}: ${esc(why)}</title></rect>`;
   }).join("");
   const laneLines = lanes.map((p) => `<text class="lane" x="0" y="${yOf(p) + 3.5}">${compact ? "" : esc(p)}</text><line x1="${labelW}" x2="${W - 6}" y1="${yOf(p)}" y2="${yOf(p)}" stroke="var(--hairline)"/>`).join("");
   const marks = items.map((it, i) => {
     const c = missionColor(it.mission), filled = it.state === "acquired";
     const label = `${passLabel(it.ref, { short: true })}: ${fmtBoth(it.when, aoiCenter())} · ${it.state === "acquired" ? "acquired (in a catalogue)" : it.state === "uncatalogued" ? "planned, in no catalogue yet" : it.state === "projected" ? "projected (past the plan's end)" : "planned"}`;
     const dash = it.state === "uncatalogued" ? ' stroke-dasharray="2 1.5"' : it.state === "projected" ? ' stroke-dasharray="1 2" opacity=".75"' : "";
-    return `<circle class="mk${selected(it) ? " sel" : ""}" data-i="${i}" data-key="${esc(it.key)}" tabindex="0" role="button" aria-label="${esc(label)}" cx="${x(it.when.getTime()).toFixed(1)}" cy="${yOf(laneOf(it))}" r="5" fill="${filled ? c : "var(--surface)"}" stroke="${c}" stroke-width="1.8"${dash}><title>${esc(label)}</title></circle>`;
+    return `<circle class="mk${selected(it) ? " sel" : ""}" data-i="${i}" data-key="${esc(it.key)}" tabindex="0" role="button" aria-label="${esc(label)}" cx="${x(it.when.getTime()).toFixed(1)}" cy="${yOf(laneOf(it))}" r="${r}" fill="${filled ? c : "var(--surface)"}" stroke="${c}" stroke-width="1.8"${dash}><title>${esc(label)}</title></circle>`;
   }).join("");
   const nowX = x(now).toFixed(1);
   const loading = state.busy || (state.recent && Object.values(state.recent.results).some((r) => r.status === "loading"));
   const empty = items.length ? "" : `<text x="${(W / 2).toFixed(0)}" y="${top + 10}" text-anchor="middle">${loading ? "Finding passes…" : "No passes over this AOI in this window that match the filters."}</text>`;
-  tlBox.innerHTML = `<div class="tl-head"><b>Passes over your AOI</b><span class="nm">30 days back to 30 ahead · ● acquired · ○ planned · dotted ○ projected · hatched: after the plan ends · click one to select it</span></div>`
+  tlBox.innerHTML = `<div class="tl-head"><b>Passes over your AOI</b><span class="nm">30 days back to ${dayWithYear(new Date(t1))} · ● acquired · ○ planned · dotted ○ projected · hatched: past the plan's end · click one to select it</span></div>`
     + `<svg viewBox="0 0 ${W} ${H}" height="${H}" role="group" aria-label="Passes over your AOI: ${items.length}">`
     + '<defs><pattern id="tl-hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" stroke="var(--muted)" stroke-width="1" opacity=".45"/></pattern></defs>'
     + `<rect x="${nowX}" y="${top - 4}" width="${(x(t1) - x(now)).toFixed(1)}" height="${H - top - 18}" fill="var(--surface-2)"/>`
