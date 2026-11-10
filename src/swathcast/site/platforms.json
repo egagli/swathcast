@@ -38,7 +38,7 @@
       "state": "operational",
       "since": "2026-06-24",
       "by": "ESA",
-      "summary": "Paired with Sentinel-1D 180° apart; the 6-day repeat was restored on 24 June 2026.",
+      "summary": "Paired with Sentinel-1D 180\u00b0 apart; the 6-day repeat was restored on 24 June 2026.",
       "source": "https://dataspace.copernicus.eu/news/2026-6-24-s1cd-final-orbital-configuration-achieved"
      },
      "notices": [
@@ -83,7 +83,7 @@
       "state": "operational",
       "since": "2026-04-17",
       "by": "ESA",
-      "summary": "Operational with Sentinel-1C. Satellite issues on 26–27 and 28–29 Oct 2026 each caused an unrecoverable loss of data; no later notice reports a continuing outage.",
+      "summary": "Operational with Sentinel-1C. Satellite issues on 26\u201327 and 28\u201329 Oct 2026 each caused an unrecoverable loss of data; no later notice reports a continuing outage.",
       "source": "https://dataspace.copernicus.eu/news/2026-10-30-copernicus-sentinel-1d-data-unavailability-28-october-2026"
      },
      "notices": [
@@ -99,7 +99,7 @@
       },
       {
        "date": "2026-06-04",
-       "title": "Sentinel-1D SAR Data Quality Degradation (29 May – 1 Jun 2026)",
+       "title": "Sentinel-1D SAR Data Quality Degradation (29 May \u2013 1 Jun 2026)",
        "url": "https://dataspace.copernicus.eu/news/2026-6-4-sentinel-1d-sar-data-quality-degradation"
       },
       {
@@ -145,6 +145,57 @@
      ],
      "status_page": "https://dataspace.copernicus.eu/news?satellite%5B8%5D=8",
      "reviewed": "2026-11-10"
+    },
+    {
+     "code": "S1B",
+     "name": "Sentinel-1B",
+     "norad": 41456,
+     "launch": {
+      "date": "2016-04-25",
+      "source": "https://sentiwiki.copernicus.eu/web/s1-mission"
+     },
+     "operations": null,
+     "status": {
+      "state": "retired",
+      "since": "2022-08-03",
+      "by": "ESA",
+      "summary": "A power-supply anomaly on 23 Dec 2021 stopped Sentinel-1B delivering radar data; recovery failed and ESA and the European Commission announced the end of the mission on 3 Aug 2022. SentiWiki says its disposal was completed in Sept 2024.",
+      "source": "https://www.esa.int/Applications/Observing_the_Earth/Copernicus/Sentinel-1/Mission_ends_for_Copernicus_Sentinel-1B_satellite"
+     },
+     "notices": [
+      {
+       "date": "2022-08-03",
+       "title": "Mission ends for Copernicus Sentinel-1B satellite",
+       "url": "https://www.esa.int/Applications/Observing_the_Earth/Copernicus/Sentinel-1/Mission_ends_for_Copernicus_Sentinel-1B_satellite"
+      },
+      {
+       "date": "2022-08-03",
+       "title": "End of mission of the Copernicus Sentinel-1B satellite",
+       "url": "https://sentinels.copernicus.eu/-/end-of-mission-of-the-copernicus-sentinel-1b-satellite"
+      }
+     ],
+     "status_page": "https://sentiwiki.copernicus.eu/web/s1-mission",
+     "reviewed": "2026-11-10"
+    }
+   ],
+   "upcoming": [
+    {
+     "code": "S1NG",
+     "name": "Sentinel-1 Next Generation (two satellites)",
+     "state": "planned",
+     "launch": {
+      "source": "https://www.esa.int/Applications/Observing_the_Earth/Copernicus/Sentinel-1/ESA_awards_contract_to_build_Sentinel-1_Next_Generation_satellites"
+     },
+     "summary": "On 10 Jun 2026 ESA awarded Thales Alenia Space the prime contract to build two Sentinel-1 Next Generation satellites, with C-band SAR instruments from Airbus Defence and Space. ESA gives no launch date.",
+     "source": "https://www.esa.int/Applications/Observing_the_Earth/Copernicus/Sentinel-1/ESA_awards_contract_to_build_Sentinel-1_Next_Generation_satellites",
+     "notices": [
+      {
+       "date": "2026-06-10",
+       "title": "ESA awards contract to build Sentinel-1 Next Generation satellites",
+       "url": "https://www.esa.int/Applications/Observing_the_Earth/Copernicus/Sentinel-1/ESA_awards_contract_to_build_Sentinel-1_Next_Generation_satellites"
+      }
+     ],
+     "reviewed": "2026-11-10"
     }
    ]
   },
@@ -180,7 +231,7 @@
       "state": "operational",
       "since": null,
       "by": "ESA",
-      "summary": "In the nominal constellation with Sentinel-2C. Products sensed 20–22 Oct 2026 have significant geolocation errors and are being removed while reprocessing is investigated (unresolved as of 3 Nov).",
+      "summary": "In the nominal constellation with Sentinel-2C. Products sensed 20\u201322 Oct 2026 have significant geolocation errors and are being removed while reprocessing is investigated (unresolved as of 3 Nov).",
       "source": "https://dataspace.copernicus.eu/news/2026-11-3-temporary-geolocation-issue-affecting-sentinel-2b-products"
      },
      "notices": [
@@ -289,11 +340,25 @@
      "status_page": "https://dataspace.copernicus.eu/news?satellite%5B9%5D=9",
      "reviewed": "2026-11-10"
     }
+   ],
+   "upcoming": [
+    {
+     "code": "S2D",
+     "name": "Sentinel-2D",
+     "state": "planned",
+     "launch": {
+      "source": "https://sentiwiki.copernicus.eu/web/s2-mission"
+     },
+     "summary": "The fourth Sentinel-2 satellite; SentiWiki says it \u201cwill succeed Sentinel-2B\u201d. No official launch date has been published.",
+     "source": "https://sentiwiki.copernicus.eu/web/s2-mission",
+     "notices": [],
+     "reviewed": "2026-11-10"
+    }
    ]
   },
   {
    "key": "landsat",
-   "label": "Landsat 8/9",
+   "label": "Landsat",
    "operator": "USGS and NASA",
    "pages": [
     {
@@ -367,7 +432,7 @@
       "state": "operational",
       "since": "2013-05-30",
       "by": "USGS",
-      "summary": "Acquiring; no orbit or mission change announced in 2025–2026. The latest notice is a ground-side interruption of new data, 20–26 Oct 2026.",
+      "summary": "Acquiring; no orbit or mission change announced in 2025\u20132026. The latest notice is a ground-side interruption of new data, 20\u201326 Oct 2026.",
       "source": "https://www.usgs.gov/centers/eros/2026-10-20-new-landsat-8-9-product-availability-interruption"
      },
      "notices": [
@@ -388,6 +453,53 @@
       }
      ],
      "status_page": "https://www.usgs.gov/centers/eros/data-notifications",
+     "reviewed": "2026-11-10"
+    },
+    {
+     "code": "L7",
+     "name": "Landsat 7",
+     "norad": 25682,
+     "launch": {
+      "date": "1999-04-15",
+      "source": "https://science.nasa.gov/mission/landsat-7/"
+     },
+     "operations": null,
+     "status": {
+      "state": "decommissioned",
+      "since": "2025-06-04",
+      "by": "USGS",
+      "summary": "Its active science mission ended in early 2024, the final images were received in May 2024, and USGS sent the final transmission on 4 June 2025, when the mission was decommissioned.",
+      "source": "https://science.nasa.gov/missions/landsat/a-final-farewell-to-landsat-7"
+     },
+     "notices": [
+      {
+       "date": "2025-06-05",
+       "title": "A Final Farewell to Landsat 7",
+       "url": "https://science.nasa.gov/missions/landsat/a-final-farewell-to-landsat-7"
+      }
+     ],
+     "status_page": "https://science.nasa.gov/mission/landsat-7/",
+     "reviewed": "2026-11-10"
+    }
+   ],
+   "upcoming": [
+    {
+     "code": "L10",
+     "name": "Landsat 10",
+     "state": "planned",
+     "launch": {
+      "expected": "2031",
+      "source": "https://science.nasa.gov/mission/landsat-10/"
+     },
+     "summary": "The next NASA\u2013USGS Landsat. NASA expects launch in 2031; the spacecraft request for proposal (17 Jul 2026) sets a launch readiness date of no later than December 2031, carrying an integrated sensor suite called LandIS.",
+     "source": "https://science.nasa.gov/mission/landsat-10/",
+     "notices": [
+      {
+       "date": "2026-07-17",
+       "title": "NASA Releases Landsat 10 Spacecraft Request for Proposal",
+       "url": "https://science.nasa.gov/mission/landsat-10/nasa-releases-landsat-10-spacecraft-request-for-proposal/"
+      }
+     ],
      "reviewed": "2026-11-10"
     }
    ]
@@ -428,7 +540,7 @@
       "state": "operational",
       "since": "2026-11-06",
       "by": "NASA",
-      "summary": "Fully validated Level 0–2 L-band products (CRID P05036) released on 6 Nov 2026, after provisional production was paused from 23:53 UTC on 23 Oct for a software upgrade. S-band products come from ISRO.",
+      "summary": "Fully validated Level 0\u20132 L-band products (CRID P05036) released on 6 Nov 2026, after provisional production was paused from 23:53 UTC on 23 Oct for a software upgrade. S-band products come from ISRO.",
       "source": "https://www.earthdata.nasa.gov/data/alerts-outages/nisar-validated-l-band-data-products-now-available"
      },
      "notices": [
@@ -439,7 +551,7 @@
       },
       {
        "date": "2026-10-30",
-       "title": "NISAR Provisional Data Production Paused Oct. 23 – Nov. 6, 2026",
+       "title": "NISAR Provisional Data Production Paused Oct. 23 \u2013 Nov. 6, 2026",
        "url": "https://www.earthdata.nasa.gov/data/alerts-outages/nisar-provisional-data-production-paused-oct.-23-nov.-6-2026"
       },
       {
@@ -456,7 +568,9 @@
      "status_page": "https://nisar-docs.asf.alaska.edu/availability-overview/",
      "reviewed": "2026-11-10"
     }
-   ]
+   ],
+   "upcoming": [],
+   "upcoming_note": "NASA's NISAR page lists it as an active mission in its science phase and names no follow-on."
   },
   {
    "key": "modis",
@@ -470,6 +584,10 @@
     {
      "text": "Earthdata alerts",
      "href": "https://www.earthdata.nasa.gov/data/alerts-outages"
+    },
+    {
+     "text": "MODIS to VIIRS transition (LAADS)",
+     "href": "https://ladsweb.modaps.eosdis.nasa.gov/learn/modis-to-viirs-transition"
     }
    ],
    "platforms": [
@@ -535,7 +653,9 @@
      "status_page": "https://science.nasa.gov/mission/aqua/",
      "reviewed": "2026-11-10"
     }
-   ]
+   ],
+   "upcoming": [],
+   "upcoming_note": "NASA plans to stop MODIS data collection after Terra and Aqua end operations and calls VIIRS its natural successor; no MODIS-like instrument will take Terra's morning orbit."
   },
   {
    "key": "viirs",
@@ -573,7 +693,7 @@
       "state": "operational",
       "since": "2024-03-13",
       "by": "NOAA",
-      "summary": "Primary JPSS satellite. Recent issues were short: VIIRS gaps on 5–6 Nov 2026, an LWIR quality-flag anomaly on 28–29 Jul 2026, gaps on 29–30 Mar 2026.",
+      "summary": "Primary JPSS satellite. Recent issues were short: VIIRS gaps on 5\u20136 Nov 2026, an LWIR quality-flag anomaly on 28\u201329 Jul 2026, gaps on 29\u201330 Mar 2026.",
       "source": "https://www.nesdis.noaa.gov/news/noaa-21-now-the-primary-satellite-the-jpss-fleet"
      },
      "notices": [
@@ -613,7 +733,7 @@
       "state": "operational",
       "since": "2024-03-13",
       "by": "NOAA",
-      "summary": "Secondary JPSS satellite since NOAA-21 became primary; VIIRS gaps on 5–7 Nov 2026.",
+      "summary": "Secondary JPSS satellite since NOAA-21 became primary; VIIRS gaps on 5\u20137 Nov 2026.",
       "source": "https://www.nesdis.noaa.gov/news/noaa-21-now-the-primary-satellite-the-jpss-fleet"
      },
      "notices": [
@@ -645,12 +765,12 @@
      "notices": [
       {
        "date": "2026-11-02",
-       "title": "Update #4 – Cessation of S-NPP data to users on November 02, 2026 1540 UTC and Decommissioning",
+       "title": "Update #4 \u2013 Cessation of S-NPP data to users on November 02, 2026 1540 UTC and Decommissioning",
        "url": "https://www.nesdis.noaa.gov/news/update-4-cessation-of-suomi-national-polar-orbiting-partnership-s-npp-data-users-november-02-2026-1540-utc-and-decommissioning-issued-november-2-2026-1800-utc"
       },
       {
        "date": "2026-10-19",
-       "title": "Update #2 – Cessation of S-NPP data to users and Decommissioning",
+       "title": "Update #2 \u2013 Cessation of S-NPP data to users and Decommissioning",
        "url": "https://www.nesdis.noaa.gov/news/administrative-update-2-cessation-of-suomi-national-polar-orbiting-partnership-s-npp-data-users-november-02-2026-1300-utc-and-decommissioning-issued-october-19-2026-1400-utc"
       },
       {
@@ -660,6 +780,45 @@
       }
      ],
      "status_page": "https://www.ospo.noaa.gov/operations/messages.html",
+     "reviewed": "2026-11-10"
+    }
+   ],
+   "upcoming": [
+    {
+     "code": "JPSS4",
+     "name": "JPSS-4 (NOAA-22 once in orbit)",
+     "state": "planned",
+     "launch": {
+      "expected": "2027 (launch readiness date)",
+      "source": "https://www.nesdis.noaa.gov/our-satellites/currently-flying/joint-polar-satellite-system"
+     },
+     "summary": "The next JPSS satellite to launch, carrying VIIRS; NOAA gives a launch readiness date of 2027 and will rename it NOAA-22 in orbit.",
+     "source": "https://www.nesdis.noaa.gov/our-satellites/currently-flying/joint-polar-satellite-system",
+     "notices": [
+      {
+       "date": "2026-02-17",
+       "title": "NOAA's Next JPSS Weather Satellite, JPSS-4, Completes Solar Array Deployment Test",
+       "url": "https://www.nesdis.noaa.gov/news/noaas-next-jpss-weather-satellite-jpss-4-completes-solar-array-deployment-test"
+      },
+      {
+       "date": "2024-07-22",
+       "title": "NASA Awards Launch Services Contract for NOAA's JPSS-4 Mission",
+       "url": "https://www.nasa.gov/news-release/nasa-awards-launch-services-contract-for-noaas-jpss-4-mission/"
+      }
+     ],
+     "reviewed": "2026-11-10"
+    },
+    {
+     "code": "JPSS3",
+     "name": "JPSS-3 (NOAA-23 once in orbit)",
+     "state": "planned",
+     "launch": {
+      "expected": "after JPSS-4; no date published",
+      "source": "https://www.nesdis.noaa.gov/s3/2026-06/JPSS-factsheet.pdf"
+     },
+     "summary": "The last satellite in the JPSS series, carrying VIIRS; NOAA's fact sheet (June 2026) says it launches after JPSS-4 and will become NOAA-23.",
+     "source": "https://www.nesdis.noaa.gov/s3/2026-06/JPSS-factsheet.pdf",
+     "notices": [],
      "reviewed": "2026-11-10"
     }
    ]
@@ -757,6 +916,57 @@
       }
      ],
      "status_page": "https://dataspace.copernicus.eu/news?satellite%5B10%5D=10",
+     "reviewed": "2026-11-10"
+    }
+   ],
+   "upcoming": [
+    {
+     "code": "S3C",
+     "name": "Sentinel-3C",
+     "norad": 100690,
+     "state": "commissioning",
+     "launch": {
+      "date": "2026-09-15",
+      "source": "https://www.esa.int/Newsroom/Press_Releases/FLEX_and_Sentinel-3C_launched"
+     },
+     "summary": "Launched with FLEX on Vega-C on 15 Sep 2026. On 8 Oct 2026 ESA said commissioning for service \u201cwill take another five months\u201d. It is to take over Sentinel-3A\u2019s primary operational role (EU Space OBSERVER, 28 Aug 2026). No user data opening date yet; swathcast will track it once its data are public.",
+     "source": "https://www.esa.int/Applications/Observing_the_Earth/Copernicus/Sentinel-3/Sentinel-3C_returns_its_first_views_of_Earth",
+     "notices": [
+      {
+       "date": "2026-10-08",
+       "title": "Sentinel-3C returns its first views of Earth",
+       "url": "https://www.esa.int/Applications/Observing_the_Earth/Copernicus/Sentinel-3/Sentinel-3C_returns_its_first_views_of_Earth"
+      },
+      {
+       "date": "2026-09-15",
+       "title": "FLEX and Sentinel-3C launched",
+       "url": "https://www.esa.int/Newsroom/Press_Releases/FLEX_and_Sentinel-3C_launched"
+      },
+      {
+       "date": "2026-08-28",
+       "title": "OBSERVER: New satellite to carry the Copernicus Sentinel-3 record into the next decade",
+       "url": "https://eu-space.europa.eu/news/observer-new-satellite-carry-copernicus-sentinel-3-record-next-decade"
+      }
+     ],
+     "reviewed": "2026-11-10"
+    },
+    {
+     "code": "S3D",
+     "name": "Sentinel-3D",
+     "state": "planned",
+     "launch": {
+      "expected": "around 2029",
+      "source": "https://sentiwiki.copernicus.eu/web/s3-mission"
+     },
+     "summary": "The fourth Sentinel-3 satellite; SentiWiki says it is \u201cplanned to follow around 2029\u201d, and EU Space OBSERVER (28 Aug 2026) says 2029.",
+     "source": "https://sentiwiki.copernicus.eu/web/s3-mission",
+     "notices": [
+      {
+       "date": "2026-08-28",
+       "title": "OBSERVER: New satellite to carry the Copernicus Sentinel-3 record into the next decade",
+       "url": "https://eu-space.europa.eu/news/observer-new-satellite-carry-copernicus-sentinel-3-record-next-decade"
+      }
+     ],
      "reviewed": "2026-11-10"
     }
    ]

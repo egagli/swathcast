@@ -24,6 +24,7 @@ const CHECK = {
   unknown: ["unknown", "b-off", "this site's sources for it are failing"],
   retired: ["no new data (retired)", "b-off", "expected: it no longer delivers"],
 };
+const RETIRED = ["retired", "data_ended", "decommissioned"];
 const esc = (x) => String(x ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 // "2 Nov 2026" from "2026-11-02" (a date, no time zone games)
@@ -46,16 +47,17 @@ function datesCell(p) {
   if (p.operations && p.operations.date) rows.push(`${esc(p.operations.what || "In operations")} ${day(p.operations.date)}${p.operations.source ? ` ${link(p.operations.source, "↗")}` : ""}`);
   return rows.map((r) => `<div>${r}</div>`).join("") || '<span class="nm">—</span>';
 }
-function dataCell(code, sats) {
+function dataCell(code, sats, p) {
   const v = sats && sats.platforms && sats.platforms[code];
+  if (!v && p && RETIRED.includes(p.status.state)) return '<span class="nm">no new data (retired); not checked hourly</span>';
   if (!v) return '<span class="nm">not tracked by this site\'s poller</span>';
   const c = CHECK[v.status] || CHECK.unknown;
   const streams = Object.values(v.streams || {});
   const lines = streams.map((s) => `<div class="nm">${esc(s.what)}: ${stamp(s.last_seen)} <span title="${esc(s.last_seen)}">(${fmtAge(ageHours(s.last_seen))})</span></div>`).join("");
   return `${badge([c[0], c[1]], c[2])}${v.note && v.status !== "ok" ? `<div class="nm">${esc(v.note)}</div>` : ""}${lines}`;
 }
-function mapCell(key, code, p, idx) {
-  if (["retired", "data_ended", "decommissioned"].includes(p.status.state)) return '<span class="nm">not planned, predicted or projected; its past acquisitions are still listed</span>';
+function mapCell(key, code, p, idx, sats) {
+  if (RETIRED.includes(p.status.state)) return `<span class="nm">not planned, predicted or projected${sats && sats.platforms && sats.platforms[code] ? "; its past acquisitions are still listed" : ""}</span>`;
   const pr = idx && idx.projections && idx.projections[key];
   const plat = pr && pr.platforms && pr.platforms[code];
   const sensor = { s1: "sentinel-1", s2: "sentinel-2", nisar: "nisar" }[key];
@@ -108,8 +110,8 @@ function render(reg, sats, idx, feed) {
         <td class="name" data-h="Satellite"><b>${esc(p.name)}</b><div class="nm">${esc(p.code)}${p.reviewed ? ` · reviewed ${day(p.reviewed)}` : ""}</div>${celestrak(p)}</td>
         <td data-h="Status">${statusCell(p)}</td>
         <td data-h="Dates">${datesCell(p)}</td>
-        <td data-h="Newest data">${dataCell(p.code, sats)}</td>
-        <td data-h="On the map">${mapCell(m.key, p.code, p, idx)}</td>
+        <td data-h="Newest data">${dataCell(p.code, sats, p)}</td>
+        <td data-h="On the map">${mapCell(m.key, p.code, p, idx, sats)}</td>
         <td data-h="Updates">${updatesCell(p, feed)}</td></tr>`;
     }).join("");
     const pages = (m.pages || []).map((x) => link(x.href, x.text)).join(" · ");

@@ -80,6 +80,38 @@ def test_registry_check_catches_problems(tmp_path):
     assert any("notice without a date or https URL" in x for x in problems)
 
 
+def test_registry_check_norad_and_upcoming(tmp_path):
+    p = _reg(tmp_path, norad="37849")
+    assert any("bad NORAD number" in x for x in platforms.check(p))
+    p = _reg(tmp_path, norad=37849)
+    reg = json.loads(p.read_text())
+    good = {
+        "code": "JPSS3",
+        "name": "JPSS-3",
+        "state": "planned",
+        "launch": {"expected": "2032", "source": "https://example.org/e"},
+        "source": "https://example.org/e",
+        "notices": [],
+    }
+    reg["missions"][0]["upcoming"] = [good]
+    p.write_text(json.dumps(reg))
+    platforms.registry.cache_clear()
+    assert platforms.check(p) == []
+    # an upcoming satellite is not a tracked platform (nothing to predict)
+    assert "JPSS3" not in platforms.platforms(p)
+    reg["missions"][0]["upcoming"] = [
+        {**good, "state": "operational"},
+        {**good, "code": "N21", "source": "http://x", "launch": {"date": "2032"}},
+    ]
+    p.write_text(json.dumps(reg))
+    platforms.registry.cache_clear()
+    problems = platforms.check(p)
+    assert any("upcoming JPSS3: state" in x for x in problems)
+    assert any("N21 twice" in x for x in problems)
+    assert any("upcoming N21: no https source" in x for x in problems)
+    assert any("bad launch date" in x for x in problems)
+
+
 def test_the_shipped_registry_is_valid():
     platforms.registry.cache_clear()
     assert platforms.check() == []
@@ -88,6 +120,10 @@ def test_the_shipped_registry_is_valid():
     from swathcast.tle import NORAD
 
     assert set(NORAD) - {"S1A"} <= set(reg)
+    # every satellite has its catalogue number (the CelesTrak link)
+    assert all(isinstance(p.get("norad"), int) for p in reg.values())
+    # the ended satellites listed for the record
+    assert {"S1B", "SNPP"} <= set(platforms.retired())
 
 
 def test_a_retired_platform_is_not_projected(monkeypatch, tmp_path):

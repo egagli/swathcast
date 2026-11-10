@@ -51,7 +51,15 @@ activity. swathcast guards against that, and against failing jobs, six ways:
    with the date each entry was last reviewed; the Satellites page shows it. Update it when an
    agency announces a change (an extension, a decommissioning, a new satellite): the `satellite-
    status` issue is the usual prompt. The site contract (`swathcast check-site`) checks it (states,
-   dates, sources, https links).
+   dates, sources, https links, NORAD numbers).
+
+   Each satellite carries its NORAD catalogue number (`norad`), which the page links to CelesTrak.
+   Satellites that ended before this site tracked them (Sentinel-1B, Landsat 7) are listed for the
+   record with a retired state. Each mission's `upcoming` list holds satellites announced or
+   launched but not yet delivering public data (`state` `planned` or `commissioning`, with a
+   `launch.date` or `launch.expected` and a source); a mission with none carries an
+   `upcoming_note` saying why. When an upcoming satellite's data open to users, move it into
+   `platforms`, add it to the poller and `tle.NORAD`, and remove it from `upcoming`.
 
    Its first run on real data (2026-11-09) found both kinds: Suomi NPP's VIIRS had delivered
    nothing to LANCE or LAADS since 2026-11-02 15:24 UTC (`silent`); and ASF had moved NISAR to new
