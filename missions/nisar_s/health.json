@@ -1,0 +1,37 @@
+{
+  "generated_at": "2026-11-14T13:27:05Z",
+  "sources": {
+    "bhoonidhi_nisar_s": {
+      "consecutive_failures": 0,
+      "details": {
+        "skipped_too_old": 0,
+        "window_end": "2026-11-14T13:27:05Z",
+        "window_start": "2026-11-14T09:29:20Z"
+      },
+      "failing_since_utc": null,
+      "granules_found": 0,
+      "granules_polled": 1127,
+      "last_attempt_utc": "2026-11-14T13:27:05Z",
+      "last_error": "ConnectTimeout: HTTPSConnectionPool(host='bhoonidhi-api.nrsc.gov.in', port=443): Max retries exceeded with url: /auth/token (Caused by ConnectTimeoutError(<HTTPSConnection(host='bhoonidhi-api.nrsc.gov.in', port=443) at 0x7fb52c943080>, 'Connection to bhoonidhi-api.nrsc.gov.in timed out. (connect timeout=60)'))",
+      "last_error_utc": "2026-11-11T18:27:59Z",
+      "last_success_utc": "2026-11-14T13:27:05Z"
+    },
+    "bhoonidhi_nisar_s_gcov": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 0
+      },
+      "failing_since_utc": null,
+      "granules_found": 0,
+      "granules_polled": 28,
+      "last_attempt_utc": "2026-11-14T13:27:05Z",
+      "last_error": "SourceError: Bhoonidhi search failed: HTTPSConnectionPool(host='bhoonidhi-api.nrsc.gov.in', port=443): Max retries exceeded with url: /data/search (Caused by ResponseError('too many 502 error responses'))",
+      "last_error_utc": "2026-10-27T06:51:22Z",
+      "last_success_utc": "2026-11-14T13:27:05Z"
+    }
+  },
+  "this_run": {
+    "bhoonidhi_nisar_s": "ok",
+    "bhoonidhi_nisar_s_gcov": "ok"
+  }
+}

@@ -1,0 +1,210 @@
+{
+  "generated_at": "2026-11-14T03:48:50+00:00",
+  "days": 30,
+  "window": [
+    "2026-11-14T00:00:00+00:00",
+    "2026-12-14T00:00:00+00:00"
+  ],
+  "plan_pages": {
+    "sentinel-1": "https://sentinels.copernicus.eu/web/sentinel/copernicus/sentinel-1/acquisition-plans",
+    "sentinel-2": "https://sentinels.copernicus.eu/web/sentinel/copernicus/sentinel-2/acquisition-plans",
+    "landsat": "https://landsat.usgs.gov/landsat_acq",
+    "nisar": "https://science.nasa.gov/mission/nisar/data/"
+  },
+  "lookback_days": {
+    "sentinel-1": 2,
+    "sentinel-2": 2,
+    "nisar": 3,
+    "landsat": 11,
+    "modis": 2,
+    "viirs": 2,
+    "sentinel-3": 2
+  },
+  "n_passes": 71143,
+  "sensors": {
+    "nisar": 66017,
+    "sentinel-1": 3560,
+    "sentinel-2": 1566
+  },
+  "platforms": {
+    "NISAR": 66017,
+    "S1C": 1808,
+    "S1D": 1752,
+    "S2B": 688,
+    "S2C": 531,
+    "S2A": 347
+  },
+  "sources": {
+    "sentinel-1": "https://sentinels.copernicus.eu/web/sentinel/copernicus/sentinel-1/acquisition-plans",
+    "sentinel-2": "https://sentinels.copernicus.eu/web/sentinel/copernicus/sentinel-2/acquisition-plans",
+    "nisar": "https://assets.science.nasa.gov/content/dam/science/missions/nisar/kmz/NISAR_ROP358_TFDB_ObservationPlan_CY2026-20260305.kmz",
+    "landsat": "https://landsat.usgs.gov/sites/default/files/landsat_acq/assets/json"
+  },
+  "orbital_elements": [
+    "Aqua",
+    "L8",
+    "L9",
+    "N20",
+    "N21",
+    "NISAR",
+    "S1A",
+    "S1C",
+    "S1D",
+    "S2A",
+    "S2B",
+    "S2C",
+    "S3A",
+    "S3B",
+    "SNPP",
+    "Terra"
+  ],
+  "postprocessing": {
+    "nisar_observed_outlines": 8336,
+    "s1_direction_from_orbit": 3560,
+    "s1_direction_filled": 0,
+    "s1_direction_left_blank": 0,
+    "geometry_fixed_or_split": 1218,
+    "geometry_fix_failed": 0,
+    "landsat_observed_outlines": 11676,
+    "landsat_scenes": 95639,
+    "landsat_timing": {
+      "orbit": 95526,
+      "formula": 113
+    },
+    "sin_tiles": 460,
+    "modis_tile_passes": {
+      "Terra": 42994,
+      "Aqua": 42771
+    },
+    "viirs_tile_passes": {
+      "N20": 53297,
+      "N21": 52992
+    },
+    "sentinel-3_tile_passes": {
+      "S3A": 26962,
+      "S3B": 26956
+    },
+    "projections": {
+      "sentinel-1": {
+        "to": "2027-11-14T00:00:00+00:00",
+        "platforms": {
+          "S1C": {
+            "from": "2026-12-05T19:45:42+00:00",
+            "base_from": "2026-11-23T19:45:42+00:00",
+            "repeat_days": 12
+          },
+          "S1D": {
+            "from": "2026-12-03T19:41:42+00:00",
+            "base_from": "2026-11-21T19:41:42+00:00",
+            "repeat_days": 12
+          }
+        }
+      },
+      "sentinel-2": {
+        "to": "2027-11-14T00:00:00+00:00",
+        "platforms": {
+          "S2A": {
+            "from": "2026-11-16T16:56:40.109000+00:00",
+            "base_from": "2026-10-27T16:56:40.109000+00:00",
+            "repeat_days": 20
+          },
+          "S2B": {
+            "from": "2026-11-23T14:57:21.958000+00:00",
+            "base_from": "2026-11-13T14:57:21.958000+00:00",
+            "repeat_days": 10
+          },
+          "S2C": {
+            "from": "2026-11-16T14:19:01.377000+00:00",
+            "base_from": "2026-11-06T14:19:01.377000+00:00",
+            "repeat_days": 10
+          }
+        }
+      },
+      "nisar": {
+        "to": "2027-11-14T00:00:00+00:00",
+        "platforms": {
+          "NISAR": {
+            "from": "2027-01-02T00:00:00+00:00",
+            "base_from": "2026-12-21T00:00:00+00:00",
+            "repeat_days": 12
+          }
+        }
+      },
+      "landsat": {
+        "to": "2027-11-14T00:00:00+00:00",
+        "platforms": {
+          "L8": {
+            "from": "2026-12-14T00:00:00+00:00",
+            "base_from": "2026-11-28T00:00:00+00:00",
+            "repeat_days": 16
+          },
+          "L9": {
+            "from": "2026-12-14T00:00:00+00:00",
+            "base_from": "2026-11-28T00:00:00+00:00",
+            "repeat_days": 16
+          }
+        }
+      },
+      "modis": {
+        "to": "2027-11-14T00:00:00+00:00",
+        "platforms": {},
+        "not_projected": {
+          "Aqua": "no longer on a repeating orbit (the same granule 16 days later lands hundreds of km away), so it is predicted from the orbit for the 30-day window only",
+          "Terra": "no longer on a repeating orbit (the same granule 16 days later lands hundreds of km away), so it is predicted from the orbit for the 30-day window only"
+        }
+      },
+      "viirs": {
+        "to": "2027-11-14T00:00:00+00:00",
+        "platforms": {
+          "N20": {
+            "from": "2026-12-14T00:00:00+00:00",
+            "base_from": "2026-11-28T00:00:00+00:00",
+            "repeat_days": 16
+          },
+          "N21": {
+            "from": "2026-12-14T00:00:00+00:00",
+            "base_from": "2026-11-28T00:00:00+00:00",
+            "repeat_days": 16
+          }
+        }
+      },
+      "sentinel-3": {
+        "to": "2027-11-14T00:00:00+00:00",
+        "platforms": {
+          "S3A": {
+            "from": "2026-12-14T00:00:00+00:00",
+            "base_from": "2026-11-17T00:00:00+00:00",
+            "repeat_days": 27
+          },
+          "S3B": {
+            "from": "2026-12-14T00:00:00+00:00",
+            "base_from": "2026-11-17T00:00:00+00:00",
+            "repeat_days": 27
+          }
+        }
+      }
+    },
+    "non_s1_simplified_deg": 0.01,
+    "s2_tiles": 56686,
+    "s2_tile_passes": 173390,
+    "s2_tile_timing": {
+      "orbit": 173390
+    },
+    "nisar_frames": 66017,
+    "nisar_timing": {
+      "orbit": 43090,
+      "repeat": 22711,
+      "formula": 216
+    }
+  },
+  "requested_sensors": [
+    "sentinel-1",
+    "sentinel-2",
+    "landsat",
+    "nisar",
+    "modis",
+    "viirs",
+    "sentinel-3"
+  ],
+  "missing_plan_files": []
+}
