@@ -551,7 +551,21 @@ def test_phone_layout(browser, server):
     assert (
         js(page, "document.querySelector('.maplibregl-ctrl-zoom-in')") is None
     )  # no +/- buttons
-    page.click("#legend-fold")
+    # the panel is a bottom sheet (sheet.js) and the legend lives in it
+    assert js(page, "document.getElementById('sidebar').classList.contains('ms-sheet')")
+    assert js(
+        page, "document.getElementById('map-legend').closest('#sidebar') !== null"
+    )
+    assert js(page, "document.body.dataset.sheet") in ("peek", "half")  # an AOI: half
+    while js(page, "document.body.dataset.sheet") != "full":
+        page.click("#sidebar .ms-chev")
+    assert (
+        js(
+            page,
+            "document.querySelector('#sidebar .ms-titlebtn').getAttribute('aria-expanded')",
+        )
+        == "true"
+    )
     assert (
         js(
             page,
@@ -559,6 +573,8 @@ def test_phone_layout(browser, server):
         )
         != "none"
     )
+    page.keyboard.press("Escape")
+    assert js(page, "document.body.dataset.sheet") == "peek"
     page.click(".mo-fold")
     assert (
         js(

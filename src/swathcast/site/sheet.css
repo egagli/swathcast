@@ -1,0 +1,70 @@
+/* sheet.css: the bottom sheet shared by the maps on egagli.github.io (goes with sheet.js; keep the
+   copies in every repository identical).
+   Applies at (max-width: 1023px), (pointer: coarse) and (max-height: 520px). JS sets
+   body[data-sheet-mode=bottom|dock], body[data-sheet=peek|half|full], --ms-full, --ms-sheet (visible
+   px), --ms-y (translate), --ms-hidden (scroll padding). Apps set --ms-bg, --ms-ink, --ms-muted,
+   --ms-grip, --ms-focus and --ms-dock-top. */
+.ms-header { display: none; }
+@media (max-width: 1023px), (pointer: coarse) and (max-height: 520px) {
+  .ms-sheet {
+    left: 0 !important; right: 0 !important; top: auto !important; bottom: 0 !important;
+    width: auto !important; max-width: none !important; margin: 0 auto !important;
+    height: var(--ms-full, 88%) !important;
+    transform: translateY(var(--ms-y, 0px)) !important;
+    transition: transform 220ms cubic-bezier(.2, .8, .2, 1) !important;
+    border-radius: 16px 16px 0 0 !important; box-shadow: 0 -4px 16px rgba(0, 0, 0, .25) !important;
+    background: var(--ms-bg) !important; border: 0 !important;
+    overflow-y: auto !important; overflow-x: hidden !important; overscroll-behavior: contain;
+    padding: 0 0 calc(var(--ms-hidden, 0px) + env(safe-area-inset-bottom)) !important;
+    scrollbar-width: none; display: block !important;
+  }
+  .ms-sheet::-webkit-scrollbar { display: none; }
+  body.ms-dragging .ms-sheet { transition: none !important; }
+  body[data-sheet="peek"] .ms-sheet { overflow-y: hidden !important; }
+
+  /* header: the >=44 px tap/drag zone, grip 8 px from the top */
+  .ms-header {
+    display: flex; align-items: center; gap: 4px; position: sticky; top: 0; z-index: 5;
+    min-height: 60px; padding: 18px 6px 6px 16px; background: var(--ms-bg);
+    touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab;
+  }
+  .ms-grip { position: absolute; top: 8px; left: 50%; width: 36px; height: 4px; margin-left: -18px; border-radius: 2px; background: var(--ms-grip); }
+  .ms-titlebtn { flex: 1; min-width: 0; min-height: 44px; display: flex; flex-direction: column; justify-content: center; border-radius: 8px; cursor: pointer; outline: none; }
+  .ms-title { font-size: 17px; font-weight: 600; line-height: 1.25; color: var(--ms-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ms-sub { font-size: 13px; line-height: 1.35; color: var(--ms-muted); }
+  .ms-chev { flex: none; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 22px; background: transparent; color: var(--ms-ink); display: grid; place-items: center; cursor: pointer; }
+  .ms-chev svg { transition: transform 220ms cubic-bezier(.2, .8, .2, 1); }
+  .ms-chev[data-dir="down"] svg { transform: rotate(180deg); }
+  .ms-titlebtn:focus-visible, .ms-chev:focus-visible { outline: 3px solid var(--ms-focus); outline-offset: 2px; }
+
+  /* tablets: a centred, capped sheet that floats 12 px off the edges */
+  @media (min-width: 721px) {
+    body[data-sheet-mode="bottom"] .ms-sheet { width: min(600px, calc(100% - 24px)) !important; bottom: 12px !important; border-radius: 16px !important; }
+  }
+  /* landscape phones: a card docked on the left, peek (header) or full height */
+  body[data-sheet-mode="dock"] .ms-sheet {
+    top: var(--ms-dock-top, 12px) !important; left: 12px !important; right: auto !important; bottom: auto !important;
+    width: min(380px, calc(50% - 12px)) !important; height: var(--ms-sheet) !important; transform: none !important;
+    transition: height 220ms cubic-bezier(.2, .8, .2, 1) !important; border-radius: 16px !important;
+    padding-bottom: env(safe-area-inset-bottom) !important; margin: 0 !important;
+  }
+  body[data-sheet-mode="dock"] .ms-grip { display: none; }
+  body[data-sheet-mode="dock"] .ms-header { padding-top: 6px; min-height: 52px; }
+
+  /* MapLibre chrome: attribution (i) 12 px above the sheet; 28 px visual in a 44 px target */
+  .maplibregl-ctrl-bottom-right { bottom: calc(var(--ms-sheet, 0px) + 12px) !important; right: env(safe-area-inset-right); transition: bottom 220ms cubic-bezier(.2, .8, .2, 1); z-index: 3; }
+  body[data-sheet-mode="bottom"][data-sheet="full"] .maplibregl-ctrl-bottom-right { visibility: hidden; }
+  @media (min-width: 721px) { body[data-sheet-mode="bottom"] .maplibregl-ctrl-bottom-right { bottom: calc(var(--ms-sheet, 0px) + 24px) !important; } }
+  body[data-sheet-mode="dock"] .maplibregl-ctrl-bottom-right { bottom: 0 !important; }
+  body.ms-dragging .maplibregl-ctrl-bottom-right { transition: none; }
+  .maplibregl-ctrl-bottom-right .maplibregl-ctrl { margin: 0 12px 0 0 !important; }
+  .maplibregl-ctrl-attrib.maplibregl-compact:not(.maplibregl-compact-show) { width: 30px; height: 30px; min-height: 0; padding: 0; border-radius: 15px; }
+  .maplibregl-ctrl-attrib.maplibregl-compact:not(.maplibregl-compact-show) .maplibregl-ctrl-attrib-button { top: 3px; right: 3px; }
+  .maplibregl-ctrl-attrib-button { position: relative; }
+  .maplibregl-ctrl-attrib-button::after { content: ""; position: absolute; inset: -10px; }
+  .maplibregl-ctrl-attrib.maplibregl-compact-show { max-width: calc(100vw - 24px); font-size: 12px; }
+  body[data-sheet-mode="dock"] .maplibregl-ctrl-bottom-right .maplibregl-ctrl { margin-bottom: 12px !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ms-sheet, .ms-chev svg, .maplibregl-ctrl-bottom-right { transition: none !important; }
+}

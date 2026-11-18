@@ -130,6 +130,9 @@ const view = new MapView("map", {
   attribution: 'plans: <a href="https://sentinels.copernicus.eu/" target="_blank" rel="noopener">ESA</a>, <a href="https://landsat.usgs.gov/" target="_blank" rel="noopener">USGS</a>, <a href="https://science.nasa.gov/mission/nisar/" target="_blank" rel="noopener">NASA</a> · bursts: <a href="https://asf.alaska.edu/" target="_blank" rel="noopener">ASF</a> · orbits: <a href="https://celestrak.org/" target="_blank" rel="noopener">CelesTrak</a> · previews: <a href="https://worldview.earthdata.nasa.gov/" target="_blank" rel="noopener">NASA Worldview</a>',
 });
 const map = view.map;
+// Phones, tablets and landscape phones: the panel is the bottom sheet of sheet.js (window.MapSheet).
+const sheetMQ = matchMedia(window.MapSheet.MS_MQ);
+const isSheet = () => sheetMQ.matches;
 view.onBasemap.push((k) => {
   try { localStorage.setItem("swathcast.basemap", k); } catch { /* storage unavailable */ }
   writeHash();
@@ -2136,9 +2139,11 @@ function planEndNote(key) {
 }
 
 // After the popup grew, pan so it is wholly inside the map (beside the panel).
+// In the sheet layout the popup is the sheet: it needs no room (and a pan would
+// end in refresh(), which drops it).
 function keepPopupInView(popup) {
   const el = popup.getElement && popup.getElement();
-  if (!el) return;
+  if (!el || isSheet()) return;
   const r = el.getBoundingClientRect(), m = map.getContainer().getBoundingClientRect();
   const pad = map.getPadding ? map.getPadding() : { left: 0, right: 0, top: 0, bottom: 0 };
   const left = m.left + (pad.left || 0) + 8, right = m.right - 8, top = m.top + 8, bottom = m.bottom - (pad.bottom || 0) - 8;
@@ -2480,7 +2485,7 @@ function renderTimeline() {
   const items = listItems().filter((it) => it.when.getTime() >= t0 && it.when.getTime() <= t1);
   tlItems = items;
   // on a phone: one lane for every satellite (the strip sits above the sheet)
-  const compact = window.innerWidth <= 760;
+  const compact = isSheet();
   const laneOf = (it) => (compact ? "all" : it.platform);
   const lanes = compact ? ["all"] : [...new Set(items.map((x) => x.platform))].sort((a, b) => (LANE_ORDER.indexOf(a) + 1 || 99) - (LANE_ORDER.indexOf(b) + 1 || 99) || a.localeCompare(b));
   const W = Math.max(compact ? 200 : 300, tlBox.clientWidth - 20), labelW = compact ? 4 : 46, laneH = 16, top = 14;
@@ -2557,9 +2562,10 @@ document.querySelector(".panel-scroll").addEventListener("touchmove", () => { sc
 // The AOI part in view: on phones the whole sheet scrolls (to it); elsewhere
 // it is always in view and only its list scrolls (to its top).
 function showAOIPart(behavior = "auto") {
-  if (getComputedStyle(document.getElementById("sidebar")).overflowY === "auto") {
-    const sheet = document.getElementById("sidebar"), part = document.getElementById("aoi-part");
-    sheet.scrollTo({ top: part.offsetTop - document.querySelector(".panel-top").offsetHeight, behavior });
+  if (isSheet()) {
+    if (sheet.state === "peek") sheet.set("half");
+    const panel = document.getElementById("sidebar"), part = document.getElementById("aoi-part");
+    panel.scrollTo({ top: part.offsetTop - document.querySelector("#sidebar > .ms-header").offsetHeight, behavior });
   } else document.querySelector(".panel-scroll").scrollTop = 0;
 }
 
@@ -3650,30 +3656,102 @@ async function loadSatellites() {
   }
 }
 
-// The floating panel can be hidden (on phones it folds to a bottom sheet).
-// It opens on every visit: the filters and the lists live there, so a panel
-// hidden once must not hide them on the next visit.
+// The floating panel can be hidden. It opens on every visit: the filters and
+// the lists live there, so a panel hidden once must not hide them on the next visit.
 const panelToggle = (closed) => {
   document.body.classList.toggle("panel-closed", closed);
   const btn = document.getElementById("panel-close");
-  btn.textContent = closed ? (window.innerWidth <= 760 ? "⌃" : "⟩") : (window.innerWidth <= 760 ? "⌄" : "⟨");
+  btn.textContent = closed ? "⟩" : "⟨";
   btn.title = btn.ariaLabel = closed ? "Show the panel" : "Hide the panel";
   setCameraPadding();
 };
-// Fit and center on the part of the map the panel does not cover.
+// Fit and center on the part of the map the panel does not cover. In the sheet
+// layout: the peek's height (opening the sheet covers the map instead of moving
+// it), or the docked card's width. A no-op setPadding still fires moveend (and so
+// refresh(), which would drop an open popup): only set a changed padding.
+let tourTop = 0; // the tour card's bottom edge while the tour runs in the sheet layout (tourSheet)
 function setCameraPadding() {
   const panel = document.getElementById("sidebar"), closed = document.body.classList.contains("panel-closed");
-  const phone = window.innerWidth <= 760;
   const pad = { top: 0, right: 0, bottom: 0, left: 0 };
-  if (!closed && phone) pad.bottom = panel.offsetHeight;
-  if (!closed && !phone) pad.left = panel.offsetWidth + 12;
+  if (isSheet()) {
+    const g = sheet.geom();
+    if (g.mode === "dock") pad.left = g.width + 24;
+    else pad.bottom = sheet.heightOf("peek");
+    if (tourTop) pad.top = Math.max(0, tourTop - map.getContainer().getBoundingClientRect().top);
+  } else if (!closed) pad.left = panel.offsetWidth + 12;
+  const now = map.getPadding();
+  if (Object.keys(pad).every((k) => Math.abs((now[k] || 0) - pad[k]) < 1)) return;
   map.setPadding(pad);
 }
 window.addEventListener("resize", () => setCameraPadding());
 document.getElementById("panel-close").addEventListener("click", () => panelToggle(!document.body.classList.contains("panel-closed")));
 document.getElementById("panel-open").addEventListener("click", () => panelToggle(false));
 try { ["s1lat.panel", "swathcast.wide"].forEach((k) => localStorage.removeItem(k)); } catch { /* storage unavailable */ }
-panelToggle(false);
+
+// ---------------------------------------------------------------- the sheet
+// Peek: the header and the color ramp (the legend moves into the sheet);
+// half: the legend's options, Tour/Share/Reset, missions, dates, the AOI;
+// full. A footprint's popup takes the sheet's place (sheetPopup).
+const sidebar = document.getElementById("sidebar"), sheetHead = sidebar.querySelector(".ms-header");
+const mapLegend = document.getElementById("map-legend"), legendHome = mapLegend.parentNode;
+let sheetPop = null; // {el, prev}: the popup shown as the sheet
+const sheet = window.MapSheet.MSheet({
+  sheet: sidebar, header: sheetHead, label: "Passes panel",
+  peek: () => {
+    const ramp = mapLegend.querySelector(".ramp-ticks");
+    if (!ramp || mapLegend.parentNode !== sidebar) return sheetHead.offsetHeight + 40;
+    return ramp.getBoundingClientRect().bottom - sidebar.getBoundingClientRect().top + sidebar.scrollTop + 12;
+  },
+  onChange: () => setCameraPadding(),
+  onDragTo: (st, header) => { if (sheetPop && header !== sheetHead && st === "peek") { view.closePopup(); return false; } },
+  onEscape: (header) => { if (sheetPop && header !== sheetHead) { view.closePopup(); return false; } },
+});
+function placeSheet() {
+  if (isSheet()) {
+    if (mapLegend.parentNode !== sidebar) sidebar.querySelector(".panel-top").before(mapLegend);
+    sidebar.classList.add("ms-sheet");
+    if (document.body.classList.contains("panel-closed")) document.body.classList.remove("panel-closed");
+    sheet.refresh();
+  } else {
+    if (mapLegend.parentNode !== legendHome) legendHome.append(mapLegend);
+    sidebar.classList.remove("ms-sheet");
+    delete document.body.dataset.sheet;
+    delete document.body.dataset.sheetMode;
+  }
+  setCameraPadding();
+}
+// A popup from the map (a footprint, a cell) in the sheet layout: the sheet's
+// geometry and state, its title in a sheet header; label popups stay on the map.
+view.onPopup = (pop, opts) => {
+  if (!isSheet() || /label-pop|tip/.test((opts && opts.className) || "")) return;
+  const el = pop.getElement(), content = el.querySelector(".maplibregl-popup-content");
+  const hl = content.querySelector(".headline"), sub = hl && hl.nextElementSibling && hl.nextElementSibling.classList.contains("nm") ? hl.nextElementSibling : null;
+  const head = window.MapSheet.msHeader({ title: hl ? hl.textContent.trim() : "Details", sub: sub ? sub.textContent.trim() : "" });
+  const chip = hl && hl.querySelector(".chip");
+  if (chip) head.querySelector(".ms-title").prepend(chip.cloneNode(true), " ");
+  if (sub) sub.hidden = true;
+  const x = Object.assign(document.createElement("button"), { type: "button", className: "ms-close", textContent: "✕" });
+  x.setAttribute("aria-label", "Close details");
+  x.addEventListener("click", () => view.closePopup());
+  head.append(x);
+  content.prepend(head);
+  el.classList.add("ms-pop", "ms-sheet");
+  el.setAttribute("aria-label", "Footprint details");
+  sheetPop = { el, prev: sheetPop ? sheetPop.prev : sheet.state };
+  sheet.attach(head, el);
+  sheet.set("half");
+  pop.on("close", () => setTimeout(() => {
+    if (!sheetPop || sheetPop.el !== el) return;
+    const prev = sheetPop.prev;
+    sheetPop = null;
+    if (isSheet()) sheet.set(prev === "full" ? "half" : prev);
+  }, 0));
+};
+new ResizeObserver(() => { if (isSheet() && sheet.state === "peek" && !document.body.classList.contains("ms-dragging")) { sheet.refresh(); setCameraPadding(); } }).observe(mapLegend);
+sheetMQ.addEventListener("change", placeSheet);
+map.once("load", () => window.MapSheet.foldAttribution(map.getContainer()));
+placeSheet();
+if (!isSheet()) panelToggle(false);
 
 // Times stay current while the page is open: every minute the list and the
 // timeline are redrawn ("in 2.1 h"), every 10 minutes the footprints are
@@ -3688,13 +3766,6 @@ setInterval(() => {
     refresh();
   } else renderList();
 }, 60e3);
-
-// Phones: the legend folds to its ramp; this button opens the rest.
-document.getElementById("legend-fold").addEventListener("click", (e) => {
-  const open = !document.body.classList.contains("legend-open");
-  document.body.classList.toggle("legend-open", open);
-  e.currentTarget.setAttribute("aria-expanded", String(open));
-});
 
 // ---------------------------------------------------------------- tour
 // A first visit (no link state in the address) gets a six-step tour, one
@@ -3885,7 +3956,22 @@ const tour = new Tour([
       },
     },
   },
-], { onEnd: startOver });
+], { onEnd: startOver, onStep: tourSheet });
+// In the sheet layout the tour's card sits at the top: steps about the panel
+// open the sheet (and keep what they point at out from under the card), steps
+// about the map leave it at its peek and center the map below the card.
+function tourSheet(n) {
+  const touring = n > 0 && isSheet();
+  if (document.body.classList.contains("touring") !== touring) document.body.classList.toggle("touring", touring);
+  if (!touring) { tourTop = 0; setCameraPadding(); return; }
+  if (!sheetPop) sheet.set(n <= 2 ? "full" : n === 5 ? "half" : "peek");
+  // now, before the step's enter() flies the map (a later setPadding would cut that flight short)
+  const card = document.querySelector(".tour:not([hidden])");
+  tourTop = card ? card.getBoundingClientRect().bottom + 8 : 0;
+  const sheetTop = innerHeight - sheet.geom().visible;
+  document.documentElement.style.setProperty("--tour-pad", `${Math.max(0, tourTop - sheetTop)}px`);
+  setCameraPadding();
+}
 async function startTour(step = 1) {
   markTourSeen();
   // the footprints at 30 %, the ground under them in sight

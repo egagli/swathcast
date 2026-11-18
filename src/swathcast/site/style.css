@@ -99,6 +99,18 @@ header.top nav a[aria-current="page"] { background: var(--chrome-ink); color: va
   header.top .wordmark { font-size: 16px; }
   .fresh { display: none; }
 }
+/* the map's sheet layout (sheet.js MS_MQ): one tight row, the tabs fit at 360 px */
+@media (max-width: 1023px), (pointer: coarse) and (max-height: 520px) {
+  header.top { height: 48px; gap: 8px; padding: 0 max(10px, env(safe-area-inset-right)) 0 max(10px, env(safe-area-inset-left)); }
+  header.top .brand { gap: 7px; flex: none; }
+  header.top .brand svg { width: 26px; height: 26px; }
+  header.top .wordmark { font-size: 16px; }
+  header.top .fresh, header.top .tagline { display: none; }
+  header.top nav { margin-left: auto; flex: 0 1 auto; min-width: 0; }
+  header.top nav a { padding: 0 12px; font-size: 13px; line-height: 36px; min-height: 36px; display: inline-flex; align-items: center; position: relative; }
+  header.top nav a::after { content: ""; position: absolute; inset: -5px 0; } /* a 46 px tall target */
+}
+@media (max-width: 374px) { header.top .wordmark { display: none; } }
 
 /* ------------------------------------------------------------ headings, controls */
 h2 { font-size: 15px; font-weight: 600; margin: 0 0 6px; color: var(--ink); letter-spacing: -0.005em; }
@@ -196,8 +208,8 @@ table.data tbody tr:hover td { background: var(--surface-2); }
 @keyframes tour-in { from { opacity: 0; transform: translateY(-8px); } }
 @keyframes tour-ring { 50% { box-shadow: 0 0 0 10px color-mix(in srgb, var(--tour) 12%, transparent), 0 0 30px color-mix(in srgb, var(--tour) 30%, transparent); } }
 @media (prefers-reduced-motion: reduce) { .tour, .tour-ring, .tour-flash { animation: none; } .tour-hand { transition: none; } }
-@media (max-width: 760px) {
-  .tour { top: 60px; right: 8px; left: 8px; width: auto; font-size: 14.5px; padding: 0 14px 12px; }
+@media (max-width: 1023px), (pointer: coarse) and (max-height: 520px) {
+  .tour { top: 56px; right: 8px; left: 8px; width: auto; font-size: 14.5px; padding: 0 14px 12px; }
   .tour-bar { margin: 0 -14px 10px; }
   .tour h3 { font-size: 19px; }
   .tour-label { font-size: 13.5px; max-width: 200px; padding: 6px 10px; }

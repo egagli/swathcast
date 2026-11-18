@@ -195,6 +195,7 @@ export class MapView {
   popup(lngLat, html, opts = {}) {
     this.closePopup();
     this.popupRef = new maplibregl.Popup({ maxWidth: "340px", ...opts }).setLngLat(lngLat).setHTML(html).addTo(this.map);
+    if (this.onPopup) this.onPopup(this.popupRef, opts); // map.js: on phones, the popup becomes the sheet
     return this.popupRef;
   }
 

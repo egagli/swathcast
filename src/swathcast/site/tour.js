@@ -51,9 +51,10 @@ const GAP = 16; // between a target's ring and its label
 export class Tour {
   // steps: this page's steps; first: the number of the first (1-based);
   // onEnd(): called when the tour ends (finished or closed) after a step
-  // that changed the page
-  constructor(steps, { first = 1, onEnd = null, dirty = false } = {}) {
-    Object.assign(this, { steps, first, onEnd, dirty, i: -1, marks: [], run: 0 });
+  // that changed the page; onStep(n): called as step n (1-based) shows, and
+  // with 0 when the tour closes (the map's sheet layout arranges itself)
+  constructor(steps, { first = 1, onEnd = null, onStep = null, dirty = false } = {}) {
+    Object.assign(this, { steps, first, onEnd, onStep, dirty, i: -1, marks: [], run: 0 });
     this.card = Object.assign(document.createElement("div"), { className: "tour", hidden: true });
     this.card.setAttribute("role", "dialog");
     this.card.setAttribute("aria-label", "Tour of swathcast");
@@ -144,6 +145,7 @@ export class Tour {
       + `<div class="tour-nav"><button type="button" class="tour-skip">${last ? "" : "Skip tour"}</button><span></span>`
       + `${n > 1 ? '<button type="button" class="tour-back">← Back</button>' : ""}<button type="button" class="tour-next">${next.label}</button></div>`;
     this.card.hidden = false;
+    if (this.onStep) this.onStep(n);
     this.card.querySelector(".tour-x").onclick = () => this.end();
     const skip = this.card.querySelector(".tour-skip");
     if (last) skip.remove(); else skip.onclick = () => this.end();
@@ -212,6 +214,7 @@ export class Tour {
     this.hand.hidden = true;
     this.clearMarks();
     document.removeEventListener("keydown", this.onKey);
+    if (this.onStep) this.onStep(0);
   }
 
   // finished or skipped: the page goes back to how it started

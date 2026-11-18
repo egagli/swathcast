@@ -45,7 +45,9 @@ src/swathcast/
   publish.py       site data files + data-contract check
   storage.py       partitioned Parquet store (the table schema is here)
   timeutil.py      the one UTC timestamp parser
-  site/            static pages: map (index.html) and dashboard
+  site/            static pages: map (index.html) and dashboard; sheet.js + sheet.css: the bottom sheet
+                   the map uses on phones, tablets and landscape phones (shared with the other maps
+                   on egagli.github.io: keep the copies identical)
 docs/              data-sources.md, methodology.md, sources.md, development.md, operations.md
 ```
 

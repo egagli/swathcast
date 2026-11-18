@@ -22,6 +22,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/5.24.0/maplibre-gl.min.css">
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="sheet.css">
 <!-- Fetch the schedule and every module at once, instead of one import level
      at a time (map.js -> hyparquet -> fzstd, overlay.js -> d3-geo -> d3-array, ...). -->
 <link rel="preload" href="data/passes_index.json" as="fetch" crossorigin>
@@ -231,7 +232,7 @@ table.bq tr.sel td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
 .bq-op select { display: block; margin-bottom: 2px; font-size: 11px; padding: 1px 2px; border: 1px solid var(--border); border-radius: 4px; background: var(--surface); color: var(--ink); max-width: 128px; }
 .bq-x { border: 0; background: transparent; color: var(--ink-2); font-size: 16px; line-height: 1; padding: 2px 6px; border-radius: 5px; cursor: pointer; }
 .bq-x:hover { background: var(--surface-2); color: var(--ink); }
-@media (max-width: 760px) { #browse-queue { bottom: auto; top: 140px; max-height: 34vh; } table.bq td:nth-child(5), table.bq td:nth-child(6) { display: none; } }
+@media (max-width: 1023px), (pointer: coarse) and (max-height: 520px) { #browse-queue { bottom: auto; top: 12px; left: 12px; right: 84px; width: auto; max-height: 34vh; } table.bq td:nth-child(5), table.bq td:nth-child(6) { display: none; } }
 .hist-table td.when .rel { color: var(--ink-2); }
 .hist-table .sub { color: var(--muted); font-weight: 400; font-size: 10.5px; }
 .hist-table td.num { white-space: nowrap; text-align: right; padding-right: 0; }
@@ -273,7 +274,7 @@ body.panel-closed #aoi-timeline { left: 12px; }
 #aoi-timeline .mk.sel { stroke: var(--ink); stroke-width: 2.5; }
 body.has-timeline #map-legend { bottom: var(--tl-h, 140px); }
 body.has-timeline #browse-queue { bottom: var(--tl-h, 140px); }
-@media (max-width: 760px) { body.has-timeline #map-legend { bottom: auto; } body.has-timeline #browse-queue { bottom: auto; } }
+@media (max-width: 1023px), (pointer: coarse) and (max-height: 520px) { body.has-timeline #map-legend { bottom: auto; } body.has-timeline #browse-queue { bottom: auto; } }
 
 /* zoom-for-detail ladder: where each mission's finer footprints start */
 #detail-hint:empty { display: none; }
@@ -352,7 +353,6 @@ table.pass-list tr.now-row td .nm { color: var(--ink-2); font-weight: 400; }
 .dh-lines .ml .chip { margin-right: 1px; }
 .dh-lines .ml button { margin-left: auto; border: 0; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font: 600 11px/1 inherit; font-family: inherit; padding: 4px 9px; cursor: pointer; white-space: nowrap; }
 .dh-lines .ml button:hover { filter: brightness(1.1); }
-.lg-fold { display: none; }
 /* satellite labels are buttons (keyboard), drawn as before */
 .sky-labels button.sat { border: 0; background: transparent; padding: 0; border-radius: 4px; }
 .sky-labels button.sat:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -363,7 +363,7 @@ table.pass-list tr.now-row td .nm { color: var(--ink-2); font-weight: 400; }
    foot of the panel (clear of a footprint's popup on the map) */
 .tour { top: 132px; }
 .tour.tour-dock { left: 12px; right: auto; top: auto; bottom: 12px; width: 480px; }
-@media (max-width: 760px) { .tour, .tour.tour-dock { left: 8px; right: 8px; top: 60px; bottom: auto; width: auto; } }
+@media (max-width: 1023px), (pointer: coarse) and (max-height: 520px) { .tour, .tour.tour-dock { left: 8px; right: 8px; top: 56px; bottom: auto; width: auto; } }
 
 /* ---------------- MapLibre */
 .maplibregl-popup { z-index: 3; } /* over the legend, under the panel */
@@ -398,40 +398,74 @@ table.pass-list tr.now-row td .nm { color: var(--ink-2); font-weight: 400; }
 @keyframes sat-pulse { 0% { transform: scale(1); opacity: .55; } 80%, 100% { transform: scale(2.8); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .sky-labels .sat i::after { animation: none; } }
 
-/* ---------------- phones: map on top, the panel as a bottom sheet */
-@media (max-width: 760px) {
-  #sidebar { top: auto; left: 0; right: 0; bottom: 0; width: auto; height: 56%; border-radius: 14px 14px 0 0; }
-  body.panel-closed #sidebar { transform: translateY(calc(100% - 44px)); }
-  #panel-open { display: none !important; }
-  /* a short sheet: everything scrolls together */
-  #sidebar { overflow-y: auto; }
+/* ---------------- phones, tablets, landscape phones: the panel is the bottom sheet of sheet.js / sheet.css
+   (peek: the header and the color ramp; half; full). The breakpoint is sheet.js's MS_MQ. */
+@media (max-width: 1023px), (pointer: coarse) and (max-height: 520px) {
+  :root { --ms-bg: var(--surface); --ms-ink: var(--ink); --ms-muted: var(--muted); --ms-grip: rgba(16, 26, 44, .28); --ms-focus: var(--accent); }
+  :root[data-theme="dark"] { --ms-grip: var(--border); }
+  #panel-open, #panel-close { display: none !important; }
+  /* nothing but the sheet scrolls: overflow: clip also stops scrollIntoView() (the tour's marks) from
+     scrolling the page and pushing the map up under the header */
+  html, body, main { overflow: clip; }
+  /* the tour: what it points at in the sheet scrolls clear of its card (map.js tourSheet) */
+  body.touring #sidebar * { scroll-margin-top: var(--tour-pad, 0px); }
+  /* everything in the sheet scrolls together, under its sticky header */
   .panel-fixed, .panel-scroll, .aoi-part > .panel-scroll { overflow: visible; flex: none; }
   .aoi-part { flex: none; min-height: 0; display: block; }
-  .panel-top { position: sticky; top: 0; z-index: 4; background: var(--surface); }
-  #results { --pt: 41px; }
-  /* the legend folds to its color ramp; "Legend & missions" opens it */
-  #map-legend { left: 8px; right: auto; top: 8px; bottom: auto; width: min(300px, calc(100vw - 96px)); padding: 5px 8px 3px; max-height: calc(44% - 16px); overflow-y: auto; }
-  body.panel-closed #map-legend { left: 8px; }
-  .lg-fold { display: block; border: 0; background: transparent; padding: 0 0 2px; font: 600 11.5px/1.3 inherit; font-family: inherit; color: var(--accent); cursor: pointer; }
-  .lg-fold::after { content: " ▾"; }
-  body.legend-open .lg-fold::after { content: " ▴"; }
-  body:not(.legend-open) #map-legend #detail-hint, body:not(.legend-open) #map-legend .lt, body:not(.legend-open) #map-legend .none-key, body:not(.legend-open) #map-legend .legend-opts { display: none; }
-  #detail-hint { margin: 0 0 6px; padding: 5px 6px; }
+  #sidebar .panel-top { position: static; border-bottom: 1px solid var(--hairline); padding: 0 8px 0 10px; gap: 0; }
+  #sidebar .panel-top .title { display: none; } /* the sheet's header says it */
+  #sidebar .panel-top .text-btn { min-height: 44px; padding: 0 10px; font-size: 14px; }
+  #results { --pt: 62px; } /* the sticky table head sits under the sheet header */
+  /* the legend moves into the sheet (map.js placeSheet): its ramp is the peek */
+  #sidebar #map-legend { position: static; width: auto; max-height: none; overflow: visible; box-shadow: none; border-radius: 0; padding: 0 16px 12px; background: transparent; transition: none; display: flex; flex-direction: column; font-size: 12px; }
+  #sidebar #map-legend .lt { display: none; } /* the header's subtitle */
+  #sidebar #map-legend #grid-legend { order: 1; }
+  #sidebar #map-legend .ramp-bar { height: 12px; }
+  #sidebar #map-legend .ramp-ticks { font-size: 12px; height: 18px; color: var(--ink-2); }
+  #sidebar #map-legend .none-key { order: 2; font-size: 12px; margin-top: 6px; color: var(--ink-2); }
+  #sidebar #map-legend .legend-opts { order: 3; margin-top: 8px; font-size: 13px; }
+  #sidebar #map-legend label.check { font-size: 13px; min-height: 44px; }
+  #sidebar #map-legend label.opacity input { width: 120px; height: 28px; }
+  #sidebar #map-legend #detail-hint { order: 4; margin: 8px 0 0; padding: 5px 6px; }
+  #sidebar #detail-hint button { min-height: 36px; padding: 0 12px; }
+  /* bigger targets, 16 px inputs (no zoom on iOS) */
+  .mission-row { min-height: 44px; }
+  .mission-row label.mission input { width: 20px; height: 20px; }
+  .ftoggle { min-height: 40px; font-size: 13px; }
+  .seg button { min-height: 44px; }
+  .dates input, .filters input, #paste-box textarea { font-size: 16px; }
+  #list-tabs button { padding: 8px 6px; min-height: 44px; }
+  section > h2 .nm, .nm, .note { font-size: 12px; }
   /* map options behind one "Layers" button */
-  .map-opts .mo-fold { display: block; width: auto; height: auto; border: 0; background: transparent; padding: 2px 4px; font: 600 12px/1.2 inherit; font-family: inherit; color: var(--ink); cursor: pointer; }
+  .map-opts .mo-fold { display: block; min-height: 44px; min-width: 72px; padding: 0 12px; border: 0; background: transparent; font: 600 14px/1 inherit; font-family: inherit; color: var(--ink); cursor: pointer; }
   .map-opts { min-width: 0; }
-  .maplibregl-ctrl-top-right { z-index: 3; } /* the open Layers panel over the legend */
+  .maplibregl-ctrl-top-right { z-index: 3; }
+  .maplibregl-ctrl-top-right .maplibregl-ctrl { margin: 12px 12px 0 0; }
   .map-opts:not(.open) .mo-row, .map-opts:not(.open) .mo-checks { display: none; }
-  .basemap-ctrl select { max-width: 160px; font-size: 11px; }
-  /* the timeline: one lane, just above the sheet */
-  #aoi-timeline { display: block; left: 8px; right: 8px; bottom: calc(56% + 8px); padding: 4px 8px 2px; }
-  body.panel-closed #aoi-timeline { left: 8px; bottom: 52px; }
+  .map-opts .mo-row select { font-size: 16px; max-width: 200px; }
+  .map-opts label.check.pill { font-size: 13px; padding: 8px 12px; }
+  /* the timeline: one lane, 12 px above the sheet (right of the card when docked) */
+  #aoi-timeline { left: 12px; right: 12px; bottom: calc(var(--ms-sheet, 0px) + 12px); padding: 4px 8px 2px; transition: bottom 220ms cubic-bezier(.2, .8, .2, 1); }
   #aoi-timeline .tl-head { display: none; }
-  body:not(.legend-open) #map-legend { width: 220px; }
-  label.opacity input { width: 70px; }
-  /* a popup opened from the map goes over the bottom sheet, and stays short */
-  .maplibregl-popup { z-index: 4; }
-  .hist-scroll { max-height: 30vh; }
+  body.ms-dragging #aoi-timeline { transition: none; }
+  body[data-sheet-mode="bottom"][data-sheet="full"] #aoi-timeline { visibility: hidden; }
+  body[data-sheet-mode="dock"] #aoi-timeline { left: calc(min(380px, 50% - 12px) + 24px); bottom: 12px; }
+  .hist-scroll { max-height: none; }
+  /* a footprint's details take the sheet's place: same geometry and state (map.js sheetPopup) */
+  .maplibregl-popup.ms-pop { position: absolute; z-index: 6; max-width: none !important; display: flex !important; flex-direction: column; padding: 0; overflow: hidden; }
+  .maplibregl-popup.ms-pop .maplibregl-popup-tip, .maplibregl-popup.ms-pop .maplibregl-popup-close-button, .maplibregl-popup.ms-pop .headline { display: none; }
+  .maplibregl-popup.ms-pop .maplibregl-popup-content { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; border-radius: 0; box-shadow: none; background: transparent; padding: 0 16px calc(16px + var(--ms-hidden, 0px)); font-size: 13px; }
+  body[data-sheet="peek"] .maplibregl-popup.ms-pop .maplibregl-popup-content { overflow-y: hidden; }
+  .maplibregl-popup.ms-pop .ms-header { margin: 0 -16px; }
+  .maplibregl-popup.ms-pop .ms-title { white-space: normal; }
+  .ms-close { flex: none; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 22px; background: transparent; color: var(--ms-ink); font-size: 22px; line-height: 1; cursor: pointer; }
+  .ms-close:focus-visible { outline: 3px solid var(--ms-focus); outline-offset: 2px; }
+  .maplibregl-popup.ms-pop .hist { width: auto; }
+  .maplibregl-popup.ms-pop .hist-scroll { overflow-x: auto; }
+  .maplibregl-popup.ms-pop .hist-table th, .maplibregl-popup.ms-pop .hist-table td, .maplibregl-popup.ms-pop .hist-table .sub, .maplibregl-popup.ms-pop .hist-foot, .maplibregl-popup.ms-pop .nm { font-size: 12px; }
+  .maplibregl-popup.ms-pop .hist-table td, .maplibregl-popup.ms-pop .hist-table th { white-space: normal; padding-right: 6px; }
+  .maplibregl-popup.ms-pop .hist-table td.when { min-width: 6.5em; }
+  .maplibregl-popup.tip { display: none !important; } /* hover tips: no hover under a finger */
 }
 </style>
 </head>
@@ -447,6 +481,7 @@ table.pass-list tr.now-row td .nm { color: var(--ink-2); font-weight: 400; }
   <div id="map"></div>
   <button id="panel-open" aria-controls="sidebar">☰ Filters &amp; passes</button>
   <aside id="sidebar" aria-label="Filters and passes">
+    <div class="ms-header"><span class="ms-grip" aria-hidden="true"></span><div class="ms-titlebtn" role="button" tabindex="0" aria-expanded="false"><div class="ms-title">Plan around the next pass</div><div class="ms-sub">Time to the next matching acquisition</div></div><button type="button" class="ms-chev" aria-label="Expand panel"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6 15l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
     <div class="panel-top"><span class="title">Plan around the next pass</span><button class="text-btn" id="tour-btn" title="A short tour of the map, an AOI's passes and the Delivery page">Tour</button><button class="text-btn" id="share" title="Copy a link to this view: AOI, missions, filters, dates and the map">Share this view</button><button class="text-btn" id="reset" title="Start over: clear the AOI, missions, filters, dates and saved map settings">Reset</button><button class="icon-btn" id="panel-close" title="Hide the panel" aria-label="Hide the panel">⟨</button></div>
     <input type="text" id="share-box" class="share-box" readonly hidden aria-label="Link to this view: copy it">
     <div class="panel-fixed">
@@ -501,7 +536,6 @@ table.pass-list tr.now-row td .nm { color: var(--ink-2); font-weight: 400; }
     <div class="bq-scroll"><table class="bq"><tbody></tbody></table></div>
   </div>
   <div id="map-legend">
-    <button type="button" id="legend-fold" class="lg-fold" aria-expanded="false" aria-controls="map-legend">Legend &amp; missions</button>
     <div id="detail-hint" aria-live="polite"></div>
     <div class="lt">Time to the next matching acquisition</div>
     <div class="legend" id="grid-legend"></div>
@@ -515,6 +549,7 @@ table.pass-list tr.now-row td .nm { color: var(--ink-2); font-weight: 400; }
 <script src="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/5.24.0/maplibre-gl.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/6.0.2/satellite.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/7.2.0/turf.min.js"></script>
+<script src="sheet.js"></script>
 <script type="module" src="map.js"></script>
 </body>
 </html>
