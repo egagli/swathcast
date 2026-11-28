@@ -1,0 +1,79 @@
+{
+  "generated_at": "2026-11-28T17:25:49Z",
+  "sources": {
+    "cdse_s2": {
+      "consecutive_failures": 0,
+      "details": {
+        "skipped_too_old": 0,
+        "window_end": "2026-11-28T17:25:49Z",
+        "window_start": "2026-11-28T13:25:42Z"
+      },
+      "failing_since_utc": null,
+      "granules_found": 55,
+      "granules_polled": 530,
+      "last_attempt_utc": "2026-11-28T17:25:49Z",
+      "last_error": "SourceError: CDSE OData count HTTP 403: {\"status\":\"error\",\"data\":{\"message\":\"This request was rejected due to a violation. Please consult with your administrator, and provide this reference ID:  9047016162990497521\"}}",
+      "last_error_utc": "2026-10-30T19:25:11Z",
+      "last_success_utc": "2026-11-28T17:25:49Z"
+    },
+    "es_s2_l1c": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 73
+      },
+      "failing_since_utc": null,
+      "granules_found": 73,
+      "granules_polled": 327,
+      "last_attempt_utc": "2026-11-28T17:25:49Z",
+      "last_error": null,
+      "last_error_utc": null,
+      "last_success_utc": "2026-11-28T17:25:49Z"
+    },
+    "es_s2_l2a": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 73
+      },
+      "failing_since_utc": null,
+      "granules_found": 73,
+      "granules_polled": 285,
+      "last_attempt_utc": "2026-11-28T17:25:49Z",
+      "last_error": null,
+      "last_error_utc": null,
+      "last_success_utc": "2026-11-28T17:25:49Z"
+    },
+    "hls_s30": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 5
+      },
+      "failing_since_utc": null,
+      "granules_found": 5,
+      "granules_polled": 10444,
+      "last_attempt_utc": "2026-11-28T17:25:49Z",
+      "last_error": "RetryError: HTTPSConnectionPool(host='cmr.earthdata.nasa.gov', port=443): Max retries exceeded with url: /search/granules.umm_json (Caused by ResponseError('too many 500 error responses'))",
+      "last_error_utc": "2026-10-20T12:45:43Z",
+      "last_success_utc": "2026-11-28T17:25:49Z"
+    },
+    "pc_s2_l2a": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 0
+      },
+      "failing_since_utc": null,
+      "granules_found": 0,
+      "granules_polled": 714,
+      "last_attempt_utc": "2026-11-28T17:25:49Z",
+      "last_error": null,
+      "last_error_utc": null,
+      "last_success_utc": "2026-11-28T17:25:49Z"
+    }
+  },
+  "this_run": {
+    "cdse_s2": "ok",
+    "es_s2_l1c": "ok",
+    "es_s2_l2a": "ok",
+    "hls_s30": "ok",
+    "pc_s2_l2a": "ok"
+  }
+}

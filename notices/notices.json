@@ -1,0 +1,894 @@
+{
+ "fetched_at": "2026-11-28T06:24:09+00:00",
+ "sources": {
+  "cdse": {
+   "label": "Copernicus Data Space Ecosystem news",
+   "url": "https://dataspace.copernicus.eu/rss.xml",
+   "ok": true,
+   "items": 50,
+   "fetched_at": "2026-11-28T06:24:09+00:00"
+  },
+  "earthdata": {
+   "label": "NASA Earthdata alerts and outages",
+   "url": "https://www.earthdata.nasa.gov/data/alerts-outages",
+   "ok": true,
+   "items": 265,
+   "fetched_at": "2026-11-28T06:24:09+00:00"
+  },
+  "ospo": {
+   "label": "NOAA OSPO operational messages",
+   "url": "https://www.ospo.noaa.gov/operations/messages.html",
+   "ok": true,
+   "items": 99,
+   "fetched_at": "2026-11-28T06:24:09+00:00"
+  },
+  "usgs": {
+   "label": "USGS EROS data notifications",
+   "url": "https://www.usgs.gov/centers/eros/data-notifications",
+   "ok": true,
+   "items": 16,
+   "fetched_at": "2026-11-28T06:24:09+00:00"
+  }
+ },
+ "items": [
+  {
+   "date": "2026-11-24",
+   "title": "JPSS1/NOAA-20 AND JPSS2/NOAA-21 VIIRS processing delays from November 19, 2026",
+   "url": "https://www.earthdata.nasa.gov/data/alerts-outages/jpss1-noaa-20-jpss2-noaa-21-viirs-processing-delays-from-november-19-2026",
+   "source": "earthdata",
+   "resolved": "TBD",
+   "platforms": [
+    "N20",
+    "N21"
+   ],
+   "missions": [
+    "viirs"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-11-24",
+   "title": "Copernicus Sentinel-3B unavailability notice for Lunar Calibration planned between 24 November 2026 [DOY 327] and 25 November 2026 [DOY 328]",
+   "url": "https://dataspace.copernicus.eu/news/2026-11-24-copernicus-sentinel-3b-unavailability-notice-lunar-calibration-planned-between-24",
+   "source": "cdse",
+   "platforms": [
+    "S3B"
+   ],
+   "missions": [
+    "s3"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-11-20",
+   "title": "Copernicus Sentinel-2C Data Unavailability on 17 November 2026 - Update (resolved)",
+   "url": "https://dataspace.copernicus.eu/news/2026-11-20-copernicus-sentinel-2c-data-unavailability-17-november-2026-update-resolved",
+   "source": "cdse",
+   "platforms": [
+    "S2C"
+   ],
+   "missions": [
+    "s2"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-11-19",
+   "title": "Product Outage/Anomaly: NOAA-21 SMD Data Delay - Issued: November 19, 2026 0030Z",
+   "url": "https://www.ospo.noaa.gov/data/messages/2026/11/MSG_20261119_0030.html",
+   "source": "ospo",
+   "platforms": [
+    "N21"
+   ],
+   "missions": [
+    "viirs"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-11-19",
+   "title": "Copernicus Sentinel-3B unavailability notice for the IP #169 Manoeuvre planned on 19 November 2026 [DOY 323]",
+   "url": "https://dataspace.copernicus.eu/news/2026-11-19-copernicus-sentinel-3b-unavailability-notice-ip-169-manoeuvre-planned-19-november",
+   "source": "cdse",
+   "platforms": [
+    "S3B"
+   ],
+   "missions": [
+    "s3"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-11-18",
+   "title": "Administrative: NOAA-21 VIIRS Lunar Calibration Roll Maneuver Scheduled for November 20, 2026 2310Z",
+   "url": "https://www.ospo.noaa.gov/data/messages/2026/11/MSG_20261118_2310.html",
+   "source": "ospo",
+   "platforms": [
+    "N21"
+   ],
+   "missions": [
+    "viirs"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-11-18",
+   "title": "Administrative: NOAA-21 VIIRS Lunar Calibration Roll Maneuver Scheduled for November 20, 2026 2310",
+   "url": "https://www.ospo.noaa.gov/data/messages/2026/11/MSG_20261118_2311.html",
+   "source": "ospo",
+   "platforms": [
+    "N21"
+   ],
+   "missions": [
+    "viirs"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-11-17",
+   "title": "Copernicus Sentinel-2C Data Unavailability on 17 November 2026",
+   "url": "https://dataspace.copernicus.eu/news/2026-11-17-copernicus-sentinel-2c-data-unavailability-17-november-2026",
+   "source": "cdse",
+   "platforms": [
+    "S2C"
+   ],
+   "missions": [
+    "s2"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-11-17",
+   "title": "Administrative: NOAA-20 VIIRS Lunar Calibration Roll Maneuver Scheduled for November 20, 2026** Issued November 17, 2026 / 16:09Z",
+   "url": "https://www.ospo.noaa.gov/data/messages/2026/11/MSG_20261117_1609.html",
+   "source": "ospo",
+   "platforms": [
+    "N20"
+   ],
+   "missions": [
+    "viirs"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-11-16",
+   "title": "Administrative: NOAA-20 Inclination Adjust Maneuver (IAM) 006 Scheduled for November 18, 2026 - Issued November 16, 2026 2028Z",
+   "url": "https://www.ospo.noaa.gov/data/messages/2026/11/MSG_20261116_2028.html",
+   "source": "ospo",
+   "platforms": [
+    "N20"
+   ],
+   "missions": [
+    "viirs"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-11-12",
+   "title": "Product Outage/Anomaly: (Correction) Update #1 - S-NPP SMD Data Delay - Issued: October 24, 2026 1852Z",
+   "url": "https://www.ospo.noaa.gov/data/messages/2026/11/MSG_20261112_1403.html",
+   "source": "ospo",
+   "platforms": [
+    "SNPP"
+   ],
+   "missions": [
+    "viirs"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-11-11",
+   "title": "Product Outage/Anomaly: Update #1: NOAA-21 SMD Data Delay - Issued: November 11, 2026 1007Z",
+   "url": "https://www.ospo.noaa.gov/data/messages/2026/11/MSG_20261111_1007.html",
+   "source": "ospo",
+   "platforms": [
+    "N21"
+   ],
+   "missions": [
+    "viirs"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-11-11",
+   "title": "Product Outage/Anomaly: Update #1: NOAA-21 SMD Data Delay - Issued: November 11, 2026 0835Z",
+   "url": "https://www.ospo.noaa.gov/data/messages/2026/11/MSG_20261111_0835.html",
+   "source": "ospo",
+   "platforms": [
+    "N21"
+   ],
+   "missions": [
+    "viirs"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-11-11",
+   "title": "Product Outage/Anomaly: Update #1 - S-NPP SMD Data Delay - Issued: October 24, 2026 1852Z",
+   "url": "https://www.ospo.noaa.gov/data/messages/2026/11/MSG_20261111_1843.html",
+   "source": "ospo",
+   "platforms": [
+    "SNPP"
+   ],
+   "missions": [
+    "viirs"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-11-11",
+   "title": "Product Outage/Anomaly: NOAA-21 SMD Data Failure - Issued: November 11, 2026 1759Z",
+   "url": "https://www.ospo.noaa.gov/data/messages/2026/11/MSG_20261111_1759.html",
+   "source": "ospo",
+   "platforms": [
+    "N21"
+   ],
+   "missions": [
+    "viirs"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-11-11",
+   "title": "Product Outage/Anomaly: NOAA-21 SMD Data Delay - Issued: November 11, 2026 0905Z",
+   "url": "https://www.ospo.noaa.gov/data/messages/2026/11/MSG_20261111_0905.html",
+   "source": "ospo",
+   "platforms": [
+    "N21"
+   ],
+   "missions": [
+    "viirs"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-11-11",
+   "title": "Product Outage/Anomaly: NOAA-21 SMD Data Delay - Issued: November 11, 2026 0730Z",
+   "url": "https://www.ospo.noaa.gov/data/messages/2026/11/MSG_20261111_0730.html",
+   "source": "ospo",
+   "platforms": [
+    "N21"
+   ],
+   "missions": [
+    "viirs"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-11-11",
+   "title": "Product Outage/Anomaly: NOAA-20 SMD Data Delay - Issued: November 11, 2026 1842Z",
+   "url": "https://www.ospo.noaa.gov/data/messages/2026/11/MSG_20261111_1842.html",
+   "source": "ospo",
+   "platforms": [
+    "N20"
+   ],
+   "missions": [
+    "viirs"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-11-11",
+   "title": "Product Outage/Anomaly: NOAA-20 SMD Data Delay - Issued: November 11, 2026 1244Z",
+   "url": "https://www.ospo.noaa.gov/data/messages/2026/11/MSG_20261111_1244.html",
+   "source": "ospo",
+   "platforms": [
+    "N20"
+   ],
+   "missions": [
+    "viirs"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-11-09",
+   "title": "Product Outage/Anomaly: Update #1: EUMETSAT: 0deg MTG Imaging Service, EUMETSAT Data Centre, Sentinel-3A Service,Sentinel-3B Service - Issued: November 9, 2026 1351Z",
+   "url": "https://www.ospo.noaa.gov/data/messages/2026/11/MSG_20261109_1352.html",
+   "source": "ospo",
+   "platforms": [
+    "S3A",
+    "S3B"
+   ],
+   "missions": [
+    "s3"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-11-09",
+   "title": "Product Outage/Anomaly: Update #1: EUMETSAT: 0deg MTG Imaging Service, EUMETSAT Data Centre, Sentinel-3A Service,Sentinel-3B Service - Issued: November 9, 2026 1351Z",
+   "url": "https://www.ospo.noaa.gov/data/messages/2026/11/MSG_20261109_1351.html",
+   "source": "ospo",
+   "platforms": [
+    "S3A",
+    "S3B"
+   ],
+   "missions": [
+    "s3"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-11-09",
+   "title": "JPSS1/NOAA-20 AND JPSS2/NOAA-21 VIIRS data gaps and processing delays from November 5, 2026",
+   "url": "https://www.earthdata.nasa.gov/data/alerts-outages/jpss1-noaa-20-jpss2-noaa-21-viirs-data-gaps-processing-delays-from-november-5",
+   "source": "earthdata",
+   "resolved": "TBD",
+   "platforms": [
+    "N20",
+    "N21"
+   ],
+   "missions": [
+    "viirs"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-11-09",
+   "title": "Copernicus Sentinel-3A unavailability notice for the OLCI S09 Calibration planned on 11 November 2026 [DOY 315]",
+   "url": "https://dataspace.copernicus.eu/news/2026-11-9-copernicus-sentinel-3a-unavailability-notice-olci-s09-calibration-planned-11",
+   "source": "cdse",
+   "platforms": [
+    "S3A"
+   ],
+   "missions": [
+    "s3"
+   ],
+   "lifecycle": false,
+   "cited": true
+  },
+  {
+   "date": "2026-11-08",
+   "title": "Product Anomaly/Outage: Alert Message 2026-11-08 18:51:04 :: 0deg MTG Imaging Service, EUMETSAT Data Centre, Sentinel-3A Service, Sentinel-3B Service - Issued: November 8, 2026 1907Z",
+   "url": "https://www.ospo.noaa.gov/data/messages/2026/11/MSG_20261108_1908.html",
+   "source": "ospo",
+   "platforms": [
+    "S3A",
+    "S3B"
+   ],
+   "missions": [
+    "s3"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-11-08",
+   "title": "Product Anomaly/Outage: Alert Message 2026-11-08 18:51:04 :: 0deg MTG Imaging Service, EUMETSAT Data Centre, Sentinel-3A Service, Sentinel-3B Service - Issued: November 8, 2026 1907Z",
+   "url": "https://www.ospo.noaa.gov/data/messages/2026/11/MSG_20261108_1907.html",
+   "source": "ospo",
+   "platforms": [
+    "S3A",
+    "S3B"
+   ],
+   "missions": [
+    "s3"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-11-03",
+   "title": "Temporary Geolocation Issue Affecting Sentinel-2B Products",
+   "url": "https://dataspace.copernicus.eu/news/2026-11-3-temporary-geolocation-issue-affecting-sentinel-2b-products",
+   "source": "cdse",
+   "platforms": [
+    "S2B"
+   ],
+   "missions": [
+    "s2"
+   ],
+   "lifecycle": false,
+   "cited": true
+  },
+  {
+   "date": "2026-11-03",
+   "title": "Delay in publication of Sentinel-1, Sentinel-2 and Sentinel-3 data on 01-11-2026 and 02-11-2026",
+   "url": "https://dataspace.copernicus.eu/news/2026-11-3-delay-publication-sentinel-1-sentinel-2-and-sentinel-3-data-01-11-2026",
+   "source": "cdse",
+   "platforms": [],
+   "missions": [
+    "s1",
+    "s2",
+    "s3"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-11-03",
+   "title": "Copernicus Sentinel-1 SAR dataset acquired without onboard FDBAQ compression",
+   "url": "https://dataspace.copernicus.eu/news/2026-11-3-copernicus-sentinel-1-sar-dataset-acquired-without-onboard-fdbaq-compression",
+   "source": "cdse",
+   "platforms": [],
+   "missions": [
+    "s1"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-11-01",
+   "title": "Cessation of Suomi National Polar-orbiting Partnership (S-NPP) data to users on November 02, 2026",
+   "url": "https://www.earthdata.nasa.gov/data/alerts-outages/cessation-suomi-national-polar-orbiting-partnership-s-npp-data-users-november",
+   "source": "earthdata",
+   "resolved": "2026-11-30",
+   "platforms": [
+    "SNPP"
+   ],
+   "missions": [
+    "viirs"
+   ],
+   "lifecycle": true,
+   "cited": false
+  },
+  {
+   "date": "2026-10-30",
+   "title": "VIIRS Processing Delay",
+   "url": "https://www.earthdata.nasa.gov/data/alerts-outages/viirs-processing-delay",
+   "source": "earthdata",
+   "resolved": "TBD",
+   "platforms": [],
+   "missions": [
+    "viirs"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-10-30",
+   "title": "Temporary rollback of the Sentinel-1 processor",
+   "url": "https://dataspace.copernicus.eu/news/2026-10-30-temporary-rollback-sentinel-1-processor",
+   "source": "cdse",
+   "platforms": [],
+   "missions": [
+    "s1"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-10-30",
+   "title": "NISAR Provisional Data Production Paused Oct. 23 - Nov. 6, 2026",
+   "url": "https://www.earthdata.nasa.gov/data/alerts-outages/nisar-provisional-data-production-paused-oct.-23-nov.-6-2026",
+   "source": "earthdata",
+   "resolved": "TBD",
+   "platforms": [
+    "NISAR"
+   ],
+   "missions": [
+    "nisar"
+   ],
+   "lifecycle": false,
+   "cited": true
+  },
+  {
+   "date": "2026-10-30",
+   "title": "Copernicus Sentinel-3B unavailability notice for OOP manoeuvre planned on 29/10/2026 [DOY 302]",
+   "url": "https://dataspace.copernicus.eu/news/2026-10-30-copernicus-sentinel-3b-unavailability-notice-oop-manoeuvre-planned-29102026-doy-302",
+   "source": "cdse",
+   "platforms": [
+    "S3B"
+   ],
+   "missions": [
+    "s3"
+   ],
+   "lifecycle": false,
+   "cited": true
+  },
+  {
+   "date": "2026-10-30",
+   "title": "Copernicus Sentinel-1D Data Unavailability on 28 October 2026",
+   "url": "https://dataspace.copernicus.eu/news/2026-10-30-copernicus-sentinel-1d-data-unavailability-28-october-2026",
+   "source": "cdse",
+   "platforms": [
+    "S1D"
+   ],
+   "missions": [
+    "s1"
+   ],
+   "lifecycle": false,
+   "cited": true
+  },
+  {
+   "date": "2026-10-29",
+   "title": "Suomi NPP Data Outage on October 28",
+   "url": "https://www.earthdata.nasa.gov/data/alerts-outages/suomi-npp-data-outage-october-28",
+   "source": "earthdata",
+   "resolved": "2026-10-29",
+   "platforms": [
+    "SNPP"
+   ],
+   "missions": [
+    "viirs"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-10-29",
+   "title": "Copernicus Sentinel-3B unavailability notice for Lunar Calibration planned on 29/10/2026 [DOY 302]",
+   "url": "https://dataspace.copernicus.eu/news/2026-10-29-copernicus-sentinel-3b-unavailability-notice-lunar-calibration-planned-29102026-doy",
+   "source": "cdse",
+   "platforms": [
+    "S3B"
+   ],
+   "missions": [
+    "s3"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-10-29",
+   "title": "Copernicus Sentinel-3A unavailability notice for OOP #164 planned on 29/10/2026 [DOY 302]",
+   "url": "https://dataspace.copernicus.eu/news/2026-10-29-copernicus-sentinel-3a-unavailability-notice-oop-164-planned-29102026-doy-302",
+   "source": "cdse",
+   "platforms": [
+    "S3A"
+   ],
+   "missions": [
+    "s3"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-10-27",
+   "title": "Copernicus Sentinel-1D Data Unavailability on October 26, 2026",
+   "url": "https://www.earthdata.nasa.gov/data/alerts-outages/copernicus-sentinel-1d-data-unavailability-october-26-2026",
+   "source": "earthdata",
+   "resolved": "2026-10-28",
+   "platforms": [
+    "S1D"
+   ],
+   "missions": [
+    "s1"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-10-27",
+   "title": "Copernicus Sentinel-1D Data Unavailability on 26 October 2026",
+   "url": "https://dataspace.copernicus.eu/news/2026-10-27-copernicus-sentinel-1d-data-unavailability-26-october-2026",
+   "source": "cdse",
+   "platforms": [
+    "S1D"
+   ],
+   "missions": [
+    "s1"
+   ],
+   "lifecycle": false,
+   "cited": true
+  },
+  {
+   "date": "2026-10-26",
+   "title": "Discontinuation of S-NPP VIIRS data availability - Impact on Sentinel-5P TROPOMI L2_NP* production",
+   "url": "https://dataspace.copernicus.eu/news/2026-10-26-discontinuation-s-npp-viirs-data-availability-impact-sentinel-5p-tropomi-l2np",
+   "source": "cdse",
+   "platforms": [
+    "SNPP"
+   ],
+   "missions": [
+    "viirs"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-10-23",
+   "title": "Copernicus Sentinel-3B unavailability notice for Lunar Calibration planned on 26 October 2026 [DOY 299]",
+   "url": "https://dataspace.copernicus.eu/news/2026-10-23-copernicus-sentinel-3b-unavailability-notice-lunar-calibration-planned-26-october",
+   "source": "cdse",
+   "platforms": [
+    "S3B"
+   ],
+   "missions": [
+    "s3"
+   ],
+   "lifecycle": false,
+   "cited": true
+  },
+  {
+   "date": "2026-10-22",
+   "title": "Copernicus Sentinel-1 L1 and L2 Products: New Processing Baseline",
+   "url": "https://dataspace.copernicus.eu/news/2026-10-22-copernicus-sentinel-1-l1-and-l2-products-new-processing-baseline",
+   "source": "cdse",
+   "platforms": [],
+   "missions": [
+    "s1"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-10-20",
+   "title": "Newly acquired Landsat 8 and 9 data are currently unavailable",
+   "url": "https://www.usgs.gov/centers/eros/2026-10-20-new-landsat-8-9-product-availability-interruption",
+   "source": "usgs",
+   "platforms": [
+    "L8",
+    "L9"
+   ],
+   "missions": [
+    "landsat"
+   ],
+   "lifecycle": false,
+   "cited": true
+  },
+  {
+   "date": "2026-10-20",
+   "title": "Copernicus Sentinel-3A unavailability notice for IP #163 planned on 21/10/2026 [DOY 294]",
+   "url": "https://dataspace.copernicus.eu/news/2026-10-20-copernicus-sentinel-3a-unavailability-notice-ip-163-planned-21102026-doy-294",
+   "source": "cdse",
+   "platforms": [
+    "S3A"
+   ],
+   "missions": [
+    "s3"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-10-19",
+   "title": "Landsat 8 and 9 Level-2, U.S. ARD, and Level-3 products",
+   "url": "https://www.usgs.gov/centers/eros/2026-10-19-landsat-8-9-level-2-level-3-and-us-ard-product-delay",
+   "source": "usgs",
+   "platforms": [
+    "L8",
+    "L9"
+   ],
+   "missions": [
+    "landsat"
+   ],
+   "lifecycle": false,
+   "cited": true
+  },
+  {
+   "date": "2026-10-16",
+   "title": "VIIRS Data Product Processing Delay",
+   "url": "https://www.earthdata.nasa.gov/data/alerts-outages/viirs-data-product-processing-delay",
+   "source": "earthdata",
+   "resolved": "2026-10-23",
+   "platforms": [],
+   "missions": [
+    "viirs"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-10-15",
+   "title": "New openEO Community Example: Analyse Earthquake-Induced Deformation with Sentinel-1 Interferograms",
+   "url": "https://dataspace.copernicus.eu/news/2026-10-15-new-openeo-community-example-analyse-earthquake-induced-deformation-sentinel-1",
+   "source": "cdse",
+   "platforms": [],
+   "missions": [
+    "s1"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-10-14",
+   "title": "New openEO Community Example: Detect Harvest Timing with Sentinel-1 SAR Coherence",
+   "url": "https://dataspace.copernicus.eu/news/2026-10-14-new-openeo-community-example-detect-harvest-timing-sentinel-1-sar-coherence",
+   "source": "cdse",
+   "platforms": [],
+   "missions": [
+    "s1"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-10-09",
+   "title": "Sentinel-2A Extension Campaign to Continue Until the End of 2027",
+   "url": "https://dataspace.copernicus.eu/news/2026-10-9-sentinel-2a-extension-campaign-continue-until-end-2027",
+   "source": "cdse",
+   "platforms": [
+    "S2A"
+   ],
+   "missions": [
+    "s2"
+   ],
+   "lifecycle": true,
+   "cited": true
+  },
+  {
+   "date": "2026-10-08",
+   "title": "Copernicus Sentinel-3A unavailability notice for annual SLSTR Black Body Crossover Test planned between 08/10/2026 [DOY 281] and 10/10/2026 [DOY 283]",
+   "url": "https://dataspace.copernicus.eu/news/2026-10-8-copernicus-sentinel-3a-unavailability-notice-annual-slstr-black-body-crossover-test",
+   "source": "cdse",
+   "platforms": [
+    "S3A"
+   ],
+   "missions": [
+    "s3"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-10-07",
+   "title": "Copernicus Sentinel-3A unavailability notice for OLCI soft reset unplanned on 07/10/2026 [DOY 280]",
+   "url": "https://dataspace.copernicus.eu/news/2026-10-7-copernicus-sentinel-3a-unavailability-notice-olci-soft-reset-unplanned-07102026-doy",
+   "source": "cdse",
+   "platforms": [
+    "S3A"
+   ],
+   "missions": [
+    "s3"
+   ],
+   "lifecycle": false,
+   "cited": true
+  },
+  {
+   "date": "2026-10-06",
+   "title": "Sentinel-3 Level-2 Land Surface Temperature now available in Copernicus Browser",
+   "url": "https://dataspace.copernicus.eu/news/2026-10-6-sentinel-3-level-2-land-surface-temperature-now-available-copernicus-browser",
+   "source": "cdse",
+   "platforms": [],
+   "missions": [
+    "s3"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-09-01",
+   "title": "Version 2.0 VIIRS Dark Target Aerosol Collections LAADS DAAC Decommissioned",
+   "url": "https://www.earthdata.nasa.gov/data/alerts-outages/version-2.0-viirs-dark-target-aerosol-collections-laads-daac-decommissioned",
+   "source": "earthdata",
+   "resolved": "TBD",
+   "platforms": [],
+   "missions": [
+    "viirs"
+   ],
+   "lifecycle": true,
+   "cited": false
+  },
+  {
+   "date": "2026-08-03",
+   "title": "Suomi NPP VIIRS Data Outage / Anomaly on August 2, 2026",
+   "url": "https://www.earthdata.nasa.gov/data/alerts-outages/suomi-npp-viirs-data-outage-anomaly-august-2-2026",
+   "source": "earthdata",
+   "resolved": "TBD",
+   "platforms": [
+    "SNPP"
+   ],
+   "missions": [
+    "viirs"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-07-30",
+   "title": "VIIRS NOAA-21 Data Anomaly",
+   "url": "https://www.earthdata.nasa.gov/data/alerts-outages/viirs-noaa-21-data-anomaly",
+   "source": "earthdata",
+   "resolved": "2026-07-31",
+   "platforms": [
+    "N21"
+   ],
+   "missions": [
+    "viirs"
+   ],
+   "lifecycle": false,
+   "cited": true
+  },
+  {
+   "date": "2026-07-28",
+   "title": "NOAA-21 VIIRS Data Outage",
+   "url": "https://www.earthdata.nasa.gov/data/alerts-outages/noaa-21-viirs-data-outage",
+   "source": "earthdata",
+   "resolved": "TBD",
+   "platforms": [
+    "N21"
+   ],
+   "missions": [
+    "viirs"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-07-13",
+   "title": "Suomi NPP VIIRS Data Outage/Anomaly on July 10, 2026",
+   "url": "https://www.earthdata.nasa.gov/data/alerts-outages/suomi-npp-viirs-data-outage-anomaly-july-10-2026",
+   "source": "earthdata",
+   "resolved": "2026-07-27",
+   "platforms": [
+    "SNPP"
+   ],
+   "missions": [
+    "viirs"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-07-10",
+   "title": "Suomi NPP ATMS/CrIS Data Outage/Anomaly on July 10, 2026",
+   "url": "https://www.earthdata.nasa.gov/data/alerts-outages/suomi-npp-atms-cris-data-outage-anomaly-july-10-2026",
+   "source": "earthdata",
+   "resolved": "2026-07-20",
+   "platforms": [
+    "SNPP"
+   ],
+   "missions": [
+    "viirs"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-07-06",
+   "title": "The Residual Polarization Correction Effects in MODIS Terra L2 LSR Product",
+   "url": "https://www.earthdata.nasa.gov/data/alerts-outages/residual-polarization-correction-effects-modis-terra-l2-lsr-product",
+   "source": "earthdata",
+   "resolved": "TBD",
+   "platforms": [
+    "Terra"
+   ],
+   "missions": [
+    "modis"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-07-06",
+   "title": "New Sentinel-1 Data Product Outage",
+   "url": "https://www.earthdata.nasa.gov/data/alerts-outages/new-sentinel-1-data-product-outage",
+   "source": "earthdata",
+   "resolved": "2026-07-07",
+   "platforms": [],
+   "missions": [
+    "s1"
+   ],
+   "lifecycle": false,
+   "cited": false
+  },
+  {
+   "date": "2026-06-01",
+   "title": "Suomi NPP VIIRS Data Outage / Anomaly on June 1, 2026",
+   "url": "https://www.earthdata.nasa.gov/data/alerts-outages/suomi-npp-viirs-data-outage-anomaly-june-1-2026",
+   "source": "earthdata",
+   "resolved": "2026-06-10",
+   "platforms": [
+    "SNPP"
+   ],
+   "missions": [
+    "viirs"
+   ],
+   "lifecycle": false,
+   "cited": false
+  }
+ ]
+}

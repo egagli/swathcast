@@ -1,0 +1,904 @@
+{
+  "generated_at": "2026-11-10T01:11:51+00:00",
+  "esa": [
+    {
+      "sensor": "nisar",
+      "lead": "(0, 30]",
+      "bases": 15,
+      "precision": 0.9910488825,
+      "recall": 0.9846076521,
+      "precision_same_mode": 0.9245293959,
+      "recall_same_mode": 0.9185205027,
+      "precision_same_mode_p10": 0.9001128449
+    },
+    {
+      "sensor": "nisar",
+      "lead": "(30, 60]",
+      "bases": 14,
+      "precision": 0.9832938389,
+      "recall": 0.9781166493,
+      "precision_same_mode": 0.9080773788,
+      "recall_same_mode": 0.9032962151,
+      "precision_same_mode_p10": 0.8775306573
+    },
+    {
+      "sensor": "nisar",
+      "lead": "(60, 90]",
+      "bases": 13,
+      "precision": 0.9765146289,
+      "recall": 0.969944652,
+      "precision_same_mode": 0.8943116241,
+      "recall_same_mode": 0.8882947079,
+      "precision_same_mode_p10": 0.851486459
+    },
+    {
+      "sensor": "nisar",
+      "lead": "(90, 120]",
+      "bases": 12,
+      "precision": 0.9732570417,
+      "recall": 0.9656871045,
+      "precision_same_mode": 0.8749560061,
+      "recall_same_mode": 0.8681506487,
+      "precision_same_mode_p10": 0.8458283677
+    },
+    {
+      "sensor": "sentinel-1",
+      "lead": "(0, 30]",
+      "bases": 66,
+      "precision": 0.9026313285,
+      "recall": 0.8364021637,
+      "precision_same_mode": 0.8957067298,
+      "recall_same_mode": 0.8299856466,
+      "precision_same_mode_p10": 0.7128322523
+    },
+    {
+      "sensor": "sentinel-1",
+      "lead": "(30, 60]",
+      "bases": 52,
+      "precision": 0.817858232,
+      "recall": 0.7635759271,
+      "precision_same_mode": 0.7983744425,
+      "recall_same_mode": 0.7453853018,
+      "precision_same_mode_p10": 0.2018484828
+    },
+    {
+      "sensor": "sentinel-1",
+      "lead": "(60, 90]",
+      "bases": 46,
+      "precision": 0.7057628038,
+      "recall": 0.6657694549,
+      "precision_same_mode": 0.6736948347,
+      "recall_same_mode": 0.6355186763,
+      "precision_same_mode_p10": 0.1770173623
+    },
+    {
+      "sensor": "sentinel-1",
+      "lead": "(90, 120]",
+      "bases": 33,
+      "precision": 0.5826774353,
+      "recall": 0.5236039892,
+      "precision_same_mode": 0.5257346283,
+      "recall_same_mode": 0.4724342011,
+      "precision_same_mode_p10": 0.1741562776
+    },
+    {
+      "sensor": "sentinel-2",
+      "lead": "(0, 30]",
+      "bases": 129,
+      "precision": 0.9329024473,
+      "recall": 0.9035467699,
+      "precision_same_mode": 0.9329024473,
+      "recall_same_mode": 0.9035467699,
+      "precision_same_mode_p10": 0.7838255509
+    },
+    {
+      "sensor": "sentinel-2",
+      "lead": "(30, 60]",
+      "bases": 122,
+      "precision": 0.900179358,
+      "recall": 0.8829557318,
+      "precision_same_mode": 0.900179358,
+      "recall_same_mode": 0.8829557318,
+      "precision_same_mode_p10": 0.6838931898
+    },
+    {
+      "sensor": "sentinel-2",
+      "lead": "(60, 90]",
+      "bases": 117,
+      "precision": 0.8478632262,
+      "recall": 0.8226204072,
+      "precision_same_mode": 0.8478632262,
+      "recall_same_mode": 0.8226204072,
+      "precision_same_mode_p10": 0.5007424468
+    },
+    {
+      "sensor": "sentinel-2",
+      "lead": "(90, 120]",
+      "bases": 108,
+      "precision": 0.8298070761,
+      "recall": 0.8179404091,
+      "precision_same_mode": 0.8298070761,
+      "recall_same_mode": 0.8179404091,
+      "precision_same_mode_p10": 0.4575555932
+    }
+  ],
+  "esa_by_platform": [
+    {
+      "sensor": "nisar",
+      "platform": "NISAR",
+      "lead": "(0, 30]",
+      "bases": 15,
+      "precision": 0.9910488825,
+      "recall": 0.9846076521,
+      "precision_same_mode": 0.9245293959,
+      "recall_same_mode": 0.9185205027,
+      "precision_same_mode_p10": 0.9001128449
+    },
+    {
+      "sensor": "nisar",
+      "platform": "NISAR",
+      "lead": "(30, 60]",
+      "bases": 14,
+      "precision": 0.9832938389,
+      "recall": 0.9781166493,
+      "precision_same_mode": 0.9080773788,
+      "recall_same_mode": 0.9032962151,
+      "precision_same_mode_p10": 0.8775306573
+    },
+    {
+      "sensor": "nisar",
+      "platform": "NISAR",
+      "lead": "(60, 90]",
+      "bases": 13,
+      "precision": 0.9765146289,
+      "recall": 0.969944652,
+      "precision_same_mode": 0.8943116241,
+      "recall_same_mode": 0.8882947079,
+      "precision_same_mode_p10": 0.851486459
+    },
+    {
+      "sensor": "nisar",
+      "platform": "NISAR",
+      "lead": "(90, 120]",
+      "bases": 12,
+      "precision": 0.9732570417,
+      "recall": 0.9656871045,
+      "precision_same_mode": 0.8749560061,
+      "recall_same_mode": 0.8681506487,
+      "precision_same_mode_p10": 0.8458283677
+    },
+    {
+      "sensor": "sentinel-1",
+      "platform": "S1A",
+      "lead": "(0, 30]",
+      "bases": 13,
+      "precision": 0.9345413526,
+      "recall": 0.9505318224,
+      "precision_same_mode": 0.929613685,
+      "recall_same_mode": 0.94551984,
+      "precision_same_mode_p10": 0.8673684168
+    },
+    {
+      "sensor": "sentinel-1",
+      "platform": "S1A",
+      "lead": "(30, 60]",
+      "bases": 9,
+      "precision": 0.8851766242,
+      "recall": 0.9322871473,
+      "precision_same_mode": 0.8771621081,
+      "recall_same_mode": 0.9238460858,
+      "precision_same_mode_p10": 0.8412144041
+    },
+    {
+      "sensor": "sentinel-1",
+      "platform": "S1A",
+      "lead": "(60, 90]",
+      "bases": 6,
+      "precision": 0.8425938762,
+      "recall": 0.957159916,
+      "precision_same_mode": 0.8321431144,
+      "recall_same_mode": 0.9452881821,
+      "precision_same_mode_p10": 0.8203085871
+    },
+    {
+      "sensor": "sentinel-1",
+      "platform": "S1A",
+      "lead": "(90, 120]",
+      "bases": 2,
+      "precision": 0.818044386,
+      "recall": 0.9542789491,
+      "precision_same_mode": 0.8054685907,
+      "recall_same_mode": 0.93960882,
+      "precision_same_mode_p10": 0.7976820165
+    },
+    {
+      "sensor": "sentinel-1",
+      "platform": "S1C",
+      "lead": "(0, 30]",
+      "bases": 30,
+      "precision": 0.8732634913,
+      "recall": 0.7807079431,
+      "precision_same_mode": 0.8648634787,
+      "recall_same_mode": 0.773198232,
+      "precision_same_mode_p10": 0.4761349351
+    },
+    {
+      "sensor": "sentinel-1",
+      "platform": "S1C",
+      "lead": "(30, 60]",
+      "bases": 25,
+      "precision": 0.7638187658,
+      "recall": 0.6716850724,
+      "precision_same_mode": 0.7343952342,
+      "recall_same_mode": 0.6458106794,
+      "precision_same_mode_p10": 0.1776276594
+    },
+    {
+      "sensor": "sentinel-1",
+      "platform": "S1C",
+      "lead": "(60, 90]",
+      "bases": 23,
+      "precision": 0.6101833756,
+      "recall": 0.5305041675,
+      "precision_same_mode": 0.5583328684,
+      "recall_same_mode": 0.4854244239,
+      "precision_same_mode_p10": 0.1742813799
+    },
+    {
+      "sensor": "sentinel-1",
+      "platform": "S1C",
+      "lead": "(90, 120]",
+      "bases": 18,
+      "precision": 0.4242747374,
+      "recall": 0.3464854676,
+      "precision_same_mode": 0.3306461139,
+      "recall_same_mode": 0.2700233205,
+      "precision_same_mode_p10": 0.1687808529
+    },
+    {
+      "sensor": "sentinel-1",
+      "platform": "S1D",
+      "lead": "(0, 30]",
+      "bases": 23,
+      "precision": 0.9181441916,
+      "recall": 0.8424802139,
+      "precision_same_mode": 0.9117664606,
+      "recall_same_mode": 0.8366280698,
+      "precision_same_mode_p10": 0.7800676287
+    },
+    {
+      "sensor": "sentinel-1",
+      "platform": "S1D",
+      "lead": "(30, 60]",
+      "bases": 18,
+      "precision": 0.8444885903,
+      "recall": 0.797517651,
+      "precision_same_mode": 0.830376164,
+      "recall_same_mode": 0.7841901659,
+      "precision_same_mode_p10": 0.5057739986
+    },
+    {
+      "sensor": "sentinel-1",
+      "platform": "S1D",
+      "lead": "(60, 90]",
+      "bases": 17,
+      "precision": 0.7608977,
+      "recall": 0.7413532834,
+      "precision_same_mode": 0.742656203,
+      "recall_same_mode": 0.7235803375,
+      "precision_same_mode_p10": 0.5019931922
+    },
+    {
+      "sensor": "sentinel-1",
+      "platform": "S1D",
+      "lead": "(90, 120]",
+      "bases": 13,
+      "precision": 0.7221550723,
+      "recall": 0.7032545966,
+      "precision_same_mode": 0.6989183979,
+      "recall_same_mode": 0.6806260799,
+      "precision_same_mode_p10": 0.5049282701
+    },
+    {
+      "sensor": "sentinel-2",
+      "platform": "S2A",
+      "lead": "(0, 30]",
+      "bases": 43,
+      "precision": 0.8703137658,
+      "recall": 0.7610609301,
+      "precision_same_mode": 0.8703137658,
+      "recall_same_mode": 0.7610609301,
+      "precision_same_mode_p10": 0.309955585
+    },
+    {
+      "sensor": "sentinel-2",
+      "platform": "S2A",
+      "lead": "(30, 60]",
+      "bases": 40,
+      "precision": 0.7820917057,
+      "recall": 0.6732201397,
+      "precision_same_mode": 0.7820917057,
+      "recall_same_mode": 0.6732201397,
+      "precision_same_mode_p10": 0.1013976238
+    },
+    {
+      "sensor": "sentinel-2",
+      "platform": "S2A",
+      "lead": "(60, 90]",
+      "bases": 39,
+      "precision": 0.7022201785,
+      "recall": 0.601255445,
+      "precision_same_mode": 0.7022201785,
+      "recall_same_mode": 0.601255445,
+      "precision_same_mode_p10": 0.2504438367
+    },
+    {
+      "sensor": "sentinel-2",
+      "platform": "S2A",
+      "lead": "(90, 120]",
+      "bases": 36,
+      "precision": 0.6233892028,
+      "recall": 0.5255967224,
+      "precision_same_mode": 0.6233892028,
+      "recall_same_mode": 0.5255967224,
+      "precision_same_mode_p10": 0.2290039282
+    },
+    {
+      "sensor": "sentinel-2",
+      "platform": "S2B",
+      "lead": "(0, 30]",
+      "bases": 41,
+      "precision": 0.9402034229,
+      "recall": 0.9446557232,
+      "precision_same_mode": 0.9402034229,
+      "recall_same_mode": 0.9446557232,
+      "precision_same_mode_p10": 0.8835663625
+    },
+    {
+      "sensor": "sentinel-2",
+      "platform": "S2B",
+      "lead": "(30, 60]",
+      "bases": 39,
+      "precision": 0.9041380827,
+      "recall": 0.9092220813,
+      "precision_same_mode": 0.9041380827,
+      "recall_same_mode": 0.9092220813,
+      "precision_same_mode_p10": 0.7838968664
+    },
+    {
+      "sensor": "sentinel-2",
+      "platform": "S2B",
+      "lead": "(60, 90]",
+      "bases": 37,
+      "precision": 0.8723308897,
+      "recall": 0.8773013748,
+      "precision_same_mode": 0.8723308897,
+      "recall_same_mode": 0.8773013748,
+      "precision_same_mode_p10": 0.7041536755
+    },
+    {
+      "sensor": "sentinel-2",
+      "platform": "S2B",
+      "lead": "(90, 120]",
+      "bases": 34,
+      "precision": 0.8409165412,
+      "recall": 0.8483282341,
+      "precision_same_mode": 0.8409165412,
+      "recall_same_mode": 0.8483282341,
+      "precision_same_mode_p10": 0.6770059801
+    },
+    {
+      "sensor": "sentinel-2",
+      "platform": "S2C",
+      "lead": "(0, 30]",
+      "bases": 45,
+      "precision": 0.9569970209,
+      "recall": 0.9436954138,
+      "precision_same_mode": 0.9569970209,
+      "recall_same_mode": 0.9436954138,
+      "precision_same_mode_p10": 0.9046630513
+    },
+    {
+      "sensor": "sentinel-2",
+      "platform": "S2C",
+      "lead": "(30, 60]",
+      "bases": 43,
+      "precision": 0.9252068022,
+      "recall": 0.916328822,
+      "precision_same_mode": 0.9252068022,
+      "recall_same_mode": 0.916328822,
+      "precision_same_mode_p10": 0.8084565685
+    },
+    {
+      "sensor": "sentinel-2",
+      "platform": "S2C",
+      "lead": "(60, 90]",
+      "bases": 41,
+      "precision": 0.8943534256,
+      "recall": 0.8942190791,
+      "precision_same_mode": 0.8943534256,
+      "recall_same_mode": 0.8942190791,
+      "precision_same_mode_p10": 0.7336179115
+    },
+    {
+      "sensor": "sentinel-2",
+      "platform": "S2C",
+      "lead": "(90, 120]",
+      "bases": 38,
+      "precision": 0.8691689615,
+      "recall": 0.8728466513,
+      "precision_same_mode": 0.8691689615,
+      "recall_same_mode": 0.8728466513,
+      "precision_same_mode_p10": 0.6689085687
+    }
+  ],
+  "landsat": {
+    "scenes": 1776,
+    "path_rows": 40,
+    "window": [
+      "2025-11-10 01:34:14.878909+00:00",
+      "2026-11-09 09:31:23.027922+00:00"
+    ],
+    "acquired_on_calendar_date": 1.0,
+    "acquired_on_calendar_within_1d": 1.0,
+    "calendar_days_acquired": 0.9699617695248498,
+    "calendar_days_acquired_by_platform": {
+      "L8": 0.952,
+      "L9": 0.988
+    },
+    "repeat_shift": [
+      {
+        "cycles": "(0, 1]",
+        "days": "16-16",
+        "n": 1687,
+        "median_abs_s": 5.421541929244995,
+        "p90_abs_s": 11.598594427108765,
+        "p99_abs_s": 19.430850124358955
+      },
+      {
+        "cycles": "(1, 2]",
+        "days": "32-32",
+        "n": 1607,
+        "median_abs_s": 11.812572002410889,
+        "p90_abs_s": 19.45490436553955,
+        "p99_abs_s": 27.254462904930115
+      },
+      {
+        "cycles": "(2, 4]",
+        "days": "48-64",
+        "n": 2981,
+        "median_abs_s": 19.58328890800476,
+        "p90_abs_s": 31.48003888130188,
+        "p99_abs_s": 40.855295181274414
+      },
+      {
+        "cycles": "(4, 8]",
+        "days": "80-128",
+        "n": 5013,
+        "median_abs_s": 32.82991099357605,
+        "p90_abs_s": 52.8968391418457,
+        "p99_abs_s": 61.74086648941041
+      },
+      {
+        "cycles": "(8, 12]",
+        "days": "144-192",
+        "n": 3739,
+        "median_abs_s": 35.5966899394989,
+        "p90_abs_s": 64.49520268440247,
+        "p99_abs_s": 71.64059562206268
+      },
+      {
+        "cycles": "(12, 16]",
+        "days": "208-256",
+        "n": 2476,
+        "median_abs_s": 22.052369952201843,
+        "p90_abs_s": 50.972506046295166,
+        "p99_abs_s": 69.07081913948059
+      },
+      {
+        "cycles": "(16, 23]",
+        "days": "272-368",
+        "n": 1359,
+        "median_abs_s": 15.99376106262207,
+        "p90_abs_s": 28.320172023773193,
+        "p99_abs_s": 35.17158928394318
+      }
+    ],
+    "sgp4": [
+      {
+        "days_from_epoch": "(0, 15]",
+        "n": 44,
+        "found": 0.9772727272727273,
+        "median_abs_s": 0.27907872200012207,
+        "p90_abs_s": 2.1752060890197793
+      },
+      {
+        "days_from_epoch": "(15, 30]",
+        "n": 77,
+        "found": 0.974025974025974,
+        "median_abs_s": 11.343925952911377,
+        "p90_abs_s": 22.103195619583136
+      },
+      {
+        "days_from_epoch": "(30, 60]",
+        "n": 151,
+        "found": 0.9735099337748344,
+        "median_abs_s": 50.67085075378418,
+        "p90_abs_s": 73.8818835258484
+      },
+      {
+        "days_from_epoch": "(60, 120]",
+        "n": 293,
+        "found": 0.34812286689419797,
+        "median_abs_s": 118.82943487167358,
+        "p90_abs_s": 194.7593252897263
+      },
+      {
+        "days_from_epoch": "(120, 240]",
+        "n": 597,
+        "found": 0.0,
+        "median_abs_s": null,
+        "p90_abs_s": null
+      },
+      {
+        "days_from_epoch": "(240, 400]",
+        "n": 614,
+        "found": 0.0,
+        "median_abs_s": null,
+        "p90_abs_s": null
+      }
+    ]
+  },
+  "wide": [
+    {
+      "mission": "modis",
+      "platform": "Terra",
+      "lead": "(0, 30]",
+      "n": 253,
+      "median_abs_s": 695.3833646507277,
+      "p90_abs_s": 752.9427207652299,
+      "median_cross_km": 444.98290807943727,
+      "p90_cross_km": 678.5733073339375
+    },
+    {
+      "mission": "modis",
+      "platform": "Terra",
+      "lead": "(30, 60]",
+      "n": 473,
+      "median_abs_s": 899.084629067531,
+      "p90_abs_s": 939.4339436547219,
+      "median_cross_km": 224.95838013637814,
+      "p90_cross_km": 557.6728789594279
+    },
+    {
+      "mission": "modis",
+      "platform": "Terra",
+      "lead": "(60, 120]",
+      "n": 814,
+      "median_abs_s": 631.4230462281971,
+      "p90_abs_s": 925.0075918095716,
+      "median_cross_km": 355.6852506007658,
+      "p90_cross_km": 667.4143602499682
+    },
+    {
+      "mission": "modis",
+      "platform": "Terra",
+      "lead": "(120, 240]",
+      "n": 1100,
+      "median_abs_s": 630.8666160208523,
+      "p90_abs_s": 926.678426008203,
+      "median_cross_km": 311.9548851675211,
+      "p90_cross_km": 775.0753831516834
+    },
+    {
+      "mission": "modis",
+      "platform": "Terra",
+      "lead": "(240, 400]",
+      "n": 396,
+      "median_abs_s": 688.6333573240861,
+      "p90_abs_s": 925.1416631710936,
+      "median_cross_km": 491.0579516720152,
+      "p90_cross_km": 934.051434374883
+    },
+    {
+      "mission": "modis",
+      "platform": "Aqua",
+      "lead": "(0, 30]",
+      "n": 253,
+      "median_abs_s": 902.9375900515539,
+      "p90_abs_s": 941.4402983737871,
+      "median_cross_km": 227.6162044422569,
+      "p90_cross_km": 620.3407311180172
+    },
+    {
+      "mission": "modis",
+      "platform": "Aqua",
+      "lead": "(30, 60]",
+      "n": 473,
+      "median_abs_s": 546.3356338357452,
+      "p90_abs_s": 921.8889558113741,
+      "median_cross_km": 433.862085297792,
+      "p90_cross_km": 711.0091359691412
+    },
+    {
+      "mission": "modis",
+      "platform": "Aqua",
+      "lead": "(60, 120]",
+      "n": 814,
+      "median_abs_s": 705.6858804495139,
+      "p90_abs_s": 935.4882075205023,
+      "median_cross_km": 298.5903093394969,
+      "p90_cross_km": 754.6489807565465
+    },
+    {
+      "mission": "modis",
+      "platform": "Aqua",
+      "lead": "(120, 240]",
+      "n": 1100,
+      "median_abs_s": 638.7937532826732,
+      "p90_abs_s": 925.9477669614348,
+      "median_cross_km": 505.10400196017895,
+      "p90_cross_km": 979.7560743400456
+    },
+    {
+      "mission": "modis",
+      "platform": "Aqua",
+      "lead": "(240, 400]",
+      "n": 396,
+      "median_abs_s": 647.4085429655775,
+      "p90_abs_s": 915.9961992505023,
+      "median_cross_km": 785.3440854035894,
+      "p90_cross_km": 1413.3598755197079
+    },
+    {
+      "mission": "viirs",
+      "platform": "SNPP",
+      "lead": "(0, 30]",
+      "n": 144,
+      "median_abs_s": 23.383816028738543,
+      "p90_abs_s": 38.56691056480302,
+      "median_cross_km": 3.335373890172537,
+      "p90_cross_km": 8.10330778961922
+    },
+    {
+      "mission": "viirs",
+      "platform": "SNPP",
+      "lead": "(30, 60]",
+      "n": 270,
+      "median_abs_s": 59.62548716983508,
+      "p90_abs_s": 95.7383618769306,
+      "median_cross_km": 7.638328748455561,
+      "p90_cross_km": 16.621788778034706
+    },
+    {
+      "mission": "viirs",
+      "platform": "SNPP",
+      "lead": "(60, 120]",
+      "n": 441,
+      "median_abs_s": 130.46960074900923,
+      "p90_abs_s": 197.1878947654813,
+      "median_cross_km": 17.995255791778543,
+      "p90_cross_km": 35.49095812033182
+    },
+    {
+      "mission": "viirs",
+      "platform": "SNPP",
+      "lead": "(120, 240]",
+      "n": 621,
+      "median_abs_s": 301.4272282722198,
+      "p90_abs_s": 373.29690709687776,
+      "median_cross_km": 44.657646747346824,
+      "p90_cross_km": 85.78773644927607
+    },
+    {
+      "mission": "viirs",
+      "platform": "SNPP",
+      "lead": "(240, 400]",
+      "n": 234,
+      "median_abs_s": 441.61874365081076,
+      "p90_abs_s": 496.3581900114238,
+      "median_cross_km": 93.37120967144176,
+      "p90_cross_km": 167.1619140860775
+    },
+    {
+      "mission": "viirs",
+      "platform": "N20",
+      "lead": "(0, 30]",
+      "n": 207,
+      "median_abs_s": 19.260208222301706,
+      "p90_abs_s": 34.32117321114503,
+      "median_cross_km": 2.7989039213767644,
+      "p90_cross_km": 7.44535394244522
+    },
+    {
+      "mission": "viirs",
+      "platform": "N20",
+      "lead": "(30, 60]",
+      "n": 387,
+      "median_abs_s": 47.777604346983566,
+      "p90_abs_s": 83.60149551831051,
+      "median_cross_km": 5.788143641169313,
+      "p90_cross_km": 15.997369424769772
+    },
+    {
+      "mission": "viirs",
+      "platform": "N20",
+      "lead": "(60, 120]",
+      "n": 666,
+      "median_abs_s": 108.00672800846183,
+      "p90_abs_s": 174.3033336764151,
+      "median_cross_km": 12.539566590238273,
+      "p90_cross_km": 27.83179452262766
+    },
+    {
+      "mission": "viirs",
+      "platform": "N20",
+      "lead": "(120, 240]",
+      "n": 900,
+      "median_abs_s": 225.96761687956626,
+      "p90_abs_s": 290.9464311516939,
+      "median_cross_km": 23.915680681689736,
+      "p90_cross_km": 51.32589698960364
+    },
+    {
+      "mission": "viirs",
+      "platform": "N20",
+      "lead": "(240, 400]",
+      "n": 324,
+      "median_abs_s": 353.1457438363164,
+      "p90_abs_s": 423.5482610748953,
+      "median_cross_km": 53.44428421548581,
+      "p90_cross_km": 85.69126314721662
+    },
+    {
+      "mission": "viirs",
+      "platform": "N21",
+      "lead": "(0, 30]",
+      "n": 207,
+      "median_abs_s": 6.882819154725335,
+      "p90_abs_s": 23.614323240734084,
+      "median_cross_km": 2.823178132496875,
+      "p90_cross_km": 7.2917520844172445
+    },
+    {
+      "mission": "viirs",
+      "platform": "N21",
+      "lead": "(30, 60]",
+      "n": 387,
+      "median_abs_s": 15.98715175470822,
+      "p90_abs_s": 53.43802784471018,
+      "median_cross_km": 5.921048709630251,
+      "p90_cross_km": 16.392201931341095
+    },
+    {
+      "mission": "viirs",
+      "platform": "N21",
+      "lead": "(60, 120]",
+      "n": 666,
+      "median_abs_s": 22.911320805297432,
+      "p90_abs_s": 84.0502602689024,
+      "median_cross_km": 12.73801922106203,
+      "p90_cross_km": 26.35914076443204
+    },
+    {
+      "mission": "viirs",
+      "platform": "N21",
+      "lead": "(120, 240]",
+      "n": 900,
+      "median_abs_s": 34.575341186289776,
+      "p90_abs_s": 65.55819461900201,
+      "median_cross_km": 11.125191689789965,
+      "p90_cross_km": 28.2189553820591
+    },
+    {
+      "mission": "viirs",
+      "platform": "N21",
+      "lead": "(240, 400]",
+      "n": 324,
+      "median_abs_s": 40.76082444751354,
+      "p90_abs_s": 83.44465432630842,
+      "median_cross_km": 10.785007589280884,
+      "p90_cross_km": 31.551487384751372
+    },
+    {
+      "mission": "sentinel-3",
+      "platform": "S3A",
+      "lead": "(0, 30]",
+      "n": 260,
+      "median_abs_s": 1.0,
+      "p90_abs_s": 3.0,
+      "median_cross_km": null,
+      "p90_cross_km": null
+    },
+    {
+      "mission": "sentinel-3",
+      "platform": "S3A",
+      "lead": "(30, 60]",
+      "n": 240,
+      "median_abs_s": 2.0,
+      "p90_abs_s": 5.0,
+      "median_cross_km": null,
+      "p90_cross_km": null
+    },
+    {
+      "mission": "sentinel-3",
+      "platform": "S3A",
+      "lead": "(60, 120]",
+      "n": 420,
+      "median_abs_s": 3.0,
+      "p90_abs_s": 7.0,
+      "median_cross_km": null,
+      "p90_cross_km": null
+    },
+    {
+      "mission": "sentinel-3",
+      "platform": "S3A",
+      "lead": "(120, 240]",
+      "n": 600,
+      "median_abs_s": 4.0,
+      "p90_abs_s": 9.100000000000023,
+      "median_cross_km": null,
+      "p90_cross_km": null
+    },
+    {
+      "mission": "sentinel-3",
+      "platform": "S3A",
+      "lead": "(240, 400]",
+      "n": 300,
+      "median_abs_s": 7.0,
+      "p90_abs_s": 9.0,
+      "median_cross_km": null,
+      "p90_cross_km": null
+    },
+    {
+      "mission": "sentinel-3",
+      "platform": "S3B",
+      "lead": "(0, 30]",
+      "n": 274,
+      "median_abs_s": 1.0,
+      "p90_abs_s": 3.0,
+      "median_cross_km": null,
+      "p90_cross_km": null
+    },
+    {
+      "mission": "sentinel-3",
+      "platform": "S3B",
+      "lead": "(30, 60]",
+      "n": 252,
+      "median_abs_s": 1.0,
+      "p90_abs_s": 4.0,
+      "median_cross_km": null,
+      "p90_cross_km": null
+    },
+    {
+      "mission": "sentinel-3",
+      "platform": "S3B",
+      "lead": "(60, 120]",
+      "n": 441,
+      "median_abs_s": 3.0,
+      "p90_abs_s": 7.0,
+      "median_cross_km": null,
+      "p90_cross_km": null
+    },
+    {
+      "mission": "sentinel-3",
+      "platform": "S3B",
+      "lead": "(120, 240]",
+      "n": 630,
+      "median_abs_s": 4.0,
+      "p90_abs_s": 7.0,
+      "median_cross_km": null,
+      "p90_cross_km": null
+    },
+    {
+      "mission": "sentinel-3",
+      "platform": "S3B",
+      "lead": "(240, 400]",
+      "n": 315,
+      "median_abs_s": 3.0,
+      "p90_abs_s": 5.0,
+      "median_cross_km": null,
+      "p90_cross_km": null
+    }
+  ]
+}

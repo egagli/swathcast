@@ -1,0 +1,111 @@
+{
+  "generated_at": "2026-11-28T17:25:10Z",
+  "sources": {
+    "asf_grd": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 89
+      },
+      "failing_since_utc": null,
+      "granules_found": 89,
+      "granules_polled": 1486,
+      "last_attempt_utc": "2026-11-28T17:25:10Z",
+      "last_error": "RetryError: HTTPSConnectionPool(host='cmr.earthdata.nasa.gov', port=443): Max retries exceeded with url: /search/granules.umm_json (Caused by ResponseError('too many 504 error responses'))",
+      "last_error_utc": "2026-11-27T09:27:25Z",
+      "last_success_utc": "2026-11-28T17:25:10Z"
+    },
+    "asf_slc": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 104
+      },
+      "failing_since_utc": null,
+      "granules_found": 104,
+      "granules_polled": 912,
+      "last_attempt_utc": "2026-11-28T17:25:10Z",
+      "last_error": "RetryError: HTTPSConnectionPool(host='cmr.earthdata.nasa.gov', port=443): Max retries exceeded with url: /search/granules.umm_json (Caused by ResponseError('too many 500 error responses'))",
+      "last_error_utc": "2026-11-26T08:28:53Z",
+      "last_success_utc": "2026-11-28T17:25:10Z"
+    },
+    "cdse": {
+      "consecutive_failures": 0,
+      "details": {
+        "skipped_too_old": 0,
+        "window_end": "2026-11-28T17:25:10Z",
+        "window_start": "2026-11-28T13:25:04Z"
+      },
+      "failing_since_utc": null,
+      "granules_found": 80,
+      "granules_polled": 221,
+      "last_attempt_utc": "2026-11-28T17:25:10Z",
+      "last_error": "SourceError: CDSE OData count HTTP 403: {\"status\":\"error\",\"data\":{\"message\":\"This request was rejected due to a violation. Please consult with your administrator, and provide this reference ID:  9047016163023790971\"}}",
+      "last_error_utc": "2026-10-30T19:24:55Z",
+      "last_success_utc": "2026-11-28T17:25:10Z"
+    },
+    "opera_cslc": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 1,
+        "stream_items": 31,
+        "unmatched_items": 0
+      },
+      "failing_since_utc": null,
+      "granules_found": 1,
+      "granules_polled": 12461,
+      "last_attempt_utc": "2026-11-28T17:25:10Z",
+      "last_error": "RetryError: HTTPSConnectionPool(host='cmr.earthdata.nasa.gov', port=443): Max retries exceeded with url: /search/granules.umm_json (Caused by ResponseError('too many 500 error responses'))",
+      "last_error_utc": "2026-10-20T12:43:37Z",
+      "last_success_utc": "2026-11-28T17:25:10Z"
+    },
+    "opera_rtc": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 66,
+        "stream_items": 8832,
+        "unmatched_items": 0
+      },
+      "failing_since_utc": null,
+      "granules_found": 324,
+      "granules_polled": 2369,
+      "last_attempt_utc": "2026-11-28T17:25:10Z",
+      "last_error": "RetryError: HTTPSConnectionPool(host='cmr.earthdata.nasa.gov', port=443): Max retries exceeded with url: /search/granules.umm_json (Caused by ResponseError('too many 500 error responses'))",
+      "last_error_utc": "2026-11-26T08:28:53Z",
+      "last_success_utc": "2026-11-28T17:25:10Z"
+    },
+    "pc_grd": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 0
+      },
+      "failing_since_utc": null,
+      "granules_found": 0,
+      "granules_polled": 126,
+      "last_attempt_utc": "2026-11-28T17:25:10Z",
+      "last_error": "RetryError: HTTPSConnectionPool(host='planetarycomputer.microsoft.com', port=443): Max retries exceeded with url: /api/stac/v1/search (Caused by ResponseError('too many 504 error responses'))",
+      "last_error_utc": "2026-10-12T23:32:19Z",
+      "last_success_utc": "2026-11-28T17:25:10Z"
+    },
+    "pc_rtc": {
+      "consecutive_failures": 0,
+      "details": {
+        "newly_seen": 0
+      },
+      "failing_since_utc": null,
+      "granules_found": 0,
+      "granules_polled": 3212,
+      "last_attempt_utc": "2026-11-28T17:25:10Z",
+      "last_error": null,
+      "last_error_utc": null,
+      "last_success_utc": "2026-11-28T17:25:10Z"
+    }
+  },
+  "this_run": {
+    "asf_grd": "ok",
+    "asf_slc": "ok",
+    "cdse": "ok",
+    "opera_cslc": "ok",
+    "opera_rtc": "ok",
+    "pc_grd": "ok",
+    "pc_rtc": "ok"
+  }
+}
